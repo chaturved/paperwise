@@ -60,7 +60,7 @@ export default function SignupPage() {
     <div className="auth-page relative">
       <AuthBackground />
       <div className="auth-panel">
-        <Link href="/" className="mb-8 block font-display text-xl font-medium tracking-[-0.05em]">paperwise<span className="text-accent">.</span></Link>
+        <Link href="/" className="mb-8 block font-display text-xl font-medium tracking-[-0.05em] xl:hidden">paperwise<span className="text-accent">.</span></Link>
 
         <h2 className="mb-1 text-[30px] font-medium leading-tight tracking-[-0.04em]">Create your account</h2>
         <p className="text-sm text-muted mb-8">Start chatting with your documents for free.</p>

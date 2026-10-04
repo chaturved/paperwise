@@ -1,4 +1,5 @@
 import { ArrowRight, FileText, MessageSquareText, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const steps = [
@@ -12,7 +13,7 @@ export function AuthBackground() {
     <>
       <div className="absolute right-5 top-5 z-20"><ThemeToggle /></div>
       <aside className="absolute inset-y-0 left-0 hidden w-[45%] flex-col justify-between border-r border-ink/10 bg-rail p-12 xl:flex">
-        <span className="font-display text-[22px] font-medium tracking-[-0.05em] text-ink">paperwise<span className="text-accent">.</span></span>
+        <Link href="/" className="font-display text-[22px] font-medium tracking-[-0.05em] text-ink">paperwise<span className="text-accent">.</span></Link>
         <div className="max-w-[470px]">
           <p className="mb-5 text-xs font-semibold uppercase tracking-[0.14em] text-accent">Your document workspace</p>
           <h1 className="font-sans text-[clamp(2.6rem,3.7vw,4.5rem)] font-medium leading-[1.08] tracking-[-0.045em] text-ink">From question to source, in one place.</h1>

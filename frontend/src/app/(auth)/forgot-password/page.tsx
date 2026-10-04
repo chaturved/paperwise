@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
     <div className="auth-page relative">
       <AuthBackground />
       <div className="auth-panel">
-        <Link href="/" className="mb-8 block font-display text-xl font-medium tracking-[-0.05em]">paperwise<span className="text-accent">.</span></Link>
+        <Link href="/" className="mb-8 block font-display text-xl font-medium tracking-[-0.05em] xl:hidden">paperwise<span className="text-accent">.</span></Link>
 
         {sent ? (
           <div className="text-center">

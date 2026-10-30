@@ -1,8 +1,9 @@
-import { KeyRound, Lock, Trash2 } from "lucide-react";
+import { ArrowRight, KeyRound, Lock, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { HeroCtas, PaintedCtaButtons } from "@/components/site/cta-buttons";
 import { FaqList } from "@/components/site/faq-list";
-import { DetailRows, LinkRows, PageHero, PaintedCard, PaintedCta, SectionHead, Statement, StepColumns } from "@/components/site/page-sections";
+import { AudienceTiles, PlansTeaser } from "@/components/site/home-sections";
+import { DetailRows, PageHero, PaintedCard, PaintedCta, SectionHead, Statement, StepColumns } from "@/components/site/page-sections";
 import { CitedRows, ProductPreview } from "@/components/site/product-preview";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
@@ -57,22 +58,12 @@ export default function LandingPage() {
 
           <section className="pb-24">
             <SectionHead title="Made for people who read closely" description="Start with the documents you already have to understand." />
-            <div className="mt-10 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
-              <span aria-hidden />
-              <LinkRows items={[
-                { label: "Freelancers", text: "Read a client agreement or brief before you sign or start.", href: "/for/freelancers" },
-                { label: "Small businesses", text: "Find the answer in leases, policies and supplier terms.", href: "/for/small-business" },
-                { label: "Researchers and students", text: "Ask a paper, textbook or manual a question and see the page it came from.", href: "/for/researchers-and-students" },
-              ]} />
-            </div>
+            <AudienceTiles />
           </section>
 
           <section className="pb-24">
             <SectionHead title="Start free, with room to grow" description="The Free plan needs no payment details. Pro is coming soon." />
-            <div className="mt-10 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
-              <span aria-hidden />
-              <LinkRows items={[{ label: "Plans and pricing", text: "What Free includes today and what Pro adds.", href: "/pricing" }]} />
-            </div>
+            <PlansTeaser />
           </section>
         </div>
 
@@ -85,8 +76,8 @@ export default function LandingPage() {
               { question: "Can I trust the answers?", answer: "Every answer cites numbered passages from your documents, so you can read the original words. AI can still be wrong, so check the source for anything that matters." },
               { question: "Who can see my documents?", answer: "Only you. Your files are stored privately and no other Paperwise customer can open them." },
             ],
+            footer: <Link href="/faq" className="inline-flex items-center gap-2 text-[15.5px] font-medium">More questions and answers <ArrowRight size={15} /></Link>,
           }]} />
-          <p className="mt-8 text-[15.5px]"><Link href="/faq" className="underline underline-offset-4">More questions and answers</Link></p>
         </div>
 
         <DetailRows title="Built so you can check the answer" text="See how Paperwise handles your account and your files." cta={{ label: "Read about security", href: "/security" }} rows={securityRows} />

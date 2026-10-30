@@ -5,6 +5,7 @@ export interface FaqGroup {
   id: string;
   title: string;
   items: { question: string; answer: ReactNode }[];
+  footer?: ReactNode;
 }
 
 /** Questions that open in place. Plain details elements, so it works without any script. */
@@ -24,6 +25,7 @@ export function FaqList({ groups }: { groups: FaqGroup[] }) {
                 <div className="max-w-[56ch] pb-5 text-[15.5px] leading-[1.6] text-ink/70">{item.answer}</div>
               </details>
             ))}
+            {group.footer && <div className="py-5">{group.footer}</div>}
           </div>
         </section>
       ))}

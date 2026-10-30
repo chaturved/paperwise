@@ -6,6 +6,7 @@ from src.core.exceptions import BadRequestError, NotFoundError, UnprocessableEnt
 from src.models.user import User
 from src.repositories.user_repository import UserRepository, UserRepositoryProtocol
 from src.schemas.user import MessageResponse, ProfileResponse, UsageItemResponse, UsageResponse, UserCreate
+from src.services.library_service import LibraryService, LibraryServiceProtocol
 from src.services.tier_service import LIMITS
 from src.utils.security import PasswordHasher
 
@@ -26,9 +27,11 @@ class UserService(UserServiceProtocol):
         self,
         repo: UserRepositoryProtocol = Depends(UserRepository),
         hasher: PasswordHasher = Depends(PasswordHasher),
+        library: LibraryServiceProtocol = Depends(LibraryService),
     ):
         self.repo = repo
         self.hasher = hasher
+        self.library = library
 
     def create_user(self, user_in: UserCreate) -> User:
         user = User(
@@ -82,6 +85,7 @@ class UserService(UserServiceProtocol):
         user = self.repo.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")
+        self.library.clear_all(user_id)  # the database rows go with the user, but the stored files would not
         self.repo.delete(user)
         return MessageResponse(message="Account deleted")
 

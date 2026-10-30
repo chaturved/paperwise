@@ -6,6 +6,7 @@ from src.core.enums import Plan
 from src.core.exceptions import BadRequestError, NotFoundError, UnprocessableEntityError
 from src.repositories.user_repository import UserRepositoryProtocol
 from src.schemas.user import UserCreate
+from src.services.library_service import LibraryServiceProtocol
 from src.services.user_service import UserService
 from src.utils.security import PasswordHasher
 
@@ -26,7 +27,8 @@ class TestUserService:
     def setup(self) -> None:
         self.mock_repo = MagicMock(spec_set=UserRepositoryProtocol)
         self.mock_hasher = MagicMock(spec_set=PasswordHasher)
-        self.svc = UserService(repo=self.mock_repo, hasher=self.mock_hasher)
+        self.mock_library = MagicMock(spec_set=LibraryServiceProtocol)
+        self.svc = UserService(repo=self.mock_repo, hasher=self.mock_hasher, library=self.mock_library)
 
     # ── create_user ───────────────────────────────────────────────────────────
 
@@ -156,6 +158,24 @@ class TestUserService:
 
         self.mock_repo.delete.assert_called_once_with(user)
         assert result.message == "Account deleted"
+
+    def test_remove_account_deletes_the_users_stored_files_before_the_account(self):
+        user = _make_user()
+        self.mock_repo.get_by_id.return_value = user
+        order = MagicMock()
+        order.attach_mock(self.mock_library.clear_all, "clear_files")
+        order.attach_mock(self.mock_repo.delete, "delete_user")
+
+        self.svc.remove_account(user_id=1, confirmation="DELETE")
+
+        assert [c[0] for c in order.mock_calls] == ["clear_files", "delete_user"]
+        self.mock_library.clear_all.assert_called_once_with(1)
+
+    def test_remove_account_keeps_everything_when_the_confirmation_is_wrong(self):
+        with pytest.raises(BadRequestError):
+            self.svc.remove_account(user_id=1, confirmation="delete")
+
+        self.mock_library.clear_all.assert_not_called()
 
     # ── complete_onboarding ───────────────────────────────────────────────────
 

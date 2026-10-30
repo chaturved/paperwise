@@ -49,8 +49,11 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
             }
             try {
               const parsed = JSON.parse(ev.data);
+              const meta: Meta | null = parsed.cited && accumulated.current.meta
+                ? { ...accumulated.current.meta, cited: parsed.cited }
+                : (parsed.meta ?? accumulated.current.meta);
               accumulated.current = {
-                meta: parsed.meta ?? accumulated.current.meta,
+                meta,
                 content: parsed.token ? accumulated.current.content + parsed.token : accumulated.current.content,
               };
               setState((prev) => ({ ...prev, meta: accumulated.current.meta, content: accumulated.current.content }));

@@ -4,13 +4,16 @@ import { useState } from "react";
 import {
   Copy, ThumbsUp, ThumbsDown,
   Bot, Shield, Waves, Sparkles, Star, Zap, BookOpen, Link2,
-  Check, AlertTriangle, ChevronRight,
+  Check, AlertTriangle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { setFeedback } from "@/lib/api/analytics";
-import type { Badge, Meta, Snippet, Source } from "@/types";
+import { CITATION_HREF_PREFIX, citedSources, linkCitations } from "@/lib/citations";
+import type { Badge, Meta } from "@/types";
+import { CitationChip } from "./citation-chip";
+import { SourcesPanel, sourceElementId } from "./sources-panel";
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
@@ -27,33 +30,12 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
   warning:   <AlertTriangle size={10} />,
 };
 
-function SourceBadge({ n }: { n: number }) {
-  return (
-    <span className="inline-flex items-center justify-center h-[14px] min-w-[14px] px-1 rounded-[3px] text-[9px] font-bold font-mono mx-px bg-accent/15 text-accent relative top-[-1px]">
-      {n}
-    </span>
-  );
-}
-
 function BadgeChip({ badge }: { badge: Badge }) {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded text-[10px] font-medium bg-ink/[0.12] text-ink/75 whitespace-nowrap">
       <span className="opacity-50">{BADGE_ICONS[badge.icon] ?? <Sparkles size={10} />}</span>
       {badge.label}
     </span>
-  );
-}
-
-function SnippetCard({ snippet }: { snippet: Snippet }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <button onClick={() => setOpen((v) => !v)} className="w-full text-left group/snip">
-      <div className="flex items-center gap-1.5">
-        <ChevronRight size={10} className={`text-ink/50 flex-shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-        <span className="text-[11.5px] text-ink/70 group-hover/snip:text-ink/90 truncate transition-colors">{snippet.name}</span>
-      </div>
-      {open && <p className="mt-1.5 pl-4 text-[11px] text-ink/50 leading-relaxed">{snippet.snippet}</p>}
-    </button>
   );
 }
 
@@ -82,7 +64,15 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
     }
   };
 
-  const hasContext = !streaming && ((meta?.snippets && meta.snippets.length > 0) || (meta?.sources && meta.sources.length > 0));
+  const sources = citedSources(meta);
+  const messageKey = String(messageId ?? "new");
+
+  const showSource = (n: number) => {
+    setExpandedSource(n);
+    document.getElementById(sourceElementId(messageKey, n))?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  const toggleSource = (n: number) => setExpandedSource((current) => (current === n ? null : n));
+
   const hasMeta    = !streaming && (meta?.description || (meta?.badges && meta.badges.length > 0));
 
   return (
@@ -123,23 +113,15 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                text: ({ children }) => {
-                  if (!meta?.sources) return <>{children}</>;
-                  const text = String(children);
-                  const parts = text.split(/(\[\d+\])/g);
-                  return (
-                    <>
-                      {parts.map((p, i) => {
-                        const match = p.match(/^\[(\d+)\]$/);
-                        if (match) return <SourceBadge key={i} n={Number(match[1])} />;
-                        return <span key={i}>{p}</span>;
-                      })}
-                    </>
-                  );
-                },
+                a: ({ href, children }) =>
+                  href?.startsWith(CITATION_HREF_PREFIX) ? (
+                    <CitationChip n={Number(href.slice(CITATION_HREF_PREFIX.length))} onSelect={showSource} />
+                  ) : (
+                    <a href={href} target="_blank" rel="noreferrer">{children}</a>
+                  ),
               }}
             >
-              {content}
+              {linkCitations(content, sources)}
             </ReactMarkdown>
             {streaming && (
               <span className="cursor-blink inline-block w-[2px] h-[13px] rounded-sm align-text-bottom ml-0.5 bg-ink/50" />
@@ -147,32 +129,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
           </div>
         )}
 
-        {hasContext && (
-          <div className="mt-4 pt-3.5 border-t-system space-y-2.5">
-            <span className="text-xs font-medium text-ink/60">Context used</span>
-            {meta?.snippets && meta.snippets.length > 0 && (
-              <div className="space-y-1.5 pl-1">{meta.snippets.map((s, i) => <SnippetCard key={i} snippet={s} />)}</div>
-            )}
-            {meta?.sources && meta.sources.length > 0 && (
-              <div className="space-y-1.5 pl-1">
-                {meta.snippets && meta.snippets.length > 0 && (
-                  <div className="text-xs font-medium text-ink/60 pt-1">Documents</div>
-                )}
-                {meta.sources.map((src: Source, i: number) => (
-                  <button key={i} onClick={() => setExpandedSource(expandedSource === i + 1 ? null : i + 1)} className="w-full text-left group/src">
-                    <div className="flex items-start gap-1.5">
-                      <span className="text-[9px] font-bold text-accent flex-shrink-0 mt-[2px]">[{i + 1}]</span>
-                      <div className="min-w-0">
-                        <span className="text-[11.5px] text-ink/70 group-hover/src:text-ink/90 transition-colors truncate block">{src.name}</span>
-                        <p className={`text-[11px] text-ink/50 leading-relaxed mt-0.5 ${expandedSource === i + 1 ? "" : "line-clamp-2"}`}>{src.quote}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {!streaming && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} />}
 
         {!streaming && (
           <div className="flex items-center gap-0.5 mt-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">

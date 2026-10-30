@@ -396,7 +396,8 @@ export default function DashboardPage() {
 - The `sseClient` wrapper in `lib/api-client.ts` handles auth refresh for SSE connections
 - SSE logic in components calls `sseClient` directly from within the component (or a hook) — not via `lib/api/` functions since SSE is stateful and event-driven
 - The backend SSE endpoint: `POST /api/v1/conversations/{conv_id}/ask`
-- SSE event format: `data: {"meta": {...}}` then `data: {"token": "..."}` then `data: [DONE]`
+- SSE event format: `data: {"meta": {...}}` (description, badges, every retrieved passage as a numbered `sources` entry), then `data: {"token": "..."}` for each token, then `data: {"cited": [1, 3]}` (the source numbers the answer cites that match a real source), then `data: [DONE]`. A failure is sent as `event: error` and still ends with `[DONE]`.
+- Answers cite passages as `[n]`. The frontend turns a marker into a chip only when `n` matches a source, and drops any other marker. The stored message keeps only the cited sources.
 
 ---
 

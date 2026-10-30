@@ -10,14 +10,11 @@ export interface ConversationSearchResult extends Conversation {
 }
 
 export interface Source {
+  n?: number; // missing on answers saved before sources were numbered
+  doc_id?: number;
   name: string;
+  page?: number | null;
   quote: string;
-  icon: string;
-}
-
-export interface Snippet {
-  name: string;
-  snippet: string;
   icon: string;
 }
 
@@ -29,8 +26,8 @@ export interface Badge {
 export interface Meta {
   description: string;
   badges: Badge[];
-  snippets: Snippet[];
   sources: Source[];
+  cited?: number[];
 }
 
 export interface Message {

@@ -17,11 +17,12 @@ from docx.text.paragraph import Paragraph
 from ...config import settings
 from ...core.exceptions import BadRequestError
 from .messages import TOO_LARGE_MESSAGE, UNREADABLE_FILE_MESSAGE
+from .pages import Page
 
 
 class TextBudget:
-    def join(self, parts: Iterable[str], separator: str) -> str:
-        """Join text parts, stopping at the first one that pushes the total past the extraction cap."""
+    def collect(self, parts: Iterable[str], separator: str = "") -> list[str]:
+        """Gather text parts, stopping at the first one that pushes the total past the extraction cap."""
         collected: list[str] = []
         total = 0
         for part in parts:
@@ -29,7 +30,7 @@ class TextBudget:
             if total > settings.MAX_EXTRACTED_CHARS:
                 raise BadRequestError(TOO_LARGE_MESSAGE)
             collected.append(part)
-        return separator.join(collected)
+        return collected
 
 
 class DocxArchiveGuard:
@@ -62,20 +63,21 @@ class DocxArchiveGuard:
 
 class FileParser(ABC):
     @abstractmethod
-    def parse(self, contents: bytes) -> str: ...
+    def parse(self, contents: bytes) -> list[Page]: ...
 
 
 class PdfParser(FileParser):
     def __init__(self, budget: TextBudget) -> None:
         self.budget = budget
 
-    def parse(self, contents: bytes) -> str:
+    def parse(self, contents: bytes) -> list[Page]:
         with fitz.open(stream=contents, filetype="pdf") as doc:
             if doc.needs_pass:
                 raise BadRequestError(UNREADABLE_FILE_MESSAGE)
             if doc.page_count > settings.MAX_PDF_PAGES:
                 raise BadRequestError(TOO_LARGE_MESSAGE)
-            return self.budget.join((page.get_text() for page in doc), "")  # type: ignore[attr-defined]
+            texts = self.budget.collect(page.get_text() for page in doc)  # type: ignore[attr-defined]
+            return [Page(number, text) for number, text in enumerate(texts, start=1)]
 
 
 class DocxParser(FileParser):
@@ -83,9 +85,10 @@ class DocxParser(FileParser):
         self.guard = guard
         self.budget = budget
 
-    def parse(self, contents: bytes) -> str:
+    def parse(self, contents: bytes) -> list[Page]:
         self.guard.check(contents)
-        return self.budget.join(self._blocks(docx.Document(io.BytesIO(contents))), "\n")
+        blocks = self.budget.collect(self._blocks(docx.Document(io.BytesIO(contents))), "\n")
+        return [Page(None, "\n".join(blocks))]
 
     def _blocks(self, document: DocxDocument) -> Iterator[str]:
         """Yield paragraph and table text in document order, so contract tables aren't skipped."""
@@ -100,10 +103,10 @@ class DocxParser(FileParser):
 
 
 class PlainTextParser(FileParser):
-    def parse(self, contents: bytes) -> str:
+    def parse(self, contents: bytes) -> list[Page]:
         if len(contents) > settings.MAX_EXTRACTED_CHARS:  # decoded text is never longer than its bytes
             raise BadRequestError(TOO_LARGE_MESSAGE)
-        return contents.decode("utf-8", errors="ignore")
+        return [Page(None, contents.decode("utf-8", errors="ignore"))]
 
 
 class DocumentParser:
@@ -119,8 +122,8 @@ class DocumentParser:
         text_parser = PlainTextParser()
         return {"pdf": PdfParser(budget), "docx": docx_parser, "doc": docx_parser, "txt": text_parser, "md": text_parser}
 
-    def parse(self, contents: bytes, ext: str) -> str:
-        """Return the text of an uploaded file. Raises BadRequestError with a plain message if it can't be used."""
+    def parse(self, contents: bytes, ext: str) -> list[Page]:
+        """Return the pages of an uploaded file. Raises BadRequestError with a plain message if it can't be used."""
         parser = self.parsers.get(ext.lower())
         if parser is None:
             raise BadRequestError(f"Unsupported file type: .{ext}")

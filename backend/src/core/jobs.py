@@ -26,13 +26,13 @@ class DocumentJobs:
     async def process(self, doc_id: int) -> None:
         async with self._ingest_slots.get():
             with self.session_factory() as db:
-                await self._ingestion_service(db).process(doc_id)
+                await self.ingestion_service(db).process(doc_id)
 
     def recover_interrupted(self) -> None:
         with self.session_factory() as db:
-            self._ingestion_service(db).recover_interrupted()
+            self.ingestion_service(db).recover_interrupted()
 
-    def _ingestion_service(self, db: Session) -> IngestionService:
+    def ingestion_service(self, db: Session) -> IngestionService:
         chunker = TextChunker()
         return IngestionService(
             repo=LibraryRepository(db),

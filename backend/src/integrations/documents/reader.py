@@ -3,6 +3,7 @@ from fastapi import Depends
 from ...core.exceptions import BadRequestError
 from ...utils.text_utils import TextChunker
 from .messages import NO_TEXT_MESSAGE
+from .pages import Page
 from .runner import IsolatedExtractor
 
 
@@ -15,9 +16,9 @@ class ReadableTextExtractor:
         self.extractor = extractor
         self.chunker = chunker
 
-    async def extract(self, contents: bytes, ext: str) -> str:
-        """The text of an uploaded file, parsed safely. Raises BadRequestError if there is nothing to read."""
-        text = await self.extractor.extract(contents, ext)
-        if not self.chunker.clean(text):
+    async def extract(self, contents: bytes, ext: str) -> list[Page]:
+        """The pages of an uploaded file, parsed safely. Raises BadRequestError if there is nothing to read."""
+        pages = [page for page in await self.extractor.extract(contents, ext) if self.chunker.clean(page.text)]
+        if not pages:
             raise BadRequestError(NO_TEXT_MESSAGE)
-        return text
+        return pages

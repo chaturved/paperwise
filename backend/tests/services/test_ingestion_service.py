@@ -7,7 +7,7 @@ import pytest
 from src.core.enums import DocumentStatus
 from src.core.exceptions import BadRequestError
 from src.integrations.ai.base import AIProvider
-from src.integrations.documents import ReadableTextExtractor
+from src.integrations.documents import Page, ReadableTextExtractor
 from src.integrations.storage import S3Storage, StorageError
 from src.repositories.library_repository import LibraryRepositoryProtocol
 from src.services.ingestion_service import (
@@ -43,19 +43,28 @@ class TestProcess:
         self.lib = _lib()
         self.repo.get.return_value = self.lib
 
-    async def _process(self, text="Payment is due in 30 days."):
-        self.reader.extract = AsyncMock(return_value=text)
+    async def _process(self, pages=None):
+        self.reader.extract = AsyncMock(return_value=pages or [Page(1, "Payment is due in 30 days.")])
         await self.service.process(1)
 
     async def test_indexes_the_file_and_marks_it_ready(self):
-        await self._process("Payment is due in 30 days.")
+        await self._process([Page(1, "Payment is due in 30 days.")])
 
         self.storage.download.assert_called_once_with("1/x/a.pdf", len(RAW))
-        self.repo.delete_chunks.assert_called_once_with(1)
         args = self.repo.finish_processing.call_args.args
         assert args[0] is self.lib and args[1] == "Payment is due in 30 days." and args[2] == RAW_HASH
         assert [c.chunk_index for c in args[3]] == list(range(len(args[3]))) and args[3]
         self.repo.set_status.assert_not_called()
+
+    async def test_every_chunk_keeps_the_page_it_came_from(self):
+        await self._process([Page(1, "alpha " * 100), Page(2, "beta " * 100), Page(None, "gamma")])
+
+        chunks = self.repo.finish_processing.call_args.args[3]
+        pages = [c.page_number for c in chunks]
+        assert pages == sorted(pages, key=lambda n: (n is None, n))
+        assert set(pages) == {1, 2, None}
+        assert all(("alpha" in c.chunk_text) == (c.page_number == 1) for c in chunks)
+        assert [c.chunk_index for c in chunks] == list(range(len(chunks)))
 
     @pytest.mark.parametrize("status", [DocumentStatus.READY, DocumentStatus.FAILED, DocumentStatus.UPLOADING])
     async def test_ignores_documents_that_are_not_waiting_to_be_processed(self, status):
@@ -180,3 +189,45 @@ class TestRecoverInterrupted:
 
         self.repo.set_status.assert_not_called()
         self.repo.delete.assert_not_called()
+
+
+class TestReindex:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.repo = MagicMock(spec_set=LibraryRepositoryProtocol)
+        self.repo.get_by_content_hash.return_value = None
+        self.storage = MagicMock(spec_set=S3Storage)
+        self.storage.key_from_path.return_value = "1/x/a.pdf"
+        self.storage.download.return_value = RAW
+        self.ai = MagicMock(spec_set=AIProvider)
+        self.ai.get_embeddings = AsyncMock(side_effect=lambda chunks: [[0.1] for _ in chunks])
+        self.reader = MagicMock(spec_set=ReadableTextExtractor)
+        self.reader.extract = AsyncMock(return_value=[Page(1, "Payment is due in 30 days.")])
+        self.service = IngestionService(self.repo, self.storage, self.ai, self.reader, TextChunker())
+        self.lib = _lib(status=DocumentStatus.READY)
+        self.repo.get.return_value = self.lib
+        self.repo.transition_status.return_value = True
+
+    async def test_replaces_the_chunks_of_a_ready_document(self):
+        assert await self.service.reindex(1) is True
+
+        self.repo.transition_status.assert_called_once_with(1, DocumentStatus.READY, DocumentStatus.PROCESSING)
+        self.repo.finish_processing.assert_called_once()
+        self.storage.delete_file.assert_not_called()
+
+    async def test_ignores_a_document_that_is_not_ready(self):
+        self.repo.transition_status.return_value = False
+
+        assert await self.service.reindex(1) is False
+
+        self.repo.finish_processing.assert_not_called()
+
+    @pytest.mark.parametrize("error", [BadRequestError("too large"), RuntimeError("provider down"), StorageError("down")])
+    async def test_a_failure_leaves_the_document_ready_and_keeps_its_file(self, error):
+        self.reader.extract = AsyncMock(side_effect=error)
+
+        assert await self.service.reindex(1) is False
+
+        self.repo.finish_processing.assert_not_called()
+        self.repo.set_status.assert_called_once_with(self.lib, DocumentStatus.READY)
+        self.storage.delete_file.assert_not_called()

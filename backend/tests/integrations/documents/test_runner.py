@@ -4,11 +4,12 @@ import sys
 import zipfile
 
 import docx
+import fitz
 import pytest
 
 from src.config import settings
 from src.core.exceptions import BadRequestError
-from src.integrations.documents import IsolatedExtractor, runner
+from src.integrations.documents import IsolatedExtractor, Page, runner
 from src.integrations.documents.messages import BUSY_MESSAGE, TIMEOUT_MESSAGE
 
 
@@ -21,15 +22,25 @@ def _docx_bytes(text: str) -> bytes:
 
 
 async def test_returns_text_from_the_worker_process():
-    assert await IsolatedExtractor().extract(b"hello world", "txt") == "hello world"
+    assert await IsolatedExtractor().extract(b"hello world", "txt") == [Page(None, "hello world")]
+
+
+async def test_pdf_pages_keep_their_numbers_through_the_worker_process():
+    pdf = fitz.open()
+    for text in ("first page", "second page"):
+        pdf.new_page().insert_text((72, 72), text)
+
+    pages = await IsolatedExtractor().extract(pdf.tobytes(), "pdf")
+
+    assert [(p.number, p.text.strip()) for p in pages] == [(1, "first page"), (2, "second page")]
 
 
 async def test_extension_is_case_insensitive():
-    assert await IsolatedExtractor().extract(b"hello", "TXT") == "hello"
+    assert await IsolatedExtractor().extract(b"hello", "TXT") == [Page(None, "hello")]
 
 
 async def test_docx_is_parsed_in_the_worker():
-    assert await IsolatedExtractor().extract(_docx_bytes("Payment due in 30 days"), "docx") == "Payment due in 30 days"
+    assert await IsolatedExtractor().extract(_docx_bytes("Payment due in 30 days"), "docx") == [Page(None, "Payment due in 30 days")]
 
 
 async def test_worker_errors_keep_their_plain_message():
@@ -93,7 +104,7 @@ async def test_crashed_worker_is_reported_as_too_complex(monkeypatch):
     assert "too large or complex" in exc.value.message
 
 
-_SLOW_WORKER = "import time; time.sleep(0.3); print('{\"ok\": true, \"text\": \"done\"}')"
+_SLOW_WORKER = "import time; time.sleep(0.3); print('{\"ok\": true, \"pages\": [{\"number\": null, \"text\": \"done\"}]}')"
 
 
 def _track_concurrency(monkeypatch):
@@ -125,7 +136,7 @@ async def test_only_a_few_workers_run_at_once(monkeypatch):
 
     results = await asyncio.gather(*(IsolatedExtractor().extract(b"x", "txt") for _ in range(6)))
 
-    assert results == ["done"] * 6
+    assert results == [[Page(None, "done")]] * 6
     assert state["peak"] <= 2
 
 
@@ -140,7 +151,7 @@ async def test_upload_is_refused_when_no_worker_frees_up_in_time(monkeypatch):
 
     refused = [o for o in outcomes if isinstance(o, BadRequestError)]
     assert refused and all(o.message == BUSY_MESSAGE for o in refused)
-    assert "done" in outcomes
+    assert [Page(None, "done")] in outcomes
 
 
 async def test_a_slot_is_released_after_a_failed_parse(monkeypatch):
@@ -149,7 +160,7 @@ async def test_a_slot_is_released_after_a_failed_parse(monkeypatch):
     with pytest.raises(BadRequestError):
         await IsolatedExtractor().extract(b"not a pdf", "pdf")
 
-    assert await IsolatedExtractor().extract(b"still works", "txt") == "still works"
+    assert await IsolatedExtractor().extract(b"still works", "txt") == [Page(None, "still works")]
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="address-space limits are only enforced on Linux")

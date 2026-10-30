@@ -16,7 +16,7 @@ async def test_process_runs_the_service_with_its_own_session():
     service = MagicMock()
     service.process = MagicMock(side_effect=lambda doc_id: asyncio.sleep(0))
 
-    with patch.object(DocumentJobs, "_ingestion_service", return_value=service) as build:
+    with patch.object(DocumentJobs, "ingestion_service", return_value=service) as build:
         await DocumentJobs(session_factory=lambda: session).process(5)
 
     build.assert_called_once_with(session)
@@ -37,7 +37,7 @@ async def test_only_a_few_documents_are_processed_at_once(monkeypatch):
     service = MagicMock()
     service.process = slow_process
 
-    with patch.object(DocumentJobs, "_ingestion_service", return_value=service):
+    with patch.object(DocumentJobs, "ingestion_service", return_value=service):
         await asyncio.gather(*(DocumentJobs(session_factory=_session).process(i) for i in range(6)))
 
     assert state["peak"] == 2
@@ -47,7 +47,7 @@ def test_recover_interrupted_uses_its_own_session():
     session = _session()
     service = MagicMock()
 
-    with patch.object(DocumentJobs, "_ingestion_service", return_value=service):
+    with patch.object(DocumentJobs, "ingestion_service", return_value=service):
         DocumentJobs(session_factory=lambda: session).recover_interrupted()
 
     service.recover_interrupted.assert_called_once_with()

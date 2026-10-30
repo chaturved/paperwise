@@ -26,6 +26,7 @@ class LibraryChunk(Base):
     library_id: Mapped[int] = mapped_column(ForeignKey("libraries.id"))
     chunk_index: Mapped[int] = mapped_column(Integer)
     chunk_text: Mapped[str] = mapped_column(Text)
+    page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     embedding = mapped_column(_EMBEDDING_COL, nullable=True)
 
     library: Mapped[Library] = relationship("Library", back_populates="chunks")

@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 from fastapi import Depends
-from sqlalchemy import func
+from sqlalchemy import exists, func
 from sqlalchemy.orm import Session
 
 from src.core.enums import DocumentStatus
@@ -25,7 +25,7 @@ class LibraryRepositoryProtocol(Protocol):
     def transition_status(self, doc_id: int, from_status: DocumentStatus, to_status: DocumentStatus) -> bool: ...
     def set_status(self, lib: Library, status: DocumentStatus, error_message: str | None = None) -> None: ...
     def finish_processing(self, lib: Library, text: str, content_hash: str, chunks: list[LibraryChunk]) -> None: ...
-    def delete_chunks(self, library_id: int) -> None: ...
+    def list_missing_page_numbers(self) -> list[Library]: ...
     def rollback(self) -> None: ...
     def list_stale(self, statuses: list[DocumentStatus], cutoff: datetime) -> list[Library]: ...
     def get_chunks_after(self, chunk_id: int, limit: int) -> list[LibraryChunk]: ...
@@ -96,21 +96,32 @@ class LibraryRepository(LibraryRepositoryProtocol):
         self.db.commit()
 
     def finish_processing(self, lib: Library, text: str, content_hash: str, chunks: list[LibraryChunk]) -> None:
-        """Save the extracted text, the chunks and the 'ready' status in a single transaction."""
+        """Save the extracted text, the chunks and the 'ready' status in a single transaction.
+
+        Chunks from an earlier run are replaced in the same transaction, so a failure never leaves a document
+        with no chunks.
+        """
         lib.extracted_text = text
         lib.content_hash = content_hash
         lib.status = DocumentStatus.READY
         lib.error_message = None
         lib.status_updated_at = _now()
+        self.db.query(LibraryChunk).filter(LibraryChunk.library_id == lib.id).delete(synchronize_session=False)
         self.db.add_all(chunks)
         self.db.commit()
 
     def rollback(self) -> None:
         self.db.rollback()
 
-    def delete_chunks(self, library_id: int) -> None:
-        self.db.query(LibraryChunk).filter(LibraryChunk.library_id == library_id).delete(synchronize_session=False)
-        self.db.commit()
+    def list_missing_page_numbers(self) -> list[Library]:
+        """Ready PDFs that were indexed before chunks recorded their page."""
+        unpaged = exists().where(LibraryChunk.library_id == Library.id, LibraryChunk.page_number.is_(None))
+        return (
+            self.db.query(Library)
+            .filter(Library.status == DocumentStatus.READY, Library.type == "pdf", unpaged)
+            .order_by(Library.id)
+            .all()
+        )
 
     def list_stale(self, statuses: list[DocumentStatus], cutoff: datetime) -> list[Library]:
         last_change = func.coalesce(Library.status_updated_at, Library.created_at)

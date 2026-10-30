@@ -7,6 +7,7 @@ import pytest
 
 from src.config import settings
 from src.core.exceptions import BadRequestError
+from src.integrations.documents import Page
 from src.integrations.documents.parsers import DocumentParser
 from src.utils.text_utils import TextChunker
 
@@ -30,12 +31,13 @@ class TestExtractDocx:
             table.cell(1, 1).text = "2%"
             document.add_paragraph("Termination")
 
-        text = DocumentParser().parse(_docx_bytes(build), "docx")
+        [page] = DocumentParser().parse(_docx_bytes(build), "docx")
 
-        assert text.splitlines() == ["Payment terms", "Due | 30 days", "Late fee | 2%", "Termination"]
+        assert page.number is None
+        assert page.text.splitlines() == ["Payment terms", "Due | 30 days", "Late fee | 2%", "Termination"]
 
     def test_empty_document_has_no_readable_text(self):
-        assert TextChunker().clean(DocumentParser().parse(_docx_bytes(lambda d: None), "docx")) == ""
+        assert [TextChunker().clean(p.text) for p in DocumentParser().parse(_docx_bytes(lambda d: None), "docx")] == [""]
 
 
 def _zip_bytes(members: dict[str, bytes]) -> bytes:
@@ -120,12 +122,21 @@ class TestUploadSafetyLimits:
     def test_text_at_the_cap_is_accepted(self, monkeypatch):
         monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 10)
 
-        assert DocumentParser().parse(b"a" * 10, "txt") == "a" * 10
+        assert DocumentParser().parse(b"a" * 10, "txt") == [Page(None, "a" * 10)]
 
 
 class TestExtractOtherTypes:
     def test_txt_is_decoded(self):
-        assert DocumentParser().parse(b"hello", "txt") == "hello"
+        assert DocumentParser().parse(b"hello", "txt") == [Page(None, "hello")]
+
+    def test_pdf_pages_are_numbered_from_one(self):
+        pdf = fitz.open()
+        for text in ("first page", "second page"):
+            pdf.new_page().insert_text((72, 72), text)
+
+        pages = DocumentParser().parse(pdf.tobytes(), "pdf")
+
+        assert [(p.number, p.text.strip()) for p in pages] == [(1, "first page"), (2, "second page")]
 
     def test_unsupported_type_raises(self):
         with pytest.raises(BadRequestError):

@@ -14,6 +14,7 @@ from .messages import (
     TOO_LARGE_MESSAGE,
     UNREADABLE_FILE_MESSAGE,
 )
+from .pages import Page
 
 # The worker is started as `python -m src.integrations.documents.worker`, so it must run from the backend root.
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
@@ -25,7 +26,7 @@ class IsolatedExtractor:
 
     _worker_slots = PerLoopSemaphore(lambda: settings.EXTRACT_MAX_CONCURRENCY)
 
-    async def extract(self, contents: bytes, ext: str) -> str:
+    async def extract(self, contents: bytes, ext: str) -> list[Page]:
         slots = self._worker_slots.get()
         try:
             await asyncio.wait_for(slots.acquire(), timeout=settings.EXTRACT_QUEUE_TIMEOUT_SECONDS)
@@ -37,7 +38,7 @@ class IsolatedExtractor:
         finally:
             slots.release()
 
-    async def _run_worker(self, contents: bytes, ext: str) -> str:
+    async def _run_worker(self, contents: bytes, ext: str) -> list[Page]:
         process = await asyncio.create_subprocess_exec(
             sys.executable,
             "-m",
@@ -68,4 +69,4 @@ class IsolatedExtractor:
 
         if not result.get("ok"):
             raise BadRequestError(str(result.get("message") or UNREADABLE_FILE_MESSAGE))
-        return str(result["text"])
+        return [Page(item["number"], str(item["text"])) for item in result["pages"]]

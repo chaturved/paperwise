@@ -206,10 +206,14 @@ class TestLibraryStatusMethods:
         self.db.add_all.assert_called_once_with(chunks)
         self.db.commit.assert_called_once()
 
-    def test_delete_chunks_removes_only_that_documents_chunks(self):
-        self.repo.delete_chunks(7)
+    def test_finish_processing_replaces_the_documents_old_chunks_in_the_same_commit(self):
+        lib = MagicMock(spec=Library)
+        lib.id = 7
+
+        self.repo.finish_processing(lib, "text", "hash", [MagicMock(spec=LibraryChunk)])
 
         self.db.query.assert_called_once_with(LibraryChunk)
+        self.db.query.return_value.filter.return_value.delete.assert_called_once_with(synchronize_session=False)
         self.db.commit.assert_called_once()
 
     def test_list_stale_returns_matching_documents(self):

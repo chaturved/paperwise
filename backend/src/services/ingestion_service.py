@@ -69,20 +69,39 @@ class IngestionService:
         if existing is not None and existing.id != lib.id:
             raise ConflictError(DUPLICATE_MESSAGE)
 
-        text = await self.reader.extract(raw, lib.type)
-        chunks = self.chunker.chunk(text)
-        embeddings = await self.ai.get_embeddings(chunks)
+        pages = await self.reader.extract(raw, lib.type)
+        passages = [(page.number, text) for page in pages for text in self.chunker.chunk(page.text)]
+        embeddings = await self.ai.get_embeddings([text for _, text in passages])
 
-        self.repo.delete_chunks(lib.id)  # clears anything left by an earlier attempt
         self.repo.finish_processing(
             lib,
-            text,
+            "\n".join(page.text for page in pages),
             content_hash,
             [
-                LibraryChunk(library_id=lib.id, chunk_index=i, chunk_text=chunk, embedding=embedding)
-                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+                LibraryChunk(
+                    library_id=lib.id, chunk_index=i, chunk_text=text, page_number=number, embedding=embedding
+                )
+                for i, ((number, text), embedding) in enumerate(zip(passages, embeddings))
             ],
         )
+
+    async def reindex(self, doc_id: int) -> bool:
+        """Re-process a document that is already ready, for example to record page numbers.
+
+        Unlike process(), this never removes the stored file: if anything goes wrong the document goes back
+        to ready with its existing chunks, which are only replaced once the new ones are complete.
+        """
+        if not self.repo.transition_status(doc_id, DocumentStatus.READY, DocumentStatus.PROCESSING):
+            return False
+        lib = self.repo.get(doc_id)
+        try:
+            await self._index(lib)
+        except Exception:  # noqa: BLE001 - any failure leaves the document as it was
+            _log.exception("Could not re-index document %s", doc_id)
+            self.repo.rollback()
+            self.repo.set_status(self.repo.get(doc_id), DocumentStatus.READY)
+            return False
+        return True
 
     def _fail(self, doc_id: int, message: str, remove_file: bool) -> None:
         self.repo.rollback()

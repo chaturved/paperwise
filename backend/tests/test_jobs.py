@@ -5,6 +5,12 @@ from src.config import settings
 from src.core.jobs import DocumentJobs
 
 
+def _jobs(session_factory):
+    jobs = DocumentJobs()
+    jobs.session_factory = session_factory
+    return jobs
+
+
 def _session():
     session = MagicMock()
     session.__enter__.return_value = session
@@ -17,7 +23,7 @@ async def test_process_runs_the_service_with_its_own_session():
     service.process = MagicMock(side_effect=lambda doc_id: asyncio.sleep(0))
 
     with patch.object(DocumentJobs, "ingestion_service", return_value=service) as build:
-        await DocumentJobs(session_factory=lambda: session).process(5)
+        await _jobs(lambda: session).process(5)
 
     build.assert_called_once_with(session)
     service.process.assert_called_once_with(5)
@@ -38,7 +44,7 @@ async def test_only_a_few_documents_are_processed_at_once(monkeypatch):
     service.process = slow_process
 
     with patch.object(DocumentJobs, "ingestion_service", return_value=service):
-        await asyncio.gather(*(DocumentJobs(session_factory=_session).process(i) for i in range(6)))
+        await asyncio.gather(*(_jobs(_session).process(i) for i in range(6)))
 
     assert state["peak"] == 2
 
@@ -48,7 +54,7 @@ def test_recover_interrupted_uses_its_own_session():
     service = MagicMock()
 
     with patch.object(DocumentJobs, "ingestion_service", return_value=service):
-        DocumentJobs(session_factory=lambda: session).recover_interrupted()
+        _jobs(lambda: session).recover_interrupted()
 
     service.recover_interrupted.assert_called_once_with()
     session.__exit__.assert_called_once()

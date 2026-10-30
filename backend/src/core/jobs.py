@@ -20,8 +20,9 @@ class DocumentJobs:
 
     _ingest_slots = PerLoopSemaphore(lambda: settings.INGEST_MAX_CONCURRENCY)
 
-    def __init__(self, session_factory: Callable[[], Session] = SessionLocal) -> None:
-        self.session_factory = session_factory
+    # A class attribute, not an __init__ parameter: FastAPI reads the parameters of any class used with Depends,
+    # and a function-typed one cannot be described in the API schema, which breaks /docs.
+    session_factory: Callable[[], Session] = staticmethod(SessionLocal)
 
     async def process(self, doc_id: int) -> None:
         async with self._ingest_slots.get():

@@ -1,17 +1,51 @@
+import axios from "axios";
 import apiClient from "@/lib/api-client";
-import type { LibraryData, MessageResponse, UploadResult } from "@/types";
+import type { CreateUploadsResponse, LibraryData, LibraryDoc, MessageResponse, UploadResult, UploadSlot } from "@/types";
 
 export const getLibrary = async (): Promise<LibraryData> => {
   const res = await apiClient.get("/v1/library");
   return res.data;
 };
 
+// Legacy multipart upload through the API. Removed once nothing calls it.
 export const uploadFiles = async (files: File[]): Promise<UploadResult> => {
   const form = new FormData();
   files.forEach((f) => form.append("files", f));
   const res = await apiClient.post("/v1/library/upload", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data;
+};
+
+export const createUploads = async (files: File[]): Promise<CreateUploadsResponse> => {
+  const res = await apiClient.post("/v1/library/uploads", {
+    files: files.map((f) => ({ name: f.name, size: f.size })),
+  });
+  return res.data;
+};
+
+// The file goes straight to storage. This is deliberately plain axios, not apiClient:
+// the signed URL is not our API and must not receive our auth cookie.
+export const putToStorage = async (
+  slot: UploadSlot,
+  file: File,
+  onProgress: (percent: number) => void,
+): Promise<void> => {
+  await axios.put(slot.upload_url, file, {
+    headers: slot.headers,
+    onUploadProgress: (event) => {
+      if (event.total) onProgress(Math.round((event.loaded / event.total) * 100));
+    },
+  });
+};
+
+export const completeUpload = async (id: number): Promise<LibraryDoc> => {
+  const res = await apiClient.post(`/v1/library/${id}/complete`);
+  return res.data;
+};
+
+export const retryDocument = async (id: number): Promise<LibraryDoc> => {
+  const res = await apiClient.post(`/v1/library/${id}/retry`);
   return res.data;
 };
 

@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { toast } from "sonner";
-import { Upload, CheckCircle, ArrowRight, ArrowLeft, FileText, MessageSquareText, ShieldCheck } from "lucide-react";
+import { Upload, CheckCircle, TriangleAlert, ArrowRight, ArrowLeft, FileText, MessageSquareText, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { completeOnboarding } from "@/lib/api/users";
-import { getLibrary, uploadFiles } from "@/lib/api/documents";
-import type { LibraryDoc } from "@/types";
+import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { useLibrary } from "@/hooks/useLibrary";
+import { apiErrorMessage } from "@/lib/api-error";
 import { AuthBackground } from "@/components/auth/auth-background";
 
 
@@ -22,37 +22,32 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [step, setStep] = useState(1);
-  const [uploadedDoc, setUploadedDoc] = useState<LibraryDoc | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const { documents, loaded, refresh, retry } = useLibrary();
+  const { upload, uploading } = useDocumentUpload(refresh);
+  const uploadedDoc = documents[0] ?? null;
   const [question, setQuestion] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Someone who already has a ready document skips straight to asking.
+  const skippedAhead = useRef(false);
   useEffect(() => {
-    getLibrary()
-      .then((library) => {
-        if (library.sections[0]) {
-          setUploadedDoc(library.sections[0]);
-          setStep(3);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (!loaded || skippedAhead.current) return;
+    skippedAhead.current = true;
+    if (uploadedDoc?.status === "ready") setStep(3);
+  }, [loaded, uploadedDoc]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
     try {
-      const { uploaded, errors } = await uploadFiles([file]);
-      if (uploaded[0]) setUploadedDoc(uploaded[0]);
-      else toast.error(errors[0]?.error || "Upload failed. Try a PDF, TXT, or MD file under 10 MB.");
+      const { errors } = await upload([file]);
+      if (errors[0]) toast.error(errors[0].error);
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.errors?.[0]?.error : undefined;
-      toast.error(message || "Upload failed. Try a PDF, TXT, or MD file under 10 MB.");
+      toast.error(apiErrorMessage(err, "Upload failed. Try a PDF, TXT, or MD file under 10 MB."));
     } finally {
-      setUploading(false);
+      e.target.value = "";
     }
-  }, []);
+  }, [upload]);
 
   const goAsk = useCallback(async (q: string) => {
     if (!q.trim()) return;
@@ -122,12 +117,22 @@ export default function OnboardingPage() {
             <p className="text-sm text-muted mb-6">Drop a PDF, TXT, or MD file to get started.</p>
 
             {uploadedDoc ? (
-              <div className="flex items-center gap-3 rounded-md p-4 mb-6 bg-emerald-400/[0.08] border border-emerald-400/[0.18]">
-                <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-400" />
+              <div className={`flex items-center gap-3 rounded-md p-4 mb-6 border ${uploadedDoc.status === "failed" ? "bg-red-500/[0.06] border-red-500/20" : "bg-emerald-400/[0.08] border-emerald-400/[0.18]"}`}>
+                {uploadedDoc.status === "failed" ? <TriangleAlert className="h-5 w-5 flex-shrink-0 text-red-500" />
+                  : uploadedDoc.status === "ready" ? <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-400" />
+                  : <span className="h-5 w-5 flex-shrink-0 rounded-full border-2 border-ink/10 border-t-ink/50 animate-spin" />}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ink truncate">{uploadedDoc.name}</p>
-                  <p className="text-xs text-faint">{(uploadedDoc.size / 1024).toFixed(0)} KB</p>
+                  <p className="text-xs text-faint">
+                    {uploadedDoc.status === "failed" ? uploadedDoc.error_message
+                      : uploadedDoc.status === "ready" ? `${(uploadedDoc.size / 1024).toFixed(0)} KB · Ready`
+                      : "Reading your document…"}
+                  </p>
                 </div>
+                {uploadedDoc.status === "failed" && (
+                  <button onClick={() => retry(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Retry failed")))}
+                    className="text-xs font-medium text-ink underline underline-offset-2">Try again</button>
+                )}
               </div>
             ) : (
               <button
@@ -152,7 +157,7 @@ export default function OnboardingPage() {
                 className="h-11 px-5 rounded-md border-system bg-ink/[0.04] text-sm text-muted hover:text-ink transition flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
-              <button onClick={() => setStep(3)} disabled={!uploadedDoc}
+              <button onClick={() => setStep(3)} disabled={uploadedDoc?.status !== "ready"}
                 className="btn-primary btn-lg flex-1 disabled:opacity-40">
                 Continue <ArrowRight className="h-4 w-4" />
               </button>

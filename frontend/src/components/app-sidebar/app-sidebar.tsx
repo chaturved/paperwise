@@ -4,12 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChartNoAxesCombined, ChevronRight, CreditCard, FileText, LogOut, Pencil, Search, SquarePen, Trash2, Upload, UserRound } from "lucide-react";
+import { ChartNoAxesCombined, ChevronRight, CreditCard, FileText, LogOut, Pencil, Search, SquarePen, RotateCw, Trash2, Upload, UserRound } from "lucide-react";
+import { apiErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { logout } from "@/lib/api/auth";
 import { deleteConversation, getConversations, renameConversation } from "@/lib/api/conversations";
-import { deleteDocument, getLibrary, uploadFiles } from "@/lib/api/documents";
+import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { useLibrary } from "@/hooks/useLibrary";
 import type { Conversation, LibraryDoc } from "@/types";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConversationSearchDialog } from "@/components/conversations/conversation-search-dialog";
@@ -23,16 +25,25 @@ interface Props {
   refreshKey?: number;
 }
 
+function DocumentStatusBadge({ document, percent }: { document: LibraryDoc; percent?: number }) {
+  if (document.status === "ready") return null;
+  if (document.status === "failed") {
+    return <span className="shrink-0 text-[11px] text-red-500" title={document.error_message ?? undefined}>Failed</span>;
+  }
+  const label = document.status === "uploading" && percent !== undefined ? `${percent}%` : document.status === "uploading" ? "Uploading" : "Processing";
+  return <span className="shrink-0 text-[11px] tabular-nums text-ink/50">{label}</span>;
+}
+
 export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, onNewChat, onConversationsChange, refreshKey }: Props) {
   const router = useRouter();
   const { user, refetchUser } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [library, setLibrary] = useState<LibraryDoc[]>([]);
+  const { documents: library, refresh: loadLibrary, remove: removeDoc, retry: retryDoc } = useLibrary();
+  const { upload, uploading: uploadingDocs, progress } = useDocumentUpload(loadLibrary);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  const [uploadingDocs, setUploadingDocs] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,13 +54,6 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
       onConversationsChange?.(items);
     } catch { /* Keep local navigation available while the API recovers. */ }
   }, [onConversationsChange]);
-
-  const loadLibrary = useCallback(async () => {
-    try {
-      const data = await getLibrary();
-      setLibrary(data.sections);
-    } catch { /* Keep local navigation available while the API recovers. */ }
-  }, []);
 
   useEffect(() => { loadConversations(); loadLibrary(); }, [loadConversations, loadLibrary, refreshKey]);
 
@@ -84,23 +88,29 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
   const handleUploadDocs = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
-    setUploadingDocs(true);
     try {
-      await uploadFiles(files);
-      await loadLibrary();
-      toast.success(`Uploaded ${files.length} file(s)`);
-    } catch { toast.error("Upload failed"); }
-    finally {
-      setUploadingDocs(false);
+      const { uploadedIds, errors } = await upload(files);
+      if (uploadedIds.length) toast.success(`Uploaded ${uploadedIds.length} file(s). We're preparing them now.`);
+      errors.forEach((e) => toast.error(`${e.file}: ${e.error}`));
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Upload failed"));
+    } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   const handleDeleteDoc = async (id: number) => {
     try {
-      await deleteDocument(id);
-      await loadLibrary();
+      await removeDoc(id);
     } catch { toast.error("Delete failed"); }
+  };
+
+  const handleRetryDoc = async (id: number) => {
+    try {
+      await retryDoc(id);
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Retry failed"));
+    }
   };
 
   const handleLogout = async () => {
@@ -149,6 +159,11 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
               <div key={document.id} className="group flex h-9 items-center gap-2 rounded-md px-2 hover:bg-ink/[0.05]">
                 <FileText size={14} className="shrink-0 text-ink/45" />
                 <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink/75" title={document.name}>{document.name}</span>
+                <DocumentStatusBadge document={document} percent={progress[document.id]} />
+                {document.status === "failed" && (
+                  <button type="button" onClick={() => handleRetryDoc(document.id)} aria-label={`Retry ${document.name}`}
+                    className="rounded p-1 text-ink/50 hover:text-ink"><RotateCw size={13} /></button>
+                )}
                 <button type="button" onClick={() => handleDeleteDoc(document.id)} aria-label={`Delete ${document.name}`}
                   className="rounded p-1 text-ink/40 hover:text-red-500 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><Trash2 size={13} /></button>
               </div>

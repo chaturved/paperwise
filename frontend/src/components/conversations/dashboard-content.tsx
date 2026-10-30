@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAppLayout } from "@/context/AppLayoutContext";
 import { useSSEStream } from "@/hooks/useSSEStream";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { apiErrorMessage } from "@/lib/api-error";
 import { createConversation, getMessages } from "@/lib/api/conversations";
 import type { Message } from "@/types";
 import { AIMessage } from "./ai-message";
@@ -26,7 +27,7 @@ function DashboardInner() {
   const [loadingConversation, setLoadingConversation] = useState(Boolean(params.get("conv")));
   const [inputValue, setInputValue]     = useState("");
   const [sidebarRefresh, setSidebarRefresh] = useState(0);
-  const { upload: uploadDocuments, uploading: isUploading } = useDocumentUpload();
+  const { upload: uploadDocuments, uploading: isUploading } = useDocumentUpload(() => setSidebarRefresh((value) => value + 1));
   const chatEndRef  = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const newConversationIdRef = useRef<number | null>(null);
@@ -150,13 +151,12 @@ function DashboardInner() {
   const handleAttach = async (files: File[]) => {
     try {
       const result = await uploadDocuments(files);
-      if (result.uploaded.length) {
-        setSidebarRefresh((value) => value + 1);
-        toast.success(`Added ${result.uploaded.length} document${result.uploaded.length === 1 ? "" : "s"} to your library`);
+      if (result.uploadedIds.length) {
+        toast.success(`Added ${result.uploadedIds.length} document${result.uploadedIds.length === 1 ? "" : "s"} to your library`);
       }
       if (result.errors.length) toast.error(`${result.errors.length} file${result.errors.length === 1 ? "" : "s"} could not be uploaded`);
-    } catch {
-      toast.error("Could not upload your documents");
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Could not upload your documents"));
     }
   };
 

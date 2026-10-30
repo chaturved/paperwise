@@ -1,6 +1,8 @@
+import asyncio
 import json
 import math
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 
 import httpx
 
@@ -10,6 +12,18 @@ from src.integrations.ai.base import AIProvider
 SYSTEM_PROMPT = "You are a helpful assistant."
 TIMEOUT = httpx.Timeout(60.0)
 EMBED_BATCH_SIZE = 100
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+
+@dataclass(frozen=True)
+class RetryPolicy:
+    attempts: int
+    max_wait_seconds: float
+
+
+# Indexing runs in the background, so it can wait out a per-minute quota. An answer has someone waiting on it.
+PATIENT = RetryPolicy(attempts=6, max_wait_seconds=65.0)
+QUICK = RetryPolicy(attempts=2, max_wait_seconds=8.0)
 
 
 class GeminiProvider(AIProvider):
@@ -57,11 +71,29 @@ class GeminiProvider(AIProvider):
     def _url(model: str, action: str) -> str:
         return f"{settings.GEMINI_API_BASE}/models/{model}:{action}"
 
-    async def _post(self, url: str, body: dict) -> dict:
+    @staticmethod
+    def _retry_delay(res: httpx.Response, attempt: int) -> float:
+        """How long Google asks us to wait, from the Retry-After header or the error details, else back off."""
+        header = res.headers.get("retry-after", "")
+        if header.replace(".", "", 1).isdigit():
+            return float(header)
+        try:
+            for detail in res.json().get("error", {}).get("details", []):
+                if str(detail.get("@type", "")).endswith("RetryInfo"):
+                    return float(str(detail["retryDelay"]).rstrip("s"))
+        except (ValueError, KeyError, AttributeError):
+            pass
+        return float(2**attempt)
+
+    async def _post(self, url: str, body: dict, policy: RetryPolicy = QUICK) -> dict:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            res = await client.post(url, headers=self._headers(), json=body)
-            res.raise_for_status()
-            return res.json()
+            for attempt in range(1, policy.attempts + 1):
+                res = await client.post(url, headers=self._headers(), json=body)
+                if res.status_code not in RETRYABLE_STATUS or attempt == policy.attempts:
+                    res.raise_for_status()
+                    return res.json()
+                await asyncio.sleep(min(max(self._retry_delay(res, attempt), 1.0), policy.max_wait_seconds))
+            raise AssertionError("unreachable")
 
     async def get_embeddings(self, texts: list[str]) -> list[list[float]]:
         url = self._url(settings.GEMINI_EMBEDDING_MODEL, "batchEmbedContents")
@@ -69,7 +101,7 @@ class GeminiProvider(AIProvider):
         for i in range(0, len(texts), EMBED_BATCH_SIZE):
             batch = texts[i : i + EMBED_BATCH_SIZE]
             body = {"requests": [self._embed_request(t, "RETRIEVAL_DOCUMENT") for t in batch]}
-            data = await self._post(url, body)
+            data = await self._post(url, body, PATIENT)
             embeddings.extend(self._normalize(e["values"]) for e in data["embeddings"])
         return embeddings
 

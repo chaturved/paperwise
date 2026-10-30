@@ -4,7 +4,6 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
-from authlib.integrations.starlette_client import OAuth
 from fastapi import Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -18,20 +17,11 @@ from src.services.token_service import (
     validate_refresh_token,
 )
 from src.services.user_service import UserServiceProtocol, UserService
+from src.integrations.google_oauth import GoogleOAuth
 from src.integrations.mailer import SmtpMailer
 from src.utils.security import hash_password, verify_password
 
 _log = logging.getLogger(__name__)
-
-_oauth = OAuth()
-_oauth.register(
-    name="google",
-    client_id=settings.GOOGLE_CLIENT_ID,
-    client_secret=settings.GOOGLE_CLIENT_SECRET,
-    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-    client_kwargs={"scope": "openid email profile"},
-    redirect_uri=settings.GOOGLE_REDIRECT_URI,
-)
 
 
 class AuthServiceProtocol(Protocol):
@@ -55,10 +45,12 @@ class AuthService(AuthServiceProtocol):
         repo: UserRepositoryProtocol = Depends(UserRepository),
         user_service: UserServiceProtocol = Depends(UserService),
         mailer: SmtpMailer = Depends(SmtpMailer),
+        google: GoogleOAuth = Depends(GoogleOAuth),
     ):
         self.repo = repo
         self.user_service = user_service
         self.mailer = mailer
+        self.google = google
 
     def _set_auth_cookies(self, response: Response, user_id: int) -> None:
         response.set_cookie(settings.ACCESS_TOKEN_KEY, create_access_token(user_id), httponly=True, secure=True, samesite="lax")
@@ -110,31 +102,26 @@ class AuthService(AuthServiceProtocol):
     # ─── Google OAuth ─────────────────────────────────────────────────────────
 
     async def google_redirect(self, request: Request):
-        return await _oauth.google.authorize_redirect(request, settings.GOOGLE_REDIRECT_URI)
+        return await self.google.authorize_redirect(request)
 
     async def google_callback(self, request: Request, response: Response):
         try:
-            token = await _oauth.google.authorize_access_token(request)
-            userinfo = token.get("userinfo") or await _oauth.google.userinfo(token=token)
+            google_user = await self.google.fetch_user(request)
 
-            email = userinfo["email"]
-            provider_user_id = userinfo["sub"]
-            full_name = userinfo.get("name", email.split("@")[0])
-
-            oauth_acct = self.repo.get_oauth_account("google", provider_user_id)
+            oauth_acct = self.repo.get_oauth_account("google", google_user.provider_user_id)
             if oauth_acct:
                 user = self.repo.get_by_id(oauth_acct.user_id)
                 if not user:
                     raise ValueError("OAuth account references deleted user")
             else:
-                user = self.repo.get_by_email(email)
+                user = self.repo.get_by_email(google_user.email)
                 if not user:
-                    user = self.user_service.create_user_oauth(email, full_name)
+                    user = self.user_service.create_user_oauth(google_user.email, google_user.full_name)
                     try:
                         self.mailer.send_welcome(user.email, user.full_name.split()[0])
                     except Exception:
                         _log.warning("Failed to send welcome email to %s", user.email, exc_info=True)
-                self.repo.create_oauth_account(user.id, "google", provider_user_id, None, None)
+                self.repo.create_oauth_account(user.id, "google", google_user.provider_user_id, None, None)
 
             redirect_to = settings.APP_URL + ("/onboarding" if not user.onboarding_completed else "/dashboard")
             redirect_response = RedirectResponse(redirect_to)

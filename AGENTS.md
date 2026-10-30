@@ -125,6 +125,7 @@ backend/src/
     ai/                 ← AI provider adapter (base, factory, gemini, huggingface)
     storage.py          ← S3 / Supabase Storage
     mailer.py           ← SMTP email
+    google_oauth.py     ← Google sign-in (Authlib)
   utils/                ← Pure shared helpers (JWT, hashing, text parsing, query building)
     jwt.py
     query_utils.py

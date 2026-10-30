@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.core.exceptions import BadRequestError, NotFoundError, UnauthorizedError
+from src.integrations.google_oauth import GoogleOAuth, GoogleUser
 from src.integrations.mailer import SmtpMailer
 from src.repositories.user_repository import UserRepositoryProtocol
 from src.services.auth_service import AuthService
@@ -35,7 +36,13 @@ class TestAuthService:
         self.mock_repo = MagicMock(spec_set=UserRepositoryProtocol)
         self.mock_user_svc = MagicMock(spec_set=UserServiceProtocol)
         self.mock_mailer = MagicMock(spec_set=SmtpMailer)
-        self.svc = AuthService(repo=self.mock_repo, user_service=self.mock_user_svc, mailer=self.mock_mailer)
+        self.mock_google = MagicMock(spec_set=GoogleOAuth)
+        self.svc = AuthService(
+            repo=self.mock_repo,
+            user_service=self.mock_user_svc,
+            mailer=self.mock_mailer,
+            google=self.mock_google,
+        )
         self.response = MagicMock()
         self.request = MagicMock()
 
@@ -308,3 +315,62 @@ class TestAuthService:
         self.mock_repo.mark_reset_token_used.assert_called_once_with(rt)
         self.mock_repo.update.assert_called_once_with(user)
         assert result.message == "Password updated successfully"
+
+
+class TestAuthServiceGoogle:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.mock_repo = MagicMock(spec_set=UserRepositoryProtocol)
+        self.mock_user_svc = MagicMock(spec_set=UserServiceProtocol)
+        self.mock_mailer = MagicMock(spec_set=SmtpMailer)
+        self.mock_google = MagicMock(spec_set=GoogleOAuth)
+        self.mock_google.fetch_user = AsyncMock(
+            return_value=GoogleUser(email="g@example.com", provider_user_id="sub-1", full_name="Goo Gle")
+        )
+        self.svc = AuthService(
+            repo=self.mock_repo,
+            user_service=self.mock_user_svc,
+            mailer=self.mock_mailer,
+            google=self.mock_google,
+        )
+
+    async def test_google_redirect_delegates_to_provider(self):
+        self.mock_google.authorize_redirect = AsyncMock(return_value="redirect")
+        request = MagicMock()
+
+        assert await self.svc.google_redirect(request) == "redirect"
+        self.mock_google.authorize_redirect.assert_awaited_once_with(request)
+
+    async def test_callback_logs_in_existing_linked_account(self):
+        user = _make_user(onboarding_completed=True)
+        self.mock_repo.get_oauth_account.return_value = MagicMock(user_id=1)
+        self.mock_repo.get_by_id.return_value = user
+
+        with patch("src.services.auth_service.create_access_token", return_value="a"), \
+             patch("src.services.auth_service.create_refresh_token", return_value="r"):
+            response = await self.svc.google_callback(MagicMock(), MagicMock())
+
+        assert response.headers["location"].endswith("/dashboard")
+        self.mock_user_svc.create_user_oauth.assert_not_called()
+        self.mock_mailer.send_welcome.assert_not_called()
+
+    async def test_callback_creates_user_links_account_and_sends_welcome(self):
+        self.mock_repo.get_oauth_account.return_value = None
+        self.mock_repo.get_by_email.return_value = None
+        self.mock_user_svc.create_user_oauth.return_value = _make_user(onboarding_completed=False)
+
+        with patch("src.services.auth_service.create_access_token", return_value="a"), \
+             patch("src.services.auth_service.create_refresh_token", return_value="r"):
+            response = await self.svc.google_callback(MagicMock(), MagicMock())
+
+        self.mock_user_svc.create_user_oauth.assert_called_once_with("g@example.com", "Goo Gle")
+        self.mock_repo.create_oauth_account.assert_called_once_with(1, "google", "sub-1", None, None)
+        self.mock_mailer.send_welcome.assert_called_once()
+        assert response.headers["location"].endswith("/onboarding")
+
+    async def test_callback_redirects_to_login_error_when_google_fails(self):
+        self.mock_google.fetch_user = AsyncMock(side_effect=Exception("bad state"))
+
+        response = await self.svc.google_callback(MagicMock(), MagicMock())
+
+        assert response.headers["location"].endswith("/login?error=oauth_failed")

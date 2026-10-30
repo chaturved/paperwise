@@ -1,6 +1,6 @@
 import axios from "axios";
 import apiClient from "@/lib/api-client";
-import type { CreateUploadsResponse, LibraryData, LibraryDoc, MessageResponse, UploadSlot } from "@/types";
+import type { CreateUploadsResponse, DocumentFile, LibraryData, LibraryDoc, MessageResponse, UploadSlot } from "@/types";
 
 export const getLibrary = async (): Promise<LibraryData> => {
   const res = await apiClient.get("/v1/library");
@@ -36,6 +36,11 @@ export const completeUpload = async (id: number): Promise<LibraryDoc> => {
 
 export const retryDocument = async (id: number): Promise<LibraryDoc> => {
   const res = await apiClient.post(`/v1/library/${id}/retry`);
+  return res.data;
+};
+
+export const getDocumentFile = async (id: number): Promise<DocumentFile> => {
+  const res = await apiClient.get(`/v1/library/${id}/file`);
   return res.data;
 };
 

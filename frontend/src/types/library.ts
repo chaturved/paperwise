@@ -21,6 +21,11 @@ export interface UploadError {
   error: string;
 }
 
+export interface DocumentFile {
+  url: string;
+  expires_in: number;
+}
+
 export interface UploadSlot {
   id: number;
   name: string;

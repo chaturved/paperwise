@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { requestDemo } from "@/lib/api/misc";
+import { rateLimitMessage } from "@/lib/api-error";
 
 const TEAM_SIZES = [
   { value: "solo", label: "Just me" },
@@ -54,8 +55,8 @@ export function DemoRequestForm() {
         website: data.website,
       });
       setSent(true);
-    } catch {
-      toast.error("We couldn't send your request. Please try again, or email us.");
+    } catch (err) {
+      toast.error(rateLimitMessage(err) ?? "We couldn't send your request. Please try again, or email us.");
     }
   };
 

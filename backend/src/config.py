@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     STALE_UPLOAD_HOURS: int = 1  # an upload that never completes is removed after this long
     STALE_PROCESSING_MINUTES: int = 15  # a document stuck processing after a restart is marked failed
 
+    # Rate limits count requests per client address. Behind a reverse proxy, turn this on so the address
+    # comes from the proxy's X-Forwarded-For header instead of the proxy itself.
+    TRUST_FORWARDED_FOR: bool = False
+
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
 

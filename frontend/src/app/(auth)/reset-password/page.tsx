@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { resetPassword } from "@/lib/api/auth";
+import { rateLimitMessage } from "@/lib/api-error";
 import { AuthBackground } from "@/components/auth/auth-background";
 
 
@@ -45,8 +46,8 @@ function ResetPasswordContent() {
       await resetPassword(token, data.new_password);
       toast.success("Password updated. Please sign in.");
       router.push("/login");
-    } catch {
-      toast.error("Invalid or expired reset link.");
+    } catch (err) {
+      toast.error(rateLimitMessage(err) ?? "Invalid or expired reset link.");
     }
   };
 

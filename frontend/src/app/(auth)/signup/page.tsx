@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, User, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { signup } from "@/lib/api/auth";
+import { rateLimitMessage } from "@/lib/api-error";
 import { useAuth } from "@/context/AuthContext";
 import { AuthBackground } from "@/components/auth/auth-background";
 
@@ -52,7 +53,7 @@ export default function SignupPage() {
       router.push("/onboarding");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(msg || "Failed to create account");
+      toast.error(rateLimitMessage(err) ?? (msg || "Failed to create account"));
     }
   };
 

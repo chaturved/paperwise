@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from src.core.dependencies import get_current_user
+from src.core.dependencies import get_current_user, get_current_user_id
 from src.core.enums import Plan
 from src.core.exceptions import BadRequestError
 from src.main import app
@@ -22,6 +22,7 @@ class _FailingService:
 @pytest.fixture
 def client():
     app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(id=1, plan=Plan.FREE)
+    app.dependency_overrides[get_current_user_id] = lambda: 1
     yield TestClient(app)
     app.dependency_overrides.clear()
 

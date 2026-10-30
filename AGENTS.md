@@ -46,7 +46,7 @@ This is a resume-quality production project. It must feel like a real product an
 - python-jose + passlib (JWT)
 - authlib + httpx (Google OAuth)
 - boto3 (Supabase Storage / S3)
-- slowapi (rate limiting)
+- limits (rate limiting, wrapped by `core/rate_limit.py`)
 - pytest + pytest-asyncio (unit tests, `backend/tests/`)
 
 Do not introduce new libraries without explaining the reason and asking first.
@@ -101,6 +101,7 @@ backend/src/
   core/
     dependencies.py     ← FastAPI Depends() — get_db, get_current_user_id
     exceptions.py       ← Typed exception classes (NotFoundError, UnauthorizedError, etc.)
+    rate_limit.py       ← RateLimit (per client address) and UserRateLimit (per signed-in user) route dependencies
   database/
     db.py               ← SQLAlchemy engine, SessionLocal, Base
   models/               ← SQLAlchemy ORM models (one file per model)

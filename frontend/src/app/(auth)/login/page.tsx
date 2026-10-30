@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { login, sendMagicLink } from "@/lib/api/auth";
+import { rateLimitMessage } from "@/lib/api-error";
 import { useAuth } from "@/context/AuthContext";
 import { AuthBackground } from "@/components/auth/auth-background";
 
@@ -47,6 +48,8 @@ function LoginContent() {
       await refetchUser();
       router.push("/dashboard");
     } catch (err: unknown) {
+      const limited = rateLimitMessage(err);
+      if (limited) { toast.error(limited); return; }
       const status = (err as { response?: { status?: number } })?.response?.status;
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       if (status && status >= 500) {
@@ -64,8 +67,8 @@ function LoginContent() {
     try {
       await sendMagicLink(email);
       router.push("/magic-link/sent?email=" + encodeURIComponent(email));
-    } catch {
-      toast.error("Failed to send magic link");
+    } catch (err) {
+      toast.error(rateLimitMessage(err) ?? "Failed to send magic link");
     } finally {
       setMagicLoading(false);
     }

@@ -61,11 +61,12 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
               /* ignore parse errors */
             }
           },
-          onerror() {
+          onerror(err) {
             if (controllerRef.current !== controller) return;
             controllerRef.current = null;
             controller.abort();
-            setState((prev) => ({ ...prev, isStreaming: false, error: "AI response failed" }));
+            const rateLimited = err instanceof Error && err.message === "HTTP 429";
+            setState((prev) => ({ ...prev, isStreaming: false, error: rateLimited ? "You're asking too fast. Please wait a moment." : "AI response failed" }));
           },
         });
       } catch {

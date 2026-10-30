@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Mail, ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { forgotPassword } from "@/lib/api/auth";
+import { rateLimitMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import { AuthBackground } from "@/components/auth/auth-background";
 
@@ -24,8 +25,8 @@ export default function ForgotPasswordPage() {
     try {
       await forgotPassword(data.email);
       setSent(true);
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (err) {
+      toast.error(rateLimitMessage(err) ?? "Something went wrong. Please try again.");
     }
   };
 

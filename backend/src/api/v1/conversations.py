@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse
 
 from src.core.dependencies import get_current_user, get_current_user_id
 from src.core.exceptions import AppError
+from src.core.rate_limit import RateLimit, UserRateLimit
 from src.models.user import User
 from src.schemas.conversation import AskRequest, ConversationCreate, ConversationRename, ConversationSearchResult
 from src.services.conversation_service import ConversationService, ConversationServiceProtocol
@@ -13,6 +14,9 @@ from src.services.conversation_service import ConversationService, ConversationS
 _log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/conversations", tags=["Conversations"])
+
+ask_address_limit = RateLimit("ask-address", "90/minute")
+ask_user_limit = UserRateLimit("ask-user", "30/minute")
 
 
 @router.get("")
@@ -69,7 +73,7 @@ def messages(
     return service.list_messages(conv_id, user.id, user.plan)
 
 
-@router.post("/{conv_id}/ask")
+@router.post("/{conv_id}/ask", dependencies=[Depends(ask_address_limit), Depends(ask_user_limit)])
 async def ask_question(
     conv_id: int,
     body: AskRequest,

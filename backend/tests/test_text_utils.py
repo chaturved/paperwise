@@ -74,6 +74,41 @@ class TestUploadSafetyLimits:
             extract_text_from_bytes(contents, "pdf")
         assert "too large" in exc.value.message
 
+    def test_forged_size_in_zip_headers_is_not_trusted(self):
+        # Declare a tiny unpacked size in both the local and central headers while the data stays large.
+        real = b"A" * 5000
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_STORED) as archive:
+            archive.writestr("word/document.xml", real)
+        forged = bytearray(buffer.getvalue())
+        local = forged.index(b"PK\x03\x04")
+        central = forged.index(b"PK\x01\x02")
+        forged[local + 22 : local + 26] = (10).to_bytes(4, "little")
+        forged[central + 24 : central + 28] = (10).to_bytes(4, "little")
+
+        with pytest.raises(BadRequestError):
+            extract_text_from_bytes(bytes(forged), "docx")
+
+    def test_decompressed_output_over_the_cap_stops_early(self, monkeypatch):
+        monkeypatch.setattr(settings, "MAX_DOCX_UNZIPPED_MB", 1)
+        two_parts = _zip_bytes({"a.xml": b"\0" * (700 * 1024), "b.xml": b"\0" * (700 * 1024)})
+
+        with pytest.raises(BadRequestError) as exc:
+            extract_text_from_bytes(two_parts, "docx")
+        assert "too large" in exc.value.message
+
+    def test_pdf_text_over_the_cap_is_rejected_while_reading_pages(self, monkeypatch):
+        monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 50)
+        pdf = fitz.open()
+        for _ in range(5):
+            pdf.new_page().insert_text((72, 72), "word " * 10)
+        contents = pdf.tobytes()
+        pdf.close()
+
+        with pytest.raises(BadRequestError) as exc:
+            extract_text_from_bytes(contents, "pdf")
+        assert "too large" in exc.value.message
+
     def test_text_longer_than_the_cap_is_rejected(self, monkeypatch):
         monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 10)
 

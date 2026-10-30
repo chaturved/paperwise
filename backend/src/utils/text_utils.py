@@ -1,7 +1,7 @@
 import io
 import re
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from typing import List
 
 import docx
@@ -45,44 +45,69 @@ UNREADABLE_FILE_MESSAGE = "This file couldn't be read. It may be empty, corrupte
 TOO_LARGE_MESSAGE = "This file is too large or complex to process. Try splitting it into smaller files."
 
 
+_READ_CHUNK_BYTES = 64 * 1024
+
+
 def _check_docx_archive(contents: bytes) -> None:
-    """A .docx is a zip file. Refuse archives that would unpack to far more than the upload size."""
+    """A .docx is a zip file. Refuse archives that unpack to far more than the upload size.
+
+    Sizes written in the zip headers can be forged, so the entries are actually decompressed in small
+    chunks and the real output is counted, stopping as soon as it passes the cap.
+    """
+    cap = settings.MAX_DOCX_UNZIPPED_MB * 1024 * 1024
     with zipfile.ZipFile(io.BytesIO(contents)) as archive:
         entries = archive.infolist()
-        unzipped_bytes = sum(entry.file_size for entry in entries)
-        if len(entries) > settings.MAX_DOCX_ENTRIES or unzipped_bytes > settings.MAX_DOCX_UNZIPPED_MB * 1024 * 1024:
+        if len(entries) > settings.MAX_DOCX_ENTRIES or sum(entry.file_size for entry in entries) > cap:
             raise BadRequestError(TOO_LARGE_MESSAGE)
 
+        total = 0
+        for entry in entries:
+            produced = 0
+            with archive.open(entry) as part:
+                while chunk := part.read(_READ_CHUNK_BYTES):
+                    produced += len(chunk)
+                    total += len(chunk)
+                    if total > cap:
+                        raise BadRequestError(TOO_LARGE_MESSAGE)
+            if produced != entry.file_size:
+                raise BadRequestError(UNREADABLE_FILE_MESSAGE)
 
-def _extract(contents: bytes, ext: str) -> str:
+
+def _join_within_budget(parts: Iterable[str], separator: str) -> str:
+    """Join text parts, stopping at the first one that pushes the total past the extraction cap."""
+    collected: list[str] = []
+    total = 0
+    for part in parts:
+        total += len(part) + len(separator)
+        if total > settings.MAX_EXTRACTED_CHARS:
+            raise BadRequestError(TOO_LARGE_MESSAGE)
+        collected.append(part)
+    return separator.join(collected)
+
+
+def extract_text_from_bytes(contents: bytes, ext: str) -> str:
+    ext = ext.lower()
+
     try:
         if ext == "pdf":
-            text = ""
             with fitz.open(stream=contents, filetype="pdf") as doc:
                 if doc.needs_pass:
                     raise BadRequestError(UNREADABLE_FILE_MESSAGE)
                 if doc.page_count > settings.MAX_PDF_PAGES:
                     raise BadRequestError(TOO_LARGE_MESSAGE)
-                for page in doc:
-                    text += page.get_text()  # type: ignore[attr-defined]
-            return text
+                return _join_within_budget((page.get_text() for page in doc), "")  # type: ignore[attr-defined]
 
         if ext in ["docx", "doc"]:
             _check_docx_archive(contents)
-            return "\n".join(_docx_blocks(docx.Document(io.BytesIO(contents))))
+            return _join_within_budget(_docx_blocks(docx.Document(io.BytesIO(contents))), "\n")
     except BadRequestError:
         raise
     except Exception as exc:
         raise BadRequestError(UNREADABLE_FILE_MESSAGE) from exc
 
     if ext in ["txt", "md"]:
+        if len(contents) > settings.MAX_EXTRACTED_CHARS:  # decoded text is never longer than its bytes
+            raise BadRequestError(TOO_LARGE_MESSAGE)
         return contents.decode("utf-8", errors="ignore")
 
     raise BadRequestError(f"Unsupported file type: .{ext}")
-
-
-def extract_text_from_bytes(contents: bytes, ext: str) -> str:
-    text = _extract(contents, ext.lower())
-    if len(text) > settings.MAX_EXTRACTED_CHARS:
-        raise BadRequestError(TOO_LARGE_MESSAGE)
-    return text

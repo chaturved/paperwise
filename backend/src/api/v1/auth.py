@@ -10,6 +10,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 sign_in_limit = RateLimit("sign-in", "10/minute")
 sign_up_limit = RateLimit("sign-up", "5/minute")
+token_limit = RateLimit("auth-token", "10/minute")
 email_limit = RateLimit("auth-email", "5/minute")
 
 
@@ -62,7 +63,7 @@ def magic_link(body: MagicLinkRequest, service: AuthServiceProtocol = Depends(Au
     return service.send_magic_link(body.email)
 
 
-@router.get("/magic-link/verify", dependencies=[Depends(sign_in_limit)])
+@router.get("/magic-link/verify", dependencies=[Depends(token_limit)])
 def magic_link_verify(token: str, response: Response, service: AuthServiceProtocol = Depends(AuthService)):
     return service.verify_magic_link(token, response)
 
@@ -72,6 +73,6 @@ def forgot_pw(body: ForgotPasswordRequest, service: AuthServiceProtocol = Depend
     return service.forgot_password(body.email)
 
 
-@router.post("/reset-password", dependencies=[Depends(sign_in_limit)])
+@router.post("/reset-password", dependencies=[Depends(token_limit)])
 def reset_pw(body: ResetPasswordRequest, service: AuthServiceProtocol = Depends(AuthService)):
     return service.reset_password(body.token, body.new_password)

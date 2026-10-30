@@ -121,7 +121,7 @@ class TestStreamGeneral:
 
         assert tokens == ["x", "y"]
         assert "What is a lien?" in prompt
-        assert "cannot see the user's documents" in prompt
+        assert "has not added any documents yet" in prompt
         assert "never cite sources" in prompt
         assert "Conversation so far" not in prompt
 
@@ -139,3 +139,35 @@ class TestStreamGeneral:
 
         assert "z" * 1500 in prompt
         assert "z" * 1501 not in prompt
+
+
+class TestStreamDecidesWhatKindOfQuestionItIs:
+    async def _prompt(self, history=None):
+        ai = _ai()
+        prompts = []
+
+        async def fake_stream(prompt, *args, **kwargs):
+            prompts.append(prompt)
+            yield "x"
+
+        ai.stream_chat = fake_stream
+        _ = [t async for t in _generator(ai).stream([CHUNK_ON_PAGE_3], "And the deposit?", history)]
+        return prompts[0]
+
+    async def test_one_prompt_covers_document_questions_and_general_ones(self):
+        prompt = await self._prompt()
+
+        assert "First decide what kind of question this is" in prompt
+        assert "answer using only the excerpts" in prompt
+        assert "If the question is not about the documents" in prompt
+        assert "Do not cite the excerpts" in prompt
+        assert NOT_FOUND_MESSAGE in prompt
+
+    async def test_the_conversation_so_far_is_included_for_follow_ups(self):
+        prompt = await self._prompt([("user", "What is the rent?"), ("assistant", "Monthly [1].")])
+
+        assert "Conversation so far:\nUser: What is the rent?\nAssistant: Monthly [1]." in prompt
+        assert prompt.index("Conversation so far") < prompt.index("User's actual question: And the deposit?")
+
+    async def test_there_is_no_conversation_section_when_there_is_no_history(self):
+        assert "Conversation so far" not in await self._prompt()

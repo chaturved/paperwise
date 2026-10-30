@@ -82,7 +82,7 @@ async def ask_question(
 ):
     async def streamer():
         try:
-            async for event_type, data in service.ask(conv_id, user.id, body.question, body.filters, body.top_k, user.plan, body.use_documents):
+            async for event_type, data in service.ask(conv_id, user.id, body.question, body.filters, body.top_k, user.plan):
                 if event_type == "meta":
                     yield f"data: {json.dumps({'meta': data})}\n\n"
                 elif event_type == "token":

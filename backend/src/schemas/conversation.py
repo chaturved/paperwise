@@ -45,4 +45,3 @@ class AskRequest(BaseModel):
     question: str
     filters: AskFilters | None = None
     top_k: int = 5
-    use_documents: bool = True

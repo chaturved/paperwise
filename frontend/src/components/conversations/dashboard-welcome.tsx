@@ -1,7 +1,6 @@
 "use client";
 
 import { CONTRACT_PROMPTS } from "@/lib/contract-prompts";
-import type { AskMode } from "@/types";
 import { InputBox } from "./input-box";
 
 interface DashboardWelcomeProps {
@@ -15,18 +14,9 @@ interface DashboardWelcomeProps {
   documentCount: number | null;
   scopeName: string | null;
   onClearScope: () => void;
-  mode: AskMode;
-  onModeChange: (mode: AskMode) => void;
 }
 
-function scopeLabel(count: number | null, scopeName: string | null): string | undefined {
-  if (scopeName) return `Asking in ${scopeName}`;
-  if (count === null) return undefined;
-  if (count === 0) return "No documents yet";
-  return `Asking across ${count} document${count === 1 ? "" : "s"}`;
-}
-
-export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, documentCount, scopeName, onClearScope, mode, onModeChange }: DashboardWelcomeProps) {
+export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, documentCount, scopeName, onClearScope }: DashboardWelcomeProps) {
   const hasDocuments = (documentCount ?? 0) > 0;
 
   return (
@@ -43,18 +33,11 @@ export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploa
           isUploading={isUploading}
           onAttach={onAttach}
           textareaRef={textareaRef}
-          mode={mode}
-          onModeChange={onModeChange}
-          scope={scopeLabel(documentCount, scopeName)}
+          scope={scopeName ? `Asking in ${scopeName}` : undefined}
           onClearScope={scopeName ? onClearScope : undefined}
         />
 
-        {mode === "general" ? (
-          <p className="mt-7 text-center text-sm leading-relaxed text-muted">
-            General answers are not based on your documents and have no sources to check.
-            {hasDocuments && " Switch to Documents to ask about your files."}
-          </p>
-        ) : hasDocuments ? (
+        {hasDocuments ? (
           <>
             <p className="mb-3 mt-7 text-[13px] text-muted">Review a contract</p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -73,12 +56,10 @@ export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploa
             </div>
           </>
         ) : (
-          <p className="mt-7 text-center text-sm text-muted">Add a PDF or Word file with the plus button to ask about it, or switch to General to chat without documents.</p>
+          <p className="mt-7 text-center text-sm text-muted">Ask anything, or add a PDF or Word file with the plus button to ask about it.</p>
         )}
 
-        <p className="mt-7 text-center text-[13px] text-muted">
-          {mode === "general" ? "General answers can be wrong. Check anything important before you rely on it." : "Every answer links to the passage it came from. Check it before you rely on it."}
-        </p>
+        <p className="mt-7 text-center text-[13px] text-muted">Answers that use your documents link to the passage they came from. Check them before you rely on them.</p>
       </div>
     </div>
   );

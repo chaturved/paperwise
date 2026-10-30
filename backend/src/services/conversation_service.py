@@ -4,7 +4,7 @@ from typing import Protocol
 
 from fastapi import Depends
 
-from src.core.enums import Plan
+from src.core.enums import DocumentStatus, Plan
 from src.core.exceptions import NotFoundError
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
@@ -30,7 +30,7 @@ from src.services.tier_service import TierService, TierServiceProtocol
 from src.utils.chunk_formatter import ChunkFormatter
 from src.utils.citations import CitationExtractor
 
-GENERAL_HISTORY_MESSAGES = 10
+HISTORY_MESSAGES = 10
 
 
 class ConversationServiceProtocol(Protocol):
@@ -48,7 +48,6 @@ class ConversationServiceProtocol(Protocol):
         filters: AskFilters | None,
         top_k: int,
         plan: Plan,
-        use_documents: bool = True,
     ) -> AsyncGenerator[tuple[str, dict | str], None]: ...
 
 
@@ -124,7 +123,6 @@ class ConversationService(ConversationServiceProtocol):
         filters: AskFilters | None,
         top_k: int,
         plan: Plan,
-        use_documents: bool = True,
     ) -> AsyncGenerator[tuple[str, dict | str], None]:
         conv = self.conv_repo.get_by_id(conv_id, user_id)
         if not conv:
@@ -134,7 +132,7 @@ class ConversationService(ConversationServiceProtocol):
 
         answer_started = False
         try:
-            async for event in self._answer(conv, conv_id, user_id, question, filters, top_k, use_documents):
+            async for event in self._answer(conv, conv_id, user_id, question, filters, top_k):
                 answer_started = answer_started or event[0] == "token"
                 yield event
         except Exception:
@@ -142,6 +140,12 @@ class ConversationService(ConversationServiceProtocol):
             if not answer_started:
                 self.tier.refund_ask(log_id)
             raise
+
+    def _has_documents(self, user_id: int, filters: AskFilters | None) -> bool:
+        """Whether there is anything to search: a document picked on purpose, or any document that is ready."""
+        if filters and filters.doc_id:
+            return True
+        return any(lib.status == DocumentStatus.READY for lib in self.lib_repo.get_all(user_id))
 
     async def _answer(
         self,
@@ -151,24 +155,23 @@ class ConversationService(ConversationServiceProtocol):
         question: str,
         filters: AskFilters | None,
         top_k: int,
-        use_documents: bool,
     ) -> AsyncGenerator[tuple[str, dict | str], None]:
-        history = [] if use_documents else [(m.role, m.content) for m in self.conv_repo.get_recent_messages(conv_id, GENERAL_HISTORY_MESSAGES)]
+        recent = [(m.role, m.content) for m in self.conv_repo.get_recent_messages(conv_id, HISTORY_MESSAGES)]
+        documents = self._has_documents(user_id, filters)
         self.conv_repo.add_message(conv_id, "user", question)
 
-        if use_documents:
+        if documents:
             query_vector = await self.ai.get_embedding(question)
             doc_id = filters.doc_id if filters else None
             results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
             chunks = self.formatter.from_results(results)
             sources = self.formatter.sources(chunks)
-            description, badges = await self.answers.describe(chunks, question)
-            meta = {"description": description, "badges": badges, "sources": sources}
-            tokens = self.answers.stream(chunks, question)
+            meta = {"description": "", "badges": [], "sources": sources}
+            tokens = self.answers.stream(chunks, question, recent)
         else:
             sources = []
-            meta = {"description": "", "badges": [], "sources": [], "general": True}
-            tokens = self.answers.stream_general(question, history)
+            meta = {"description": "", "badges": [], "sources": []}
+            tokens = self.answers.stream_general(question, recent)
 
         yield "meta", meta
 
@@ -177,7 +180,7 @@ class ConversationService(ConversationServiceProtocol):
             full_answer += token
             yield "token", token
 
-        grounded = use_documents and not full_answer.strip().startswith(NOT_FOUND_MESSAGE)
+        grounded = documents and not full_answer.strip().startswith(NOT_FOUND_MESSAGE)
         cited = self.citations.cited(full_answer, len(sources)) if grounded else []
         yield "cited", cited
 

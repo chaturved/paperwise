@@ -10,7 +10,7 @@ import { useAttachDocuments } from "@/hooks/useAttachDocuments";
 import { useLibrary } from "@/hooks/useLibrary";
 import { historyLimitReached } from "@/lib/api-error";
 import { createConversation, getMessages } from "@/lib/api/conversations";
-import type { AskMode, Message } from "@/types";
+import type { Message } from "@/types";
 import { AddDocumentButton } from "./add-document-button";
 import { AIMessage } from "./ai-message";
 import { InputBox } from "./input-box";
@@ -40,9 +40,6 @@ function DashboardInner() {
     return Number.isInteger(id) && id > 0 ? id : null;
   });
   const scopeName = documents.find((document) => document.id === docId)?.name ?? null;
-  const [modeChoice, setModeChoice] = useState<AskMode | null>(null);
-  const documentCountForMode = usage?.documents.used ?? null;
-  const mode: AskMode = modeChoice ?? ((documentCountForMode ?? 1) > 0 ? "documents" : "general");
 
   useEffect(() => {
     if (libraryLoaded && docId !== null && !documents.some((document) => document.id === docId)) setDocId(null);
@@ -107,7 +104,6 @@ function DashboardInner() {
   const handleNewChat = useCallback(() => {
     resetStream();
     setDocId(null);
-    setModeChoice(null);
     setActiveConvId(null);
     setMessages([]);
     setLoadingConversation(false);
@@ -118,7 +114,6 @@ function DashboardInner() {
     if (id === activeConvId) return;
     resetStream();
     setDocId(null);
-    setModeChoice(null);
     setMessages([]);
     setLoadingConversation(true);
     setActiveConvId(id);
@@ -173,8 +168,8 @@ function DashboardInner() {
     setInputValue("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
-    await sendStream(convId, q, docId, mode === "documents");
-  }, [activeConvId, docId, inputValue, isStreaming, mode, router, sendStream]);
+    await sendStream(convId, q, docId);
+  }, [activeConvId, docId, inputValue, isStreaming, router, sendStream]);
 
   const handleSendRef = useRef(handleSend);
   handleSendRef.current = handleSend;
@@ -227,9 +222,7 @@ function DashboardInner() {
               isUploading={isUploading}
               onAttach={handleAttach}
               textareaRef={textareaRef}
-              mode={mode}
-              onModeChange={setModeChoice}
-              placeholder={mode === "general" ? "Ask anything" : "Ask a follow-up"}
+              placeholder="Ask a follow-up"
               scope={scopeName ? `Asking in ${scopeName}` : undefined}
               onClearScope={scopeName ? () => setDocId(null) : undefined}
             />
@@ -249,8 +242,6 @@ function DashboardInner() {
           documentCount={documentCount}
           scopeName={scopeName}
           onClearScope={() => setDocId(null)}
-          mode={mode}
-          onModeChange={setModeChoice}
         />
       )}
     </main>

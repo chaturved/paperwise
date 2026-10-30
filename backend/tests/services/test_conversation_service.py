@@ -32,6 +32,7 @@ class TestConversationService:
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_ai = MagicMock(spec_set=AIProvider)
         self.mock_answers = MagicMock(spec_set=AnswerGeneratorProtocol)
+        self.mock_lib_repo.get_all.return_value = [SimpleNamespace(name="lease.pdf", status="ready")]
         self.svc = ConversationService(
             conv_repo=self.mock_conv_repo,
             lib_repo=self.mock_lib_repo,
@@ -171,20 +172,19 @@ class TestConversationService:
         mock_vector = [0.1, 0.2]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(chunks, question):
+        async def fake_stream(chunks, question, history=None):
             yield "hello"
             yield " world"
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("desc", ["b1"]))),
             patch.object(self.mock_answers, "stream", fake_stream),
         ):
             events = []
             async for event in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
                 events.append(event)
 
-        assert events[0] == ("meta", {"description": "desc", "badges": ["b1"], "sources": []})
+        assert events[0] == ("meta", {"description": "", "badges": [], "sources": []})
         assert ("token", "hello") in events
         assert ("token", " world") in events
         assert events[-1] == ("cited", [])
@@ -194,12 +194,11 @@ class TestConversationService:
         self.mock_tier.check_and_log_ask.return_value = 77
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(chunks, question):
+        async def fake_stream(chunks, question, history=None):
             yield "answer"
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
-            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
             patch.object(self.mock_answers, "stream", fake_stream),
         ):
             async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
@@ -225,13 +224,12 @@ class TestConversationService:
         self.mock_tier.check_and_log_ask.return_value = 78
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def broken_stream(chunks, question):
+        async def broken_stream(chunks, question, history=None):
             raise RuntimeError("model went away")
             yield  # pragma: no cover - makes this an async generator
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
-            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
             patch.object(self.mock_answers, "stream", broken_stream),
             pytest.raises(RuntimeError),
         ):
@@ -245,13 +243,12 @@ class TestConversationService:
         self.mock_tier.check_and_log_ask.return_value = 79
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def broken_stream(chunks, question):
+        async def broken_stream(chunks, question, history=None):
             yield "partial"
             raise RuntimeError("model went away")
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
-            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
             patch.object(self.mock_answers, "stream", broken_stream),
             pytest.raises(RuntimeError),
         ):
@@ -272,6 +269,7 @@ class TestConversationService:
         self.mock_conv_repo.add_message.assert_not_called()
 
     async def _ask_in_general_mode(self, history=()):
+        self.mock_lib_repo.get_all.return_value = []
         order = []
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
         self.mock_conv_repo.get_recent_messages.side_effect = lambda *a, **k: (order.append("history"), list(history))[1]
@@ -285,23 +283,21 @@ class TestConversationService:
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock()) as embed,
-            patch.object(self.mock_answers, "describe", AsyncMock()) as describe,
             patch.object(self.mock_answers, "stream_general", fake_general),
         ):
-            events = [e async for e in self.svc.ask(1, 1, "What is a lien?", None, 5, Plan.FREE, use_documents=False)]
-        return events, order, seen, embed, describe
+            events = [e async for e in self.svc.ask(1, 1, "What is a lien?", None, 5, Plan.FREE)]
+        return events, order, seen, embed
 
-    async def test_general_chat_does_not_search_or_describe_the_documents(self):
-        _, _, _, embed, describe = await self._ask_in_general_mode()
+    async def test_general_chat_does_not_search_the_documents(self):
+        _, _, _, embed = await self._ask_in_general_mode()
 
         embed.assert_not_called()
-        describe.assert_not_called()
         self.mock_lib_repo.get_top_k_chunks.assert_not_called()
 
     async def test_general_chat_sends_no_sources_and_marks_the_answer_as_general(self):
         events, *_ = await self._ask_in_general_mode()
 
-        assert events[0][1] == {"description": "", "badges": [], "sources": [], "general": True}
+        assert events[0][1] == {"description": "", "badges": [], "sources": []}
         assert [e for e in events if e[0] == "token"] == [("token", "Hello "), ("token", "there")]
         assert events[-1] == ("cited", [])
 
@@ -322,18 +318,85 @@ class TestConversationService:
         assert stored.args[3]["sources"] == []
         assert stored.args[3]["cited"] == []
 
+    async def _ask(self, answer="from the documents", filters=None, history=()):
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        self.mock_conv_repo.get_recent_messages.return_value = [SimpleNamespace(role=r, content=c) for r, c in history]
+        self.mock_lib_repo.get_top_k_chunks.return_value = []
+        seen = {}
+
+        async def fake_stream(chunks, question, previous=None):
+            seen["history"] = previous
+            yield answer
+
+        async def fake_general(question, previous):
+            yield "from general knowledge"
+
+        with (
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])) as embed,
+            patch.object(self.mock_answers, "stream", fake_stream),
+            patch.object(self.mock_answers, "stream_general", fake_general),
+        ):
+            events = [e async for e in self.svc.ask(1, 1, "q", filters, 5, Plan.FREE)]
+        return events, embed.called, seen
+
+    async def test_with_no_documents_the_question_is_answered_generally(self):
+        self.mock_lib_repo.get_all.return_value = []
+
+        events, searched, _ = await self._ask()
+
+        assert searched is False
+        assert ("token", "from general knowledge") in events
+
+    async def test_documents_that_are_not_ready_do_not_count(self):
+        self.mock_lib_repo.get_all.return_value = [
+            SimpleNamespace(name="a.pdf", status="processing"),
+            SimpleNamespace(name="b.pdf", status="failed"),
+        ]
+
+        _, searched, _ = await self._ask()
+
+        assert searched is False
+
+    async def test_with_documents_every_question_goes_through_the_one_prompt_that_decides(self):
+        events, searched, _ = await self._ask()
+
+        assert searched is True
+        assert ("token", "from the documents") in events
+
+    async def test_the_earlier_messages_go_to_the_prompt_so_follow_ups_make_sense(self):
+        _, _, seen = await self._ask(history=[("user", "What is the rent?"), ("assistant", "Monthly [1].")])
+
+        assert seen["history"] == [("user", "What is the rent?"), ("assistant", "Monthly [1].")]
+
+    async def test_asking_about_one_document_searches_it_even_when_the_library_looks_empty(self):
+        from src.schemas.conversation import AskFilters
+
+        self.mock_lib_repo.get_all.return_value = []
+
+        _, searched, _ = await self._ask(filters=AskFilters(doc_id=7))
+
+        assert searched is True
+
+    async def test_an_answer_with_no_citations_is_stored_without_sources_and_marked_nowhere(self):
+        events, _, _ = await self._ask(answer="Paris is the capital of France.")
+
+        assert events[0][1] == {"description": "", "badges": [], "sources": []}
+        assert events[-1] == ("cited", [])
+        stored = next(c for c in self.mock_conv_repo.add_message.call_args_list if c.args[1] == "assistant")
+        assert stored.args[3]["sources"] == []
+        assert "general" not in stored.args[3]
+
     async def test_ask_auto_renames_new_conversation(self):
         conv = _make_conv(title="New conversation")
         self.mock_conv_repo.get_by_id.return_value = conv
         mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(chunks, question):
+        async def fake_stream(chunks, question, history=None):
             yield "answer"
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
             patch.object(self.mock_answers, "stream", fake_stream),
         ):
             async for _ in self.svc.ask(1, 1, "A long question here?", None, 5, Plan.FREE):
@@ -347,12 +410,11 @@ class TestConversationService:
         mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(chunks, question):
+        async def fake_stream(chunks, question, history=None):
             yield "answer"
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
             patch.object(self.mock_answers, "stream", fake_stream),
         ):
             async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
@@ -369,12 +431,11 @@ class TestConversationService:
         ]
         self.mock_lib_repo.get_top_k_chunks.return_value = passages
 
-        async def fake_stream(chunks, question):
+        async def fake_stream(chunks, question, history=None):
             yield answer
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
-            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("desc", []))),
             patch.object(self.mock_answers, "stream", fake_stream),
         ):
             return [event async for event in self.svc.ask(1, 1, "when is rent due?", None, 5, Plan.FREE)]

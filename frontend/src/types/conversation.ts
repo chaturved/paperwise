@@ -23,14 +23,11 @@ export interface Badge {
   icon: string;
 }
 
-export type AskMode = "documents" | "general";
-
 export interface Meta {
   description: string;
   badges: Badge[];
   sources: Source[];
   cited?: number[];
-  general?: boolean;
 }
 
 export interface Message {

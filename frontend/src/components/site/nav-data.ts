@@ -37,6 +37,7 @@ export const megaMenus: MegaMenu[] = [
       [
         { label: "For freelancers", description: "Read a client contract or brief before you sign or start.", href: "/for/freelancers" },
         { label: "For small businesses", description: "Find the answer in your leases, policies and supplier terms.", href: "/for/small-business" },
+        { label: "For researchers and students", description: "Ask a paper, a textbook or a manual a question.", href: "/for/researchers-and-students" },
       ],
       [
         { label: "Contracts and policies", description: "Check a clause, a deadline or a requirement.", href: "/use-cases#contracts" },
@@ -95,6 +96,7 @@ export const footerColumns = [
     links: [
       { label: "For freelancers", href: "/for/freelancers" },
       { label: "For small businesses", href: "/for/small-business" },
+      { label: "For researchers and students", href: "/for/researchers-and-students" },
       { label: "Use cases", href: "/use-cases" },
     ],
   },

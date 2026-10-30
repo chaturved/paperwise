@@ -31,12 +31,13 @@ export default function AboutPage() {
             <IconColumns items={principles} />
           </section>
           <section className="pb-24">
-            <SectionHead title="Who it is for" description="Paperwise is built first for people who read their own contracts and paperwork." />
+            <SectionHead title="Who it is for" description="Anyone who needs to read a document closely, starting with freelancers and small businesses." />
             <div className="mt-10 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
               <span aria-hidden />
               <LinkRows items={[
                 { label: "Freelancers", text: "Read a client agreement or brief before you sign or start.", href: "/for/freelancers" },
                 { label: "Small businesses", text: "Find the answer in leases, policies and supplier terms.", href: "/for/small-business" },
+                { label: "Researchers and students", text: "Ask a paper, textbook or manual a question and see the page it came from.", href: "/for/researchers-and-students" },
               ]} />
             </div>
           </section>

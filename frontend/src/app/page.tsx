@@ -56,12 +56,13 @@ export default function LandingPage() {
           <Statement lead="Every answer comes with its source." rest="Read the original text before you rely on it, and keep your files, questions and history in one place." />
 
           <section className="pb-24">
-            <SectionHead title="Made for people who read their own paperwork" description="Start with the documents you already have to read closely." />
+            <SectionHead title="Made for people who read closely" description="Start with the documents you already have to understand." />
             <div className="mt-10 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
               <span aria-hidden />
               <LinkRows items={[
                 { label: "Freelancers", text: "Read a client agreement or brief before you sign or start.", href: "/for/freelancers" },
                 { label: "Small businesses", text: "Find the answer in leases, policies and supplier terms.", href: "/for/small-business" },
+                { label: "Researchers and students", text: "Ask a paper, textbook or manual a question and see the page it came from.", href: "/for/researchers-and-students" },
               ]} />
             </div>
           </section>

@@ -14,7 +14,14 @@ from src.core.exceptions import BadRequestError, NotFoundError, UnauthorizedErro
 from src.integrations.google_oauth import GoogleOAuth
 from src.integrations.mailer import SmtpMailer
 from src.repositories.user_repository import UserRepository, UserRepositoryProtocol
-from src.schemas.user import AuthResponse, MessageResponse, TokenResponse, UserCreate, UserResponse
+from src.schemas.user import (
+    AuthResponse,
+    MessageResponse,
+    SignInMethodsResponse,
+    TokenResponse,
+    UserCreate,
+    UserResponse,
+)
 from src.services.token_service import TokenService, TokenServiceProtocol
 from src.services.user_service import UserService, UserServiceProtocol
 from src.utils.security import PasswordHasher
@@ -25,6 +32,7 @@ _log = logging.getLogger(__name__)
 class AuthServiceProtocol(Protocol):
     def signup(self, user_in: UserCreate, response: Response) -> AuthResponse: ...
     def login(self, response: Response, form_data: OAuth2PasswordRequestForm) -> AuthResponse: ...
+    def sign_in_methods(self, email: str) -> SignInMethodsResponse: ...
     def authorize_token(self, form_data: OAuth2PasswordRequestForm) -> TokenResponse: ...
     def refresh(self, request: Request, response: Response) -> MessageResponse: ...
     def logout(self, response: Response) -> MessageResponse: ...
@@ -80,8 +88,14 @@ class AuthService(AuthServiceProtocol):
         self._set_auth_cookies(response, user.id)
         return AuthResponse(user=UserResponse.model_validate(user))
 
+    def sign_in_methods(self, email: str) -> SignInMethodsResponse:
+        """Whether to ask for a password. Unknown emails answer yes, so only an account that really has no
+        password (it signs in with Google) looks different from the rest."""
+        user = self.repo.get_by_email(email)
+        return SignInMethodsResponse(has_password=user is None or bool(user.hashed_password))
+
     def authorize_token(self, form_data: OAuth2PasswordRequestForm) -> TokenResponse:
-        user = self.repo.get_by_email(form_data.username)
+        user =self.repo.get_by_email(form_data.username)
         if not user or not user.hashed_password or not self.hasher.verify(form_data.password, user.hashed_password):
             raise UnauthorizedError("Incorrect email or password")
         return TokenResponse(access_token=self.tokens.create_access_token(user.id))

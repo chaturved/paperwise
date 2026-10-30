@@ -7,6 +7,10 @@ export interface User {
   onboarding_completed: boolean;
 }
 
+export interface SignInMethods {
+  has_password: boolean;
+}
+
 export interface UsageItem {
   used: number;
   limit: number | null;

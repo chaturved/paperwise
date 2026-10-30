@@ -94,3 +94,23 @@ def test_a_signed_in_user_keeps_one_allowance_across_addresses(monkeypatch):
     assert client.get("/ping", headers={"x-user": "a", "x-forwarded-for": "1.1.1.1"}).status_code == 200
     assert client.get("/ping", headers={"x-user": "a", "x-forwarded-for": "2.2.2.2"}).status_code == 429
     assert client.get("/ping", headers={"x-user": "b", "x-forwarded-for": "1.1.1.1"}).status_code == 200
+
+
+def test_the_sign_in_methods_route_is_limited():
+    from src.main import app
+    from src.schemas.user import SignInMethodsResponse
+    from src.services.auth_service import AuthService
+
+    class _Methods:
+        def sign_in_methods(self, email):
+            return SignInMethodsResponse(has_password=True)
+
+    app.dependency_overrides[AuthService] = lambda: _Methods()
+    try:
+        client = TestClient(app)
+        statuses = [client.post("/api/v1/auth/methods", json={"email": "a@b.co"}).status_code for _ in range(11)]
+    finally:
+        app.dependency_overrides.clear()
+
+    assert statuses[:10] == [200] * 10
+    assert statuses[-1] == 429

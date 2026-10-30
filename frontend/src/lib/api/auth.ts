@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { MessageResponse, User } from "@/types";
+import type { MessageResponse, SignInMethods, User } from "@/types";
 
 export const getMe = async (): Promise<User> => {
   const res = await apiClient.get("/v1/auth/me");
@@ -12,6 +12,11 @@ export const login = async (email: string, password: string): Promise<User> => {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
   });
   return res.data.user;
+};
+
+export const getSignInMethods = async (email: string): Promise<SignInMethods> => {
+  const res = await apiClient.post("/v1/auth/methods", { email });
+  return res.data;
 };
 
 export const signup = async (email: string, password: string, full_name: string): Promise<User> => {

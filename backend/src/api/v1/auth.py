@@ -3,7 +3,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from src.core.dependencies import get_current_user_id
 from src.core.rate_limit import RateLimit
-from src.schemas.user import ForgotPasswordRequest, MagicLinkRequest, ResetPasswordRequest, UserCreate
+from src.schemas.user import (
+    ForgotPasswordRequest,
+    MagicLinkRequest,
+    ResetPasswordRequest,
+    SignInMethodsRequest,
+    SignInMethodsResponse,
+    UserCreate,
+)
 from src.services.auth_service import AuthService, AuthServiceProtocol
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -12,6 +19,7 @@ sign_in_limit = RateLimit("sign-in", "10/minute")
 sign_up_limit = RateLimit("sign-up", "5/minute")
 token_limit = RateLimit("auth-token", "10/minute")
 email_limit = RateLimit("auth-email", "5/minute")
+methods_limit = RateLimit("auth-methods", "10/minute")
 
 
 @router.post("/signup", dependencies=[Depends(sign_up_limit)])
@@ -26,6 +34,11 @@ def login_route(
     service: AuthServiceProtocol = Depends(AuthService),
 ):
     return service.login(response, form_data)
+
+
+@router.post("/methods", response_model=SignInMethodsResponse, dependencies=[Depends(methods_limit)])
+def sign_in_methods_route(body: SignInMethodsRequest, service: AuthServiceProtocol = Depends(AuthService)):
+    return service.sign_in_methods(body.email)
 
 
 @router.post("/token", include_in_schema=False, dependencies=[Depends(sign_in_limit)])

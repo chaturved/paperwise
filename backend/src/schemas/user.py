@@ -28,6 +28,14 @@ class MagicLinkRequest(BaseModel):
     email: EmailStr
 
 
+class SignInMethodsRequest(BaseModel):
+    email: EmailStr
+
+
+class SignInMethodsResponse(BaseModel):
+    has_password: bool
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

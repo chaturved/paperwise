@@ -98,6 +98,21 @@ class TestAuthService:
         assert result.user.email == "user@example.com"
 
 
+    def test_sign_in_methods_asks_for_a_password_when_the_account_has_one(self):
+        self.mock_repo.get_by_email.return_value = _make_user(hashed_password="hashed")
+
+        assert self.svc.sign_in_methods("user@example.com").has_password is True
+
+    def test_sign_in_methods_does_not_ask_for_a_password_when_the_account_has_none(self):
+        self.mock_repo.get_by_email.return_value = _make_user(hashed_password=None)
+
+        assert self.svc.sign_in_methods("user@example.com").has_password is False
+
+    def test_sign_in_methods_answers_the_same_for_an_unknown_email_as_for_a_password_account(self):
+        self.mock_repo.get_by_email.return_value = None
+
+        assert self.svc.sign_in_methods("nobody@example.com").has_password is True
+
     def test_login_raises_when_user_not_found(self):
         self.mock_repo.get_by_email.return_value = None
 

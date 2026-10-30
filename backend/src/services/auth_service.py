@@ -11,15 +11,11 @@ from src.config import settings
 from src.core.exceptions import BadRequestError, NotFoundError, UnauthorizedError
 from src.repositories.user_repository import UserRepositoryProtocol, UserRepository
 from src.schemas.user import AuthResponse, MessageResponse, TokenResponse, UserCreate, UserResponse
-from src.services.token_service import (
-    create_access_token,
-    create_refresh_token,
-    validate_refresh_token,
-)
+from src.services.token_service import TokenService, TokenServiceProtocol
 from src.services.user_service import UserServiceProtocol, UserService
 from src.integrations.google_oauth import GoogleOAuth
 from src.integrations.mailer import SmtpMailer
-from src.utils.security import hash_password, verify_password
+from src.utils.security import PasswordHasher
 
 _log = logging.getLogger(__name__)
 
@@ -46,15 +42,19 @@ class AuthService(AuthServiceProtocol):
         user_service: UserServiceProtocol = Depends(UserService),
         mailer: SmtpMailer = Depends(SmtpMailer),
         google: GoogleOAuth = Depends(GoogleOAuth),
+        tokens: TokenServiceProtocol = Depends(TokenService),
+        hasher: PasswordHasher = Depends(PasswordHasher),
     ):
         self.repo = repo
         self.user_service = user_service
         self.mailer = mailer
         self.google = google
+        self.tokens = tokens
+        self.hasher = hasher
 
     def _set_auth_cookies(self, response: Response, user_id: int) -> None:
-        response.set_cookie(settings.ACCESS_TOKEN_KEY, create_access_token(user_id), httponly=True, secure=True, samesite="lax")
-        response.set_cookie(settings.REFRESH_TOKEN_KEY, create_refresh_token(user_id), httponly=True, secure=True, samesite="lax")
+        response.set_cookie(settings.ACCESS_TOKEN_KEY, self.tokens.create_access_token(user_id), httponly=True, secure=True, samesite="lax")
+        response.set_cookie(settings.REFRESH_TOKEN_KEY, self.tokens.create_refresh_token(user_id), httponly=True, secure=True, samesite="lax")
 
     def signup(self, user_in: UserCreate, response: Response) -> AuthResponse:
         if self.repo.get_by_email(user_in.email):
@@ -69,23 +69,23 @@ class AuthService(AuthServiceProtocol):
 
     def login(self, response: Response, form_data: OAuth2PasswordRequestForm) -> AuthResponse:
         user = self.repo.get_by_email(form_data.username)
-        if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
+        if not user or not user.hashed_password or not self.hasher.verify(form_data.password, user.hashed_password):
             raise UnauthorizedError("Incorrect email or password")
         self._set_auth_cookies(response, user.id)
         return AuthResponse(user=UserResponse.model_validate(user))
 
     def authorize_token(self, form_data: OAuth2PasswordRequestForm) -> TokenResponse:
         user = self.repo.get_by_email(form_data.username)
-        if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
+        if not user or not user.hashed_password or not self.hasher.verify(form_data.password, user.hashed_password):
             raise UnauthorizedError("Incorrect email or password")
-        return TokenResponse(access_token=create_access_token(user.id))
+        return TokenResponse(access_token=self.tokens.create_access_token(user.id))
 
     def refresh(self, request: Request, response: Response) -> MessageResponse:
         token = request.cookies.get(settings.REFRESH_TOKEN_KEY)
         if not token:
             raise UnauthorizedError("Missing refresh token")
-        user_id = validate_refresh_token(token)
-        response.set_cookie(settings.ACCESS_TOKEN_KEY, create_access_token(user_id), httponly=True, secure=True, samesite="lax")
+        user_id = self.tokens.validate_refresh_token(token)
+        response.set_cookie(settings.ACCESS_TOKEN_KEY, self.tokens.create_access_token(user_id), httponly=True, secure=True, samesite="lax")
         return MessageResponse(message="Token refreshed")
 
     def logout(self, response: Response) -> MessageResponse:
@@ -187,7 +187,7 @@ class AuthService(AuthServiceProtocol):
         if not user:
             raise NotFoundError("User not found")
 
-        user.hashed_password = hash_password(new_password)
+        user.hashed_password = self.hasher.hash(new_password)
         self.repo.mark_reset_token_used(rt)
         self.repo.update(user)
         return MessageResponse(message="Password updated successfully")

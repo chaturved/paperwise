@@ -1,45 +1,46 @@
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timedelta, timezone
+from typing import Protocol
+
+from fastapi import Depends
 
 from ..config import settings
 from ..core.exceptions import UnauthorizedError
-from ..utils.jwt import get_encoded_token, get_payload
+from ..utils.jwt import JwtCodec
 
 
-def _create_token(user_id: int, expires_delta: timedelta, token_type: str) -> str:
-    expire = datetime.now(timezone.utc) + expires_delta
-    claims = {"sub": str(user_id), "exp": int(expire.timestamp()), "type": token_type}
-    return get_encoded_token(claims)
+class TokenServiceProtocol(Protocol):
+    def create_access_token(self, user_id: int) -> str: ...
+    def create_refresh_token(self, user_id: int) -> str: ...
+    def validate_access_token(self, token: str) -> int: ...
+    def validate_refresh_token(self, token: str) -> int: ...
 
 
-def create_access_token(user_id: int) -> str:
-    return _create_token(
-        user_id,
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        token_type=settings.ACCESS_TOKEN_TYPE,
-    )
+class TokenService(TokenServiceProtocol):
+    def __init__(self, codec: JwtCodec = Depends(JwtCodec)) -> None:
+        self.codec = codec
 
+    def create_access_token(self, user_id: int) -> str:
+        return self._create(user_id, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES), settings.ACCESS_TOKEN_TYPE)
 
-def create_refresh_token(user_id: int) -> str:
-    return _create_token(
-        user_id,
-        expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-        token_type=settings.REFRESH_TOKEN_TYPE,
-    )
+    def create_refresh_token(self, user_id: int) -> str:
+        return self._create(user_id, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS), settings.REFRESH_TOKEN_TYPE)
 
+    def validate_access_token(self, token: str) -> int:
+        return self._validate(token, settings.ACCESS_TOKEN_TYPE)
 
-def _validate_token(token: str, expected_type: str) -> int:
-    payload = get_payload(token)
-    if payload.get("type") != expected_type:
-        raise UnauthorizedError("Invalid token type")
-    user_id = payload.get("sub")
-    if user_id is None:
-        raise UnauthorizedError("Invalid authentication token")
-    return int(user_id)
+    def validate_refresh_token(self, token: str) -> int:
+        return self._validate(token, settings.REFRESH_TOKEN_TYPE)
 
+    def _create(self, user_id: int, expires_delta: timedelta, token_type: str) -> str:
+        expire = datetime.now(timezone.utc) + expires_delta
+        claims = {"sub": str(user_id), "exp": int(expire.timestamp()), "type": token_type}
+        return self.codec.encode(claims)
 
-def validate_access_token(token: str) -> int:
-    return _validate_token(token, settings.ACCESS_TOKEN_TYPE)
-
-
-def validate_refresh_token(token: str) -> int:
-    return _validate_token(token, settings.REFRESH_TOKEN_TYPE)
+    def _validate(self, token: str, expected_type: str) -> int:
+        payload = self.codec.decode(token)
+        if payload.get("type") != expected_type:
+            raise UnauthorizedError("Invalid token type")
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise UnauthorizedError("Invalid authentication token")
+        return int(user_id)

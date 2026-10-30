@@ -7,6 +7,7 @@ from src.core.exceptions import BadRequestError, NotFoundError, UnprocessableEnt
 from src.repositories.user_repository import UserRepositoryProtocol
 from src.schemas.user import UserCreate
 from src.services.user_service import UserService
+from src.utils.security import PasswordHasher
 
 
 def _make_user(id=1, email="user@example.com", full_name="Test User", plan=Plan.FREE):
@@ -24,7 +25,8 @@ class TestUserService:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.mock_repo = MagicMock(spec_set=UserRepositoryProtocol)
-        self.svc = UserService(repo=self.mock_repo)
+        self.mock_hasher = MagicMock(spec_set=PasswordHasher)
+        self.svc = UserService(repo=self.mock_repo, hasher=self.mock_hasher)
 
     # ── create_user ───────────────────────────────────────────────────────────
 
@@ -32,7 +34,7 @@ class TestUserService:
         user_in = UserCreate(email="a@b.com", password="secret123", full_name="John Doe")
         self.mock_repo.add.return_value = _make_user(email="a@b.com", full_name="John Doe")
 
-        with patch("src.services.user_service.hash_password", return_value="hashed") as mock_hash:
+        with patch.object(self.mock_hasher, "hash", return_value="hashed") as mock_hash:
             self.svc.create_user(user_in)
 
         mock_hash.assert_called_once_with("secret123")
@@ -81,7 +83,7 @@ class TestUserService:
         self.mock_repo.get_by_id.return_value = user
 
         with (
-            patch("src.services.user_service.verify_password", return_value=False),
+            patch.object(self.mock_hasher, "verify", return_value=False),
             pytest.raises(BadRequestError),
         ):
             self.svc.change_password(user_id=1, current_password="wrong", new_password="newpass1")
@@ -91,7 +93,7 @@ class TestUserService:
         self.mock_repo.get_by_id.return_value = user
 
         with (
-            patch("src.services.user_service.verify_password", return_value=True),
+            patch.object(self.mock_hasher, "verify", return_value=True),
             pytest.raises(UnprocessableEntityError),
         ):
             self.svc.change_password(user_id=1, current_password="old", new_password="short")
@@ -101,8 +103,8 @@ class TestUserService:
         self.mock_repo.get_by_id.return_value = user
 
         with (
-            patch("src.services.user_service.verify_password", return_value=True),
-            patch("src.services.user_service.hash_password", return_value="new_hashed"),
+            patch.object(self.mock_hasher, "verify", return_value=True),
+            patch.object(self.mock_hasher, "hash", return_value="new_hashed"),
         ):
             result = self.svc.change_password(user_id=1, current_password="old", new_password="newpass123")
 
@@ -128,7 +130,7 @@ class TestUserService:
         user = _make_user()
         self.mock_repo.get_by_id.return_value = user
 
-        with patch("src.services.user_service.hash_password", return_value="hashed_new"):
+        with patch.object(self.mock_hasher, "hash", return_value="hashed_new"):
             result = self.svc.set_password(user_id=1, new_password="newpass123")
 
         assert user.hashed_password == "hashed_new"

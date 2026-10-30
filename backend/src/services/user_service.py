@@ -6,7 +6,7 @@ from src.models.user import User
 from src.repositories.user_repository import UserRepositoryProtocol, UserRepository
 from src.schemas.user import MessageResponse, ProfileResponse, UsageItemResponse, UsageResponse, UserCreate
 from src.core.exceptions import BadRequestError, NotFoundError, UnprocessableEntityError
-from src.utils.security import hash_password, verify_password
+from src.utils.security import PasswordHasher
 from src.services.tier_service import LIMITS
 
 
@@ -22,13 +22,18 @@ class UserServiceProtocol(Protocol):
 
 
 class UserService(UserServiceProtocol):
-    def __init__(self, repo: UserRepositoryProtocol = Depends(UserRepository)):
+    def __init__(
+        self,
+        repo: UserRepositoryProtocol = Depends(UserRepository),
+        hasher: PasswordHasher = Depends(PasswordHasher),
+    ):
         self.repo = repo
+        self.hasher = hasher
 
     def create_user(self, user_in: UserCreate) -> User:
         user = User(
             email=user_in.email,
-            hashed_password=hash_password(user_in.password),
+            hashed_password=self.hasher.hash(user_in.password),
             full_name=user_in.full_name,
         )
         return self.repo.add(user)
@@ -53,11 +58,11 @@ class UserService(UserServiceProtocol):
         user = self.repo.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")
-        if not user.hashed_password or not verify_password(current_password, user.hashed_password):
+        if not user.hashed_password or not self.hasher.verify(current_password, user.hashed_password):
             raise BadRequestError("Current password is incorrect")
         if len(new_password) < 8:
             raise UnprocessableEntityError("Password must be at least 8 characters")
-        user.hashed_password = hash_password(new_password)
+        user.hashed_password = self.hasher.hash(new_password)
         self.repo.update(user)
         return MessageResponse(message="Password updated")
 
@@ -67,7 +72,7 @@ class UserService(UserServiceProtocol):
             raise NotFoundError("User not found")
         if len(new_password) < 8:
             raise UnprocessableEntityError("Password must be at least 8 characters")
-        user.hashed_password = hash_password(new_password)
+        user.hashed_password = self.hasher.hash(new_password)
         self.repo.update(user)
         return MessageResponse(message="Password set")
 

@@ -8,7 +8,9 @@ from src.integrations.google_oauth import GoogleOAuth, GoogleUser
 from src.integrations.mailer import SmtpMailer
 from src.repositories.user_repository import UserRepositoryProtocol
 from src.services.auth_service import AuthService
+from src.services.token_service import TokenServiceProtocol
 from src.services.user_service import UserServiceProtocol
+from src.utils.security import PasswordHasher
 
 
 def _make_user(id=1, email="user@example.com", full_name="Test User", plan="free",
@@ -37,11 +39,15 @@ class TestAuthService:
         self.mock_user_svc = MagicMock(spec_set=UserServiceProtocol)
         self.mock_mailer = MagicMock(spec_set=SmtpMailer)
         self.mock_google = MagicMock(spec_set=GoogleOAuth)
+        self.mock_tokens = MagicMock(spec_set=TokenServiceProtocol)
+        self.mock_hasher = MagicMock(spec_set=PasswordHasher)
         self.svc = AuthService(
             repo=self.mock_repo,
             user_service=self.mock_user_svc,
             mailer=self.mock_mailer,
             google=self.mock_google,
+            tokens=self.mock_tokens,
+            hasher=self.mock_hasher,
         )
         self.response = MagicMock()
         self.request = MagicMock()
@@ -66,8 +72,8 @@ class TestAuthService:
         user_in = UserCreate(email="new@example.com", password="pass123", full_name="New User")
 
         with (
-            patch("src.services.auth_service.create_access_token", return_value="access"),
-            patch("src.services.auth_service.create_refresh_token", return_value="refresh"),
+            patch.object(self.mock_tokens, "create_access_token", return_value="access"),
+            patch.object(self.mock_tokens, "create_refresh_token", return_value="refresh"),
         ):
             result = self.svc.signup(user_in, self.response)
 
@@ -85,8 +91,8 @@ class TestAuthService:
         user_in = UserCreate(email="new@example.com", password="pass123", full_name="New User")
 
         with (
-            patch("src.services.auth_service.create_access_token", return_value="access"),
-            patch("src.services.auth_service.create_refresh_token", return_value="refresh"),
+            patch.object(self.mock_tokens, "create_access_token", return_value="access"),
+            patch.object(self.mock_tokens, "create_refresh_token", return_value="refresh"),
         ):
             result = self.svc.signup(user_in, self.response)
 
@@ -104,7 +110,7 @@ class TestAuthService:
         self.mock_repo.get_by_email.return_value = _make_user()
 
         with (
-            patch("src.services.auth_service.verify_password", return_value=False),
+            patch.object(self.mock_hasher, "verify", return_value=False),
             pytest.raises(UnauthorizedError),
         ):
             self.svc.login(self.response, _make_form())
@@ -114,9 +120,9 @@ class TestAuthService:
         self.mock_repo.get_by_email.return_value = user
 
         with (
-            patch("src.services.auth_service.verify_password", return_value=True),
-            patch("src.services.auth_service.create_access_token", return_value="access"),
-            patch("src.services.auth_service.create_refresh_token", return_value="refresh"),
+            patch.object(self.mock_hasher, "verify", return_value=True),
+            patch.object(self.mock_tokens, "create_access_token", return_value="access"),
+            patch.object(self.mock_tokens, "create_refresh_token", return_value="refresh"),
         ):
             result = self.svc.login(self.response, _make_form())
 
@@ -135,8 +141,8 @@ class TestAuthService:
         self.mock_repo.get_by_email.return_value = _make_user()
 
         with (
-            patch("src.services.auth_service.verify_password", return_value=True),
-            patch("src.services.auth_service.create_access_token", return_value="tok123"),
+            patch.object(self.mock_hasher, "verify", return_value=True),
+            patch.object(self.mock_tokens, "create_access_token", return_value="tok123"),
         ):
             result = self.svc.authorize_token(_make_form())
 
@@ -154,8 +160,8 @@ class TestAuthService:
         self.request.cookies.get.return_value = "refresh-token"
 
         with (
-            patch("src.services.auth_service.validate_refresh_token", return_value=1),
-            patch("src.services.auth_service.create_access_token", return_value="new-access"),
+            patch.object(self.mock_tokens, "validate_refresh_token", return_value=1),
+            patch.object(self.mock_tokens, "create_access_token", return_value="new-access"),
         ):
             result = self.svc.refresh(self.request, self.response)
 
@@ -242,8 +248,8 @@ class TestAuthService:
         self.mock_repo.get_by_email.return_value = _make_user()
 
         with (
-            patch("src.services.auth_service.create_access_token", return_value="access"),
-            patch("src.services.auth_service.create_refresh_token", return_value="refresh"),
+            patch.object(self.mock_tokens, "create_access_token", return_value="access"),
+            patch.object(self.mock_tokens, "create_refresh_token", return_value="refresh"),
         ):
             result = self.svc.verify_magic_link("valid-token", self.response)
 
@@ -308,7 +314,7 @@ class TestAuthService:
         user = _make_user()
         self.mock_repo.get_by_id.return_value = user
 
-        with patch("src.services.auth_service.hash_password", return_value="new_hashed"):
+        with patch.object(self.mock_hasher, "hash", return_value="new_hashed"):
             result = self.svc.reset_password("valid-token", "newpass123")
 
         assert user.hashed_password == "new_hashed"
@@ -324,6 +330,8 @@ class TestAuthServiceGoogle:
         self.mock_user_svc = MagicMock(spec_set=UserServiceProtocol)
         self.mock_mailer = MagicMock(spec_set=SmtpMailer)
         self.mock_google = MagicMock(spec_set=GoogleOAuth)
+        self.mock_tokens = MagicMock(spec_set=TokenServiceProtocol)
+        self.mock_hasher = MagicMock(spec_set=PasswordHasher)
         self.mock_google.fetch_user = AsyncMock(
             return_value=GoogleUser(email="g@example.com", provider_user_id="sub-1", full_name="Goo Gle")
         )
@@ -332,6 +340,8 @@ class TestAuthServiceGoogle:
             user_service=self.mock_user_svc,
             mailer=self.mock_mailer,
             google=self.mock_google,
+            tokens=self.mock_tokens,
+            hasher=self.mock_hasher,
         )
 
     async def test_google_redirect_delegates_to_provider(self):
@@ -346,8 +356,8 @@ class TestAuthServiceGoogle:
         self.mock_repo.get_oauth_account.return_value = MagicMock(user_id=1)
         self.mock_repo.get_by_id.return_value = user
 
-        with patch("src.services.auth_service.create_access_token", return_value="a"), \
-             patch("src.services.auth_service.create_refresh_token", return_value="r"):
+        with patch.object(self.mock_tokens, "create_access_token", return_value="a"), \
+             patch.object(self.mock_tokens, "create_refresh_token", return_value="r"):
             response = await self.svc.google_callback(MagicMock(), MagicMock())
 
         assert response.headers["location"].endswith("/dashboard")
@@ -359,8 +369,8 @@ class TestAuthServiceGoogle:
         self.mock_repo.get_by_email.return_value = None
         self.mock_user_svc.create_user_oauth.return_value = _make_user(onboarding_completed=False)
 
-        with patch("src.services.auth_service.create_access_token", return_value="a"), \
-             patch("src.services.auth_service.create_refresh_token", return_value="r"):
+        with patch.object(self.mock_tokens, "create_access_token", return_value="a"), \
+             patch.object(self.mock_tokens, "create_refresh_token", return_value="r"):
             response = await self.svc.google_callback(MagicMock(), MagicMock())
 
         self.mock_user_svc.create_user_oauth.assert_called_once_with("g@example.com", "Goo Gle")

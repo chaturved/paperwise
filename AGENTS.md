@@ -42,7 +42,7 @@ This is a resume-quality production project. It must feel like a real product an
 - Pydantic Settings (env config)
 - PyMuPDF + python-docx
 - AI provider adapter (`integrations/ai/`): Gemini (httpx) + HuggingFace Inference
-- Document parsing (`integrations/documents/`): PyMuPDF + python-docx, run in an isolated worker process with time, memory and concurrency limits
+- Document parsing (`integrations/documents/`): PyMuPDF + python-docx, run in an isolated worker process with time, memory and concurrency limits. Scanned PDF pages are read with Tesseract OCR (a system package, `tesseract-ocr` in the Dockerfile) through PyMuPDF; if Tesseract is missing, parsing still works and scans are rejected as before
 - python-jose + passlib (JWT)
 - authlib + httpx (Google OAuth)
 - boto3 (Supabase Storage / S3)

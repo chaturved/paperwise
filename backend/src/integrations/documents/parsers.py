@@ -16,7 +16,8 @@ from docx.text.paragraph import Paragraph
 
 from ...config import settings
 from ...core.exceptions import BadRequestError
-from .messages import TOO_LARGE_MESSAGE, UNREADABLE_FILE_MESSAGE
+from .messages import SCAN_TOO_LONG_MESSAGE, TOO_LARGE_MESSAGE, UNREADABLE_FILE_MESSAGE
+from .ocr import OcrUnavailableError, PageOcr, TesseractPageOcr
 from .pages import Page
 
 
@@ -67,8 +68,11 @@ class FileParser(ABC):
 
 
 class PdfParser(FileParser):
-    def __init__(self, budget: TextBudget) -> None:
+    """Reads the text layer of each page. Pages with no text are read with `ocr` when one is given."""
+
+    def __init__(self, budget: TextBudget, ocr: PageOcr | None = None) -> None:
         self.budget = budget
+        self.ocr = ocr
 
     def parse(self, contents: bytes) -> list[Page]:
         with fitz.open(stream=contents, filetype="pdf") as doc:
@@ -77,7 +81,26 @@ class PdfParser(FileParser):
             if doc.page_count > settings.MAX_PDF_PAGES:
                 raise BadRequestError(TOO_LARGE_MESSAGE)
             texts = self.budget.collect(page.get_text() for page in doc)  # type: ignore[attr-defined]
+            if self.ocr is not None:
+                texts = self._read_blank_pages(doc, texts, self.ocr)
             return [Page(number, text) for number, text in enumerate(texts, start=1)]
+
+    def _read_blank_pages(self, doc: fitz.Document, texts: list[str], ocr: PageOcr) -> list[str]:
+        blank = [index for index, text in enumerate(texts) if not text.strip()]
+        if not blank:
+            return texts
+
+        if len(blank) > settings.OCR_MAX_PAGES:
+            if len(blank) == len(texts):
+                raise BadRequestError(SCAN_TOO_LONG_MESSAGE.format(limit=settings.OCR_MAX_PAGES))
+            blank = blank[: settings.OCR_MAX_PAGES]
+
+        try:
+            for index in blank:
+                texts[index] = ocr.read(doc[index])
+        except OcrUnavailableError:
+            return texts
+        return self.budget.collect(texts)
 
 
 class DocxParser(FileParser):
@@ -120,7 +143,8 @@ class DocumentParser:
         budget = TextBudget()
         docx_parser = DocxParser(DocxArchiveGuard(), budget)
         text_parser = PlainTextParser()
-        return {"pdf": PdfParser(budget), "docx": docx_parser, "doc": docx_parser, "txt": text_parser, "md": text_parser}
+        ocr = TesseractPageOcr() if settings.OCR_ENABLED else None
+        return {"pdf": PdfParser(budget, ocr), "docx": docx_parser, "doc": docx_parser, "txt": text_parser, "md": text_parser}
 
     def parse(self, contents: bytes, ext: str) -> list[Page]:
         """Return the pages of an uploaded file. Raises BadRequestError with a plain message if it can't be used."""

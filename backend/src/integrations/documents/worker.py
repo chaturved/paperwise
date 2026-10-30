@@ -12,10 +12,11 @@ from ...config import settings
 from ...core.exceptions import BadRequestError
 from .messages import TOO_LARGE_MESSAGE
 from .parsers import DocumentParser
+from .timeouts import ExtractionTimeout
 
 
 class ResourceLimits:
-    def apply(self) -> None:
+    def apply(self, timeout_seconds: int) -> None:
         try:
             import resource
         except ImportError:
@@ -23,7 +24,7 @@ class ResourceLimits:
 
         limits = (
             (resource.RLIMIT_AS, settings.EXTRACT_MAX_MEMORY_MB * 1024 * 1024),
-            (resource.RLIMIT_CPU, settings.EXTRACT_TIMEOUT_SECONDS + 5),
+            (resource.RLIMIT_CPU, timeout_seconds + 5),
         )
         for kind, value in limits:
             try:
@@ -33,12 +34,13 @@ class ResourceLimits:
 
 
 class ExtractionWorker:
-    def __init__(self, parser: DocumentParser, limits: ResourceLimits) -> None:
+    def __init__(self, parser: DocumentParser, limits: ResourceLimits, timeout: ExtractionTimeout) -> None:
         self.parser = parser
         self.limits = limits
+        self.timeout = timeout
 
     def run(self, ext: str) -> None:
-        self.limits.apply()
+        self.limits.apply(self.timeout.seconds(ext))
         contents = sys.stdin.buffer.read()
 
         try:
@@ -53,4 +55,4 @@ class ExtractionWorker:
 
 
 if __name__ == "__main__":
-    ExtractionWorker(DocumentParser(), ResourceLimits()).run(sys.argv[1] if len(sys.argv) > 1 else "")
+    ExtractionWorker(DocumentParser(), ResourceLimits(), ExtractionTimeout()).run(sys.argv[1] if len(sys.argv) > 1 else "")

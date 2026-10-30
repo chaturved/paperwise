@@ -15,6 +15,7 @@ from .messages import (
     UNREADABLE_FILE_MESSAGE,
 )
 from .pages import Page
+from .timeouts import ExtractionTimeout
 
 # The worker is started as `python -m src.integrations.documents.worker`, so it must run from the backend root.
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
@@ -25,6 +26,7 @@ class IsolatedExtractor:
     runs too long, and when no worker frees up in time."""
 
     _worker_slots = PerLoopSemaphore(lambda: settings.EXTRACT_MAX_CONCURRENCY)
+    _timeout = ExtractionTimeout()
 
     async def extract(self, contents: bytes, ext: str) -> list[Page]:
         slots = self._worker_slots.get()
@@ -51,7 +53,7 @@ class IsolatedExtractor:
         )
 
         try:
-            stdout, _ = await asyncio.wait_for(process.communicate(contents), timeout=settings.EXTRACT_TIMEOUT_SECONDS)
+            stdout, _ = await asyncio.wait_for(process.communicate(contents), timeout=self._timeout.seconds(ext))
         except TimeoutError:
             raise BadRequestError(TIMEOUT_MESSAGE) from None
         finally:

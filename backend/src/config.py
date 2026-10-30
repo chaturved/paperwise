@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     EXTRACT_MAX_MEMORY_MB: int = 2048
     EXTRACT_MAX_CONCURRENCY: int = 2
     EXTRACT_QUEUE_TIMEOUT_SECONDS: int = 60
+    OCR_ENABLED: bool = True
+    OCR_LANGUAGE: str = "eng"
+    OCR_DPI: int = 200
+    OCR_MAX_PAGES: int = 25
+    OCR_EXTRA_TIMEOUT_SECONDS: int = 120
     UPLOAD_URL_EXPIRY_SECONDS: int = 600
     DOWNLOAD_URL_EXPIRY_SECONDS: int = 600
     INGEST_MAX_CONCURRENCY: int = 3

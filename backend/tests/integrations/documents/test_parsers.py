@@ -1,4 +1,5 @@
 import io
+import shutil
 import zipfile
 
 import docx
@@ -8,7 +9,9 @@ import pytest
 from src.config import settings
 from src.core.exceptions import BadRequestError
 from src.integrations.documents import Page
-from src.integrations.documents.parsers import DocumentParser
+from src.integrations.documents.ocr import OcrUnavailableError, PageOcr
+from src.integrations.documents.parsers import DocumentParser, PdfParser, TextBudget
+from src.integrations.documents.timeouts import ExtractionTimeout
 from src.utils.text_utils import TextChunker
 
 
@@ -148,3 +151,99 @@ class TestExtractOtherTypes:
             with pytest.raises(BadRequestError) as exc:
                 DocumentParser().parse(contents, ext)
             assert "couldn't be read" in exc.value.message
+
+
+def _pdf(*pages: tuple[str, str]) -> bytes:
+    """A PDF made of ("text", words) pages that have a text layer and ("image", words) pages that are only a picture."""
+    target = fitz.open()
+    for kind, words in pages:
+        if kind == "text":
+            target.new_page().insert_text((72, 100), words, fontsize=14)
+            continue
+        source = fitz.open()
+        page = source.new_page()
+        if words:
+            page.insert_text((72, 120), words, fontsize=28)
+        image_page = target.new_page()
+        image_page.insert_image(image_page.rect, pixmap=page.get_pixmap(dpi=150))
+    return target.tobytes()
+
+
+class _FakeOcr(PageOcr):
+    def __init__(self) -> None:
+        self.read_pages: list[int] = []
+
+    def read(self, page: fitz.Page) -> str:
+        self.read_pages.append(page.number)
+        return f"scanned page {page.number + 1}"
+
+
+class _MissingOcr(PageOcr):
+    def read(self, page: fitz.Page) -> str:
+        raise OcrUnavailableError("Tesseract is not installed")
+
+
+class TestScannedPdf:
+    def test_pages_with_no_text_are_read_with_ocr_and_keep_their_page_numbers(self):
+        ocr = _FakeOcr()
+        contents = _pdf(("text", "Payment is due in 30 days"), ("image", "x"))
+
+        pages = PdfParser(TextBudget(), ocr).parse(contents)
+
+        assert [(p.number, p.text.strip()) for p in pages] == [(1, "Payment is due in 30 days"), (2, "scanned page 2")]
+        assert ocr.read_pages == [1]
+
+    def test_ocr_is_not_used_when_every_page_has_text(self):
+        ocr = _FakeOcr()
+
+        PdfParser(TextBudget(), ocr).parse(_pdf(("text", "one"), ("text", "two")))
+
+        assert ocr.read_pages == []
+
+    def test_a_scan_with_too_many_pages_is_rejected_with_a_plain_message(self, monkeypatch):
+        monkeypatch.setattr(settings, "OCR_MAX_PAGES", 2)
+        contents = _pdf(("image", "a"), ("image", "b"), ("image", "c"))
+
+        with pytest.raises(BadRequestError) as exc:
+            PdfParser(TextBudget(), _FakeOcr()).parse(contents)
+
+        assert "more than 2 pages" in exc.value.message
+
+    def test_a_mostly_text_document_reads_blank_pages_only_up_to_the_cap(self, monkeypatch):
+        monkeypatch.setattr(settings, "OCR_MAX_PAGES", 2)
+        ocr = _FakeOcr()
+        contents = _pdf(("text", "body"), ("image", ""), ("image", ""), ("image", ""))
+
+        PdfParser(TextBudget(), ocr).parse(contents)
+
+        assert ocr.read_pages == [1, 2]
+
+    def test_without_ocr_a_scan_comes_back_with_no_text(self):
+        pages = PdfParser(TextBudget()).parse(_pdf(("image", "invoice")))
+
+        assert [p.text.strip() for p in pages] == [""]
+
+    def test_when_ocr_is_not_installed_the_pages_stay_blank_instead_of_failing(self):
+        pages = PdfParser(TextBudget(), _MissingOcr()).parse(_pdf(("image", "invoice")))
+
+        assert [p.text.strip() for p in pages] == [""]
+
+    @pytest.mark.skipif(shutil.which("tesseract") is None, reason="Tesseract is not installed")
+    def test_real_tesseract_reads_a_scanned_page(self):
+        pages = DocumentParser().parse(_pdf(("image", "Invoice total 4200")), "pdf")
+
+        assert "4200" in pages[0].text
+
+
+class TestExtractionTimeout:
+    def test_pdfs_get_extra_time_for_ocr_but_other_files_do_not(self):
+        timeout = ExtractionTimeout()
+
+        assert timeout.seconds("pdf") == settings.EXTRACT_TIMEOUT_SECONDS + settings.OCR_EXTRA_TIMEOUT_SECONDS
+        assert timeout.seconds("PDF") == timeout.seconds("pdf")
+        assert timeout.seconds("docx") == settings.EXTRACT_TIMEOUT_SECONDS
+
+    def test_no_extra_time_when_ocr_is_switched_off(self, monkeypatch):
+        monkeypatch.setattr(settings, "OCR_ENABLED", False)
+
+        assert ExtractionTimeout().seconds("pdf") == settings.EXTRACT_TIMEOUT_SECONDS

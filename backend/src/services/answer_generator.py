@@ -47,27 +47,26 @@ User's actual question:
 
 Please return a JSON object with:
 1. "title": a short, catchy sentence summarizing the context suitable as a chat title.
-2. "badges": 2-3 short badges (labels) summarizing key aspects of the answer.
-   Each badge should have a "label" and an "icon".
+2. "badges": 2-3 short badges (labels) describing the kind of content in the answer.
+   Each badge should have a "label" and an "icon". Never describe anything as verified, confirmed,
+   validated or trusted: nothing here has been checked.
 
 Available icons:
 - bot: AI-generated content
-- shield: Verified or trusted information
 - waves: Conceptual, trends, or patterns
 - sparkles: Novelty, creative solutions, tips
 - star: Key takeaway, important point
 - lightning: Fast, critical, or high-priority info
 - book: Reference or documentation-based content
 - link: External resources
-- check: Correct, confirmed, validated info
 - warning: Caution or limitation
 
 Example response:
 {{
   "title": "Summary title here",
   "badges": [
-    {{"label": "AI Generated", "icon": "bot"}},
-    {{"label": "Verified Context", "icon": "shield"}}
+    {{"label": "AI generated", "icon": "bot"}},
+    {{"label": "From your documents", "icon": "book"}}
   ]
 }}
 """
@@ -81,8 +80,8 @@ Example response:
             return title, badges
         except json.JSONDecodeError:
             return f"Found {len(chunks)} relevant sections from your library.", [
-                {"label": "AI Generated", "icon": "bot"},
-                {"label": "Verified Context", "icon": "shield"},
+                {"label": "AI generated", "icon": "bot"},
+                {"label": "From your documents", "icon": "book"},
             ]
 
 

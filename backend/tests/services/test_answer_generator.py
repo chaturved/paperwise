@@ -52,7 +52,7 @@ class TestDescribe:
         title, badges = await _generator(ai).describe(CHUNKS, "q")
 
         assert title == "Found 1 relevant sections from your library."
-        assert [b["icon"] for b in badges] == ["bot", "shield"]
+        assert [b["label"] for b in badges] == ["AI generated", "From your documents"]
 
 
 class TestStream:

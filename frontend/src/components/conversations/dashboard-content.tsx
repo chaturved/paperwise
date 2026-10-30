@@ -7,13 +7,14 @@ import { useAppLayout } from "@/context/AppLayoutContext";
 import { useSSEStream } from "@/hooks/useSSEStream";
 import { useAccountUsage } from "@/hooks/useAccountUsage";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
-import { apiErrorMessage } from "@/lib/api-error";
+import { apiErrorMessage, historyLimitReached } from "@/lib/api-error";
 import { createConversation, getMessages } from "@/lib/api/conversations";
 import type { Message } from "@/types";
 import { AddDocumentButton } from "./add-document-button";
 import { AIMessage } from "./ai-message";
 import { InputBox } from "./input-box";
 import { DashboardWelcome } from "./dashboard-welcome";
+import { HistoryLimitNotice } from "./history-limit-notice";
 import { UserMessage } from "./user-message";
 
 function DashboardInner() {
@@ -27,6 +28,7 @@ function DashboardInner() {
   });
   const [messages, setMessages]         = useState<Message[]>([]);
   const [loadingConversation, setLoadingConversation] = useState(Boolean(params.get("conv")));
+  const [historyLocked, setHistoryLocked] = useState(false);
   const [inputValue, setInputValue]     = useState("");
   const [sidebarRefresh, setSidebarRefresh] = useState(0);
   const { upload: uploadDocuments, uploading: isUploading } = useDocumentUpload(() => setSidebarRefresh((value) => value + 1));
@@ -61,6 +63,7 @@ function DashboardInner() {
   }, [params, resetStream]);
 
   useEffect(() => {
+    setHistoryLocked(false);
     if (!activeConvId) {
       setMessages([]);
       setLoadingConversation(false);
@@ -74,7 +77,11 @@ function DashboardInner() {
     let cancelled = false;
     getMessages(activeConvId)
       .then((items) => { if (!cancelled) setMessages(items); })
-      .catch(() => { if (!cancelled) toast.error("Could not load this conversation"); })
+      .catch((err) => {
+        if (cancelled) return;
+        if (historyLimitReached(err)) setHistoryLocked(true);
+        else toast.error("Could not load this conversation");
+      })
       .finally(() => { if (!cancelled) setLoadingConversation(false); });
     return () => { cancelled = true; };
   }, [activeConvId]);
@@ -186,7 +193,9 @@ function DashboardInner() {
         <AddDocumentButton onAttach={handleAttach} uploading={isUploading} />
       </div>
 
-      {inChat ? (
+      {inChat && historyLocked ? (
+        <HistoryLimitNotice onNewChat={handleNewChat} />
+      ) : inChat ? (
         <>
           <div className="thin-scroll relative z-10 flex-1 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
             <div className="mx-auto w-full max-w-[700px] space-y-9">

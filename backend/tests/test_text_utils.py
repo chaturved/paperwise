@@ -1,8 +1,11 @@
 import io
+import zipfile
 
 import docx
+import fitz
 import pytest
 
+from src.config import settings
 from src.core.exceptions import BadRequestError
 from src.utils.text_utils import chunk_text, clean_text, extract_text_from_bytes
 
@@ -32,6 +35,56 @@ class TestExtractDocx:
 
     def test_empty_document_has_no_readable_text(self):
         assert clean_text(extract_text_from_bytes(_docx_bytes(lambda d: None), "docx")) == ""
+
+
+def _zip_bytes(members: dict[str, bytes]) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for name, data in members.items():
+            archive.writestr(name, data)
+    return buffer.getvalue()
+
+
+class TestUploadSafetyLimits:
+    def test_docx_that_unpacks_far_beyond_its_size_is_rejected(self):
+        # Zeros compress to almost nothing, so the file is tiny but declares a huge unpacked size.
+        bomb = _zip_bytes({"word/document.xml": b"\0" * (settings.MAX_DOCX_UNZIPPED_MB * 1024 * 1024 + 1)})
+
+        assert len(bomb) < 1024 * 1024
+        with pytest.raises(BadRequestError) as exc:
+            extract_text_from_bytes(bomb, "docx")
+        assert "too large" in exc.value.message
+
+    def test_docx_with_too_many_entries_is_rejected(self):
+        many = _zip_bytes({f"part{i}.xml": b"x" for i in range(settings.MAX_DOCX_ENTRIES + 1)})
+
+        with pytest.raises(BadRequestError) as exc:
+            extract_text_from_bytes(many, "docx")
+        assert "too large" in exc.value.message
+
+    def test_pdf_with_too_many_pages_is_rejected(self, monkeypatch):
+        monkeypatch.setattr(settings, "MAX_PDF_PAGES", 2)
+        pdf = fitz.open()
+        for _ in range(3):
+            pdf.new_page()
+        contents = pdf.tobytes()
+        pdf.close()
+
+        with pytest.raises(BadRequestError) as exc:
+            extract_text_from_bytes(contents, "pdf")
+        assert "too large" in exc.value.message
+
+    def test_text_longer_than_the_cap_is_rejected(self, monkeypatch):
+        monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 10)
+
+        with pytest.raises(BadRequestError) as exc:
+            extract_text_from_bytes(b"a" * 11, "txt")
+        assert "too large" in exc.value.message
+
+    def test_text_at_the_cap_is_accepted(self, monkeypatch):
+        monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 10)
+
+        assert extract_text_from_bytes(b"a" * 10, "txt") == "a" * 10
 
 
 class TestExtractOtherTypes:

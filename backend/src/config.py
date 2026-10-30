@@ -51,6 +51,11 @@ class Settings(BaseSettings):
 
     TEXT_CHUNK_SIZE: int = 500
     TEXT_CHUNK_OVERLAP: int = 50
+    # Upload safety: a small file can unpack to something huge, so cap what we are willing to parse.
+    MAX_DOCX_UNZIPPED_MB: int = 50
+    MAX_DOCX_ENTRIES: int = 2000
+    MAX_PDF_PAGES: int = 1000
+    MAX_EXTRACTED_CHARS: int = 3_000_000
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 

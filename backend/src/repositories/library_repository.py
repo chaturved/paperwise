@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Optional, Protocol
+from typing import Protocol
 
 from fastapi import Depends
 from sqlalchemy import func
@@ -18,8 +18,8 @@ class LibraryRepositoryProtocol(Protocol):
     def get_all(self, user_id: int) -> list[Library]: ...
     def count_active(self, user_id: int) -> int: ...
     def get(self, doc_id: int) -> Library | None: ...
-    def get_by_id(self, doc_id: int, user_id: int) -> Optional[Library]: ...
-    def get_by_content_hash(self, user_id: int, content_hash: str) -> Optional[Library]: ...
+    def get_by_id(self, doc_id: int, user_id: int) -> Library | None: ...
+    def get_by_content_hash(self, user_id: int, content_hash: str) -> Library | None: ...
     def add(self, library: Library) -> Library: ...
     def add_chunks(self, chunks: list[LibraryChunk]) -> None: ...
     def transition_status(self, doc_id: int, from_status: DocumentStatus, to_status: DocumentStatus) -> bool: ...
@@ -37,7 +37,7 @@ class LibraryRepositoryProtocol(Protocol):
         user_id: int,
         query_vector: list[float],
         top_k: int,
-        doc_id: Optional[int],
+        doc_id: int | None,
     ) -> list: ...
 
 
@@ -60,10 +60,10 @@ class LibraryRepository(LibraryRepositoryProtocol):
     def get(self, doc_id: int) -> Library | None:
         return self.db.get(Library, doc_id)
 
-    def get_by_id(self, doc_id: int, user_id: int) -> Optional[Library]:
+    def get_by_id(self, doc_id: int, user_id: int) -> Library | None:
         return self.db.query(Library).filter(Library.id == doc_id, Library.user_id == user_id).first()
 
-    def get_by_content_hash(self, user_id: int, content_hash: str) -> Optional[Library]:
+    def get_by_content_hash(self, user_id: int, content_hash: str) -> Library | None:
         return self.db.query(Library).filter(Library.user_id == user_id, Library.content_hash == content_hash).first()
 
     def add(self, library: Library) -> Library:
@@ -146,7 +146,7 @@ class LibraryRepository(LibraryRepositoryProtocol):
         user_id: int,
         query_vector: list[float],
         top_k: int = 5,
-        doc_id: Optional[int] = None,
+        doc_id: int | None = None,
     ) -> list:
         q = (
             self.db.query(LibraryChunk, Library)

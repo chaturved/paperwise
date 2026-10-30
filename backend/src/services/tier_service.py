@@ -1,12 +1,12 @@
-from datetime import datetime, timezone
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, Protocol, TypedDict
+from datetime import UTC, datetime
+from typing import NamedTuple, Protocol, TypedDict
 
 from fastapi import Depends
 
 from src.core.enums import Plan
 from src.core.exceptions import PlanLimitError
-from src.repositories.tier_repository import TierRepositoryProtocol, TierRepository
+from src.repositories.tier_repository import TierRepository, TierRepositoryProtocol
 
 
 class UploadMeta(NamedTuple):
@@ -15,11 +15,11 @@ class UploadMeta(NamedTuple):
 
 
 class PlanLimits(TypedDict):
-    max_docs: Optional[int]
+    max_docs: int | None
     max_file_mb: int
     allowed_types: set[str]
-    max_queries_day: Optional[int]
-    history_days: Optional[int]
+    max_queries_day: int | None
+    history_days: int | None
 
 
 LIMITS: dict[Plan, PlanLimits] = {
@@ -75,6 +75,6 @@ class TierService(TierServiceProtocol):
         limits = self._limits(plan)
         if limits["history_days"] is None:
             return
-        age_days = (datetime.now(timezone.utc) - created_at.replace(tzinfo=timezone.utc)).days
+        age_days = (datetime.now(UTC) - created_at.replace(tzinfo=UTC)).days
         if age_days > limits["history_days"]:
             raise PlanLimitError("history")

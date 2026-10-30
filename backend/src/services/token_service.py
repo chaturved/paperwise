@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from fastapi import Depends
@@ -32,7 +32,7 @@ class TokenService(TokenServiceProtocol):
         return self._validate(token, settings.REFRESH_TOKEN_TYPE)
 
     def _create(self, user_id: int, expires_delta: timedelta, token_type: str) -> str:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
         claims = {"sub": str(user_id), "exp": int(expire.timestamp()), "type": token_type}
         return self.codec.encode(claims)
 

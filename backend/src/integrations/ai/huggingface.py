@@ -1,5 +1,5 @@
 import ssl
-from typing import AsyncGenerator, List
+from collections.abc import AsyncGenerator
 
 import certifi
 from huggingface_hub import AsyncInferenceClient
@@ -31,7 +31,7 @@ class HuggingFaceProvider(AIProvider):
         ssl.create_default_context = create_default_context
 
     @staticmethod
-    def _to_list(vector: object) -> List[float]:
+    def _to_list(vector: object) -> list[float]:
         return vector.tolist() if hasattr(vector, "tolist") else list(vector)  # type: ignore[arg-type]
 
     @staticmethod
@@ -41,11 +41,11 @@ class HuggingFaceProvider(AIProvider):
             {"role": "user", "content": prompt},
         ]
 
-    async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
+    async def get_embeddings(self, texts: list[str]) -> list[list[float]]:
         result = await self.client.feature_extraction(texts, model=settings.HF_EMBEDDING_MODEL)
         return [self._to_list(v) for v in result]
 
-    async def get_embedding(self, text: str) -> List[float]:
+    async def get_embedding(self, text: str) -> list[float]:
         result = await self.client.feature_extraction(text, model=settings.HF_EMBEDDING_MODEL)
         return self._to_list(result)
 

@@ -14,7 +14,7 @@ class TestQueryRepository:
         self.repo = QueryRepository(db=self.db)
 
     def test_add_recent_query_persists_and_returns(self):
-        result = self.repo.add_recent_query(user_id=1, query="what is RAG?")
+        self.repo.add_recent_query(user_id=1, query="what is RAG?")
 
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()

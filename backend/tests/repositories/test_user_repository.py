@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -89,7 +89,7 @@ class TestUserRepository:
     # ── create_oauth_account ──────────────────────────────────────────────────
 
     def test_create_oauth_account_persists_and_returns(self):
-        result = self.repo.create_oauth_account(
+        self.repo.create_oauth_account(
             user_id=1, provider="google", provider_user_id="sub-123",
             access_token="tok", refresh_token=None,
         )
@@ -106,7 +106,7 @@ class TestUserRepository:
         self.db.commit.assert_called_once()
 
     def test_create_magic_token_persists_and_returns(self):
-        expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expires = datetime.now(UTC) + timedelta(minutes=15)
 
         self.repo.create_magic_token("user@example.com", "hash123", expires)
 
@@ -142,7 +142,7 @@ class TestUserRepository:
         self.db.commit.assert_called_once()
 
     def test_create_reset_token_persists_and_returns(self):
-        expires = datetime.now(timezone.utc) + timedelta(hours=1)
+        expires = datetime.now(UTC) + timedelta(hours=1)
 
         self.repo.create_reset_token(user_id=1, token_hash="resethash", expires_at=expires)
 

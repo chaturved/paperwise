@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +11,7 @@ from src.core.exceptions import (
     PlanLimitError,
 )
 from src.integrations.documents import ContentTypes
-from src.integrations.storage import S3Storage
+from src.integrations.storage import S3Storage, StorageError
 from src.repositories.library_repository import LibraryRepositoryProtocol
 from src.schemas.library import CreateUploadsRequest, UploadFileRequest
 from src.services.library_service import LibraryService
@@ -25,7 +25,7 @@ def _make_lib(id=1, name="doc.pdf", type="pdf", size=1024, path: str | None = "/
     lib.type = type
     lib.size = size
     lib.path = path
-    lib.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    lib.created_at = datetime(2024, 1, 1, tzinfo=UTC)
     lib.status = "ready"
     lib.error_message = None
     return lib
@@ -105,7 +105,7 @@ class TestLibraryService:
         libs = [_make_lib(id=1, path="/tmp/a.pdf"), _make_lib(id=2, path="/tmp/b.pdf")]
         self.mock_repo.get_all.return_value = libs
 
-        self.mock_storage.delete_file.side_effect = OSError("disk error")
+        self.mock_storage.delete_file.side_effect = StorageError("disk error")
         result = self.svc.clear_all(user_id=1)
 
         self.mock_repo.clear_user_library.assert_called_once_with(1)

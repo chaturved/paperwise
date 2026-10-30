@@ -5,15 +5,17 @@ Revises: 0002_auth_tables
 Create Date: 2026-05-18 00:02:00.000000
 
 """
-from typing import Sequence, Union
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
+from alembic import op
+
 revision: str = "0003_conversations_messages"
-down_revision: Union[str, Sequence[str], None] = "0002_auth_tables"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "0002_auth_tables"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, List
+from collections.abc import AsyncGenerator
 
 
 class AIProvider(ABC):
     """Contract every AI backend (Gemini, Hugging Face, ...) must implement."""
 
     @abstractmethod
-    async def get_embeddings(self, texts: List[str]) -> List[List[float]]: ...
+    async def get_embeddings(self, texts: list[str]) -> list[list[float]]: ...
 
     @abstractmethod
-    async def get_embedding(self, text: str) -> List[float]: ...
+    async def get_embedding(self, text: str) -> list[float]: ...
 
     @abstractmethod
     def stream_chat(

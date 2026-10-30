@@ -9,7 +9,7 @@ async def test_same_loop_gets_the_same_semaphore_sized_by_the_limit():
     first = limiter.get()
 
     assert limiter.get() is first
-    assert first._value == 3  # noqa: SLF001 — checking the configured size
+    assert first._value == 3
 
 
 def test_each_event_loop_gets_its_own_semaphore():

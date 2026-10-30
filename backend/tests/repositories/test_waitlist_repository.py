@@ -14,7 +14,7 @@ class TestWaitlistRepository:
         self.repo = WaitlistRepository(db=self.db)
 
     def test_add_persists_and_returns_entry(self):
-        result = self.repo.add("new@example.com")
+        self.repo.add("new@example.com")
 
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()

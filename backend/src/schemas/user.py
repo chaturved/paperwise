@@ -1,6 +1,5 @@
 from pydantic import BaseModel, EmailStr, computed_field
 
-
 # ─── Request schemas ──────────────────────────────────────────────────────────
 
 class UserCreate(BaseModel):

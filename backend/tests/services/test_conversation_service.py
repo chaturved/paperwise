@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -18,7 +18,7 @@ def _make_conv(id=1, title="New conversation", days_old=0):
     conv = MagicMock()
     conv.id = id
     conv.title = title
-    conv.created_at = datetime.now(timezone.utc) - timedelta(days=days_old)
+    conv.created_at = datetime.now(UTC) - timedelta(days=days_old)
     return conv
 
 
@@ -43,7 +43,7 @@ class TestConversationService:
 
     def test_list_conversations_returns_validated_list(self):
         conv = _make_conv()
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.get_all.return_value = [conv]
 
         result = self.svc.list_conversations(user_id=1)
@@ -60,7 +60,7 @@ class TestConversationService:
 
     def test_search_conversations_returns_message_excerpt(self):
         conv = _make_conv(title="Quarterly report")
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.search.return_value = [(conv, "The revenue grew in the third quarter.")]
 
         result = self.svc.search_conversations(user_id=7, query="revenue")
@@ -78,7 +78,7 @@ class TestConversationService:
 
     def test_new_conversation_creates_and_returns(self):
         conv = _make_conv(title="Custom title")
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.create.return_value = conv
 
         result = self.svc.new_conversation(user_id=1, title="Custom title")
@@ -96,11 +96,11 @@ class TestConversationService:
 
     def test_rename_conversation_updates_title(self):
         conv = _make_conv(title="Old")
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.get_by_id.return_value = conv
 
         renamed = _make_conv(title="New")
-        renamed.updated_at = datetime.now(timezone.utc)
+        renamed.updated_at = datetime.now(UTC)
         self.mock_conv_repo.update_title.return_value = renamed
 
         result = self.svc.rename_conversation(conv_id=1, user_id=1, title="New")
@@ -150,7 +150,7 @@ class TestConversationService:
         msg.role = "user"
         msg.content = "hello"
         msg.meta = None
-        msg.created_at = datetime.now(timezone.utc)
+        msg.created_at = datetime.now(UTC)
         self.mock_conv_repo.get_by_id.return_value = conv
         self.mock_conv_repo.get_messages.return_value = [msg]
 

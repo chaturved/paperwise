@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -220,7 +220,7 @@ class TestAuthService:
     def test_verify_magic_link_redirects_when_token_expired(self):
         mt = MagicMock()
         mt.used_at = None
-        mt.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+        mt.expires_at = datetime.now(UTC) - timedelta(minutes=1)
         self.mock_repo.get_magic_token.return_value = mt
 
         result = self.svc.verify_magic_link("expired-token", self.response)
@@ -230,7 +230,7 @@ class TestAuthService:
     def test_verify_magic_link_redirects_when_no_account(self):
         mt = MagicMock()
         mt.used_at = None
-        mt.expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        mt.expires_at = datetime.now(UTC) + timedelta(minutes=10)
         mt.email = "ghost@example.com"
         self.mock_repo.get_magic_token.return_value = mt
         self.mock_repo.get_by_email.return_value = None
@@ -242,7 +242,7 @@ class TestAuthService:
     def test_verify_magic_link_success_sets_cookies_and_redirects(self):
         mt = MagicMock()
         mt.used_at = None
-        mt.expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        mt.expires_at = datetime.now(UTC) + timedelta(minutes=10)
         mt.email = "user@example.com"
         self.mock_repo.get_magic_token.return_value = mt
         self.mock_repo.get_by_email.return_value = _make_user()
@@ -287,7 +287,7 @@ class TestAuthService:
     def test_reset_password_raises_when_token_expired(self):
         rt = MagicMock()
         rt.used_at = None
-        rt.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
+        rt.expires_at = datetime.now(UTC) - timedelta(hours=1)
         self.mock_repo.get_reset_token.return_value = rt
 
         with pytest.raises(BadRequestError):
@@ -296,7 +296,7 @@ class TestAuthService:
     def test_reset_password_raises_when_user_not_found(self):
         rt = MagicMock()
         rt.used_at = None
-        rt.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        rt.expires_at = datetime.now(UTC) + timedelta(hours=1)
         rt.user_id = 99
         self.mock_repo.get_reset_token.return_value = rt
         self.mock_repo.get_by_id.return_value = None
@@ -307,7 +307,7 @@ class TestAuthService:
     def test_reset_password_updates_hash_and_marks_token_used(self):
         rt = MagicMock()
         rt.used_at = None
-        rt.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        rt.expires_at = datetime.now(UTC) + timedelta(hours=1)
         rt.user_id = 1
         self.mock_repo.get_reset_token.return_value = rt
 

@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from sqlalchemy.orm import Session
 
 from src.repositories.tier_repository import TierRepository

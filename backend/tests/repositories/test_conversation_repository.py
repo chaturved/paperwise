@@ -17,7 +17,7 @@ class TestConversationRepository:
     # ── create ────────────────────────────────────────────────────────────────
 
     def test_create_adds_commits_and_returns(self):
-        result = self.repo.create(user_id=1, title="My convo")
+        self.repo.create(user_id=1, title="My convo")
 
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()
@@ -109,7 +109,7 @@ class TestConversationRepository:
     # ── add_message ───────────────────────────────────────────────────────────
 
     def test_add_message_creates_persists_and_returns(self):
-        result = self.repo.add_message(conversation_id=1, role="user", content="hello")
+        self.repo.add_message(conversation_id=1, role="user", content="hello")
 
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()

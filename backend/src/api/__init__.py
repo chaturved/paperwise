@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from ..api import v1, internal
+
+from ..api import internal, v1
 
 router = APIRouter()
 

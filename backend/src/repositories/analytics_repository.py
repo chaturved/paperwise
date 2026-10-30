@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from fastapi import Depends
@@ -44,7 +44,7 @@ class AnalyticsRepository(AnalyticsRepositoryProtocol):
         total_feedback = thumbs_up + thumbs_down
         quality_pct = round(thumbs_up / total_feedback * 100) if total_feedback > 0 else None
 
-        since_30d = datetime.now(timezone.utc) - timedelta(days=30)
+        since_30d = datetime.now(UTC) - timedelta(days=30)
         queries_30d = (
             self.db.query(func.count(RecentQuery.id))
             .filter(RecentQuery.user_id == user_id, RecentQuery.created_at >= since_30d)
@@ -62,7 +62,7 @@ class AnalyticsRepository(AnalyticsRepositoryProtocol):
         }
 
     def get_query_volume(self, user_id: int, days: int = 30) -> list[dict]:
-        since = datetime.now(timezone.utc) - timedelta(days=days)
+        since = datetime.now(UTC) - timedelta(days=days)
         rows = (
             self.db.query(func.date(RecentQuery.created_at).label("day"), func.count(RecentQuery.id).label("count"))
             .filter(RecentQuery.user_id == user_id, RecentQuery.created_at >= since)

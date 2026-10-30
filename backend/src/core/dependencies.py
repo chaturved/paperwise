@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.config import settings
 from src.core.exceptions import UnauthorizedError
-from src.database.db import get_db  # noqa: F401 — re-exported for routers
+from src.database.db import get_db
 from src.models.user import User
 from src.services.token_service import TokenService, TokenServiceProtocol
 

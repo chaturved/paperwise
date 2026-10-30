@@ -1,0 +1,9 @@
+line-length = 120
+
+[lint]
+# FastAPI wires dependencies with Depends() in argument defaults.
+ignore = ["B008"]
+
+[lint.per-file-ignores]
+# Importing the models registers them with SQLAlchemy; the names are re-exported on purpose.
+"src/models/__init__.py" = ["F401"]

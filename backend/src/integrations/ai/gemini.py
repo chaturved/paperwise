@@ -1,6 +1,6 @@
 import json
 import math
-from typing import AsyncGenerator, List
+from collections.abc import AsyncGenerator
 
 import httpx
 
@@ -18,7 +18,7 @@ class GeminiProvider(AIProvider):
         return {"x-goog-api-key": settings.GEMINI_API_KEY, "Content-Type": "application/json"}
 
     @staticmethod
-    def _normalize(vector: List[float]) -> List[float]:
+    def _normalize(vector: list[float]) -> list[float]:
         # Gemini only returns unit-length vectors at full size; reduced dimensions must be normalized.
         norm = math.sqrt(sum(v * v for v in vector)) or 1.0
         return [v / norm for v in vector]
@@ -63,9 +63,9 @@ class GeminiProvider(AIProvider):
             res.raise_for_status()
             return res.json()
 
-    async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
+    async def get_embeddings(self, texts: list[str]) -> list[list[float]]:
         url = self._url(settings.GEMINI_EMBEDDING_MODEL, "batchEmbedContents")
-        embeddings: List[List[float]] = []
+        embeddings: list[list[float]] = []
         for i in range(0, len(texts), EMBED_BATCH_SIZE):
             batch = texts[i : i + EMBED_BATCH_SIZE]
             body = {"requests": [self._embed_request(t, "RETRIEVAL_DOCUMENT") for t in batch]}
@@ -73,7 +73,7 @@ class GeminiProvider(AIProvider):
             embeddings.extend(self._normalize(e["values"]) for e in data["embeddings"])
         return embeddings
 
-    async def get_embedding(self, text: str) -> List[float]:
+    async def get_embedding(self, text: str) -> list[float]:
         url = self._url(settings.GEMINI_EMBEDDING_MODEL, "embedContent")
         data = await self._post(url, self._embed_request(text, "RETRIEVAL_QUERY"))
         return self._normalize(data["embedding"]["values"])
@@ -88,11 +88,13 @@ class GeminiProvider(AIProvider):
     ) -> AsyncGenerator[str, None]:
         url = self._url(settings.GEMINI_CHAT_MODEL, "streamGenerateContent") + "?alt=sse"
         body = self._chat_body(prompt, temperature, max_tokens)
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            async with client.stream("POST", url, headers=self._headers(), json=body) as res:
-                res.raise_for_status()
-                async for line in res.aiter_lines():
-                    if line.startswith("data:"):
-                        text = self._extract_text(json.loads(line[len("data:"):]))
-                        if text:
-                            yield text
+        async with (
+            httpx.AsyncClient(timeout=TIMEOUT) as client,
+            client.stream("POST", url, headers=self._headers(), json=body) as res,
+        ):
+            res.raise_for_status()
+            async for line in res.aiter_lines():
+                if line.startswith("data:"):
+                    text = self._extract_text(json.loads(line[len("data:"):]))
+                    if text:
+                        yield text

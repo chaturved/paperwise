@@ -2,12 +2,12 @@ from typing import Protocol
 
 from fastapi import Depends
 
-from src.models.user import User
-from src.repositories.user_repository import UserRepositoryProtocol, UserRepository
-from src.schemas.user import MessageResponse, ProfileResponse, UsageItemResponse, UsageResponse, UserCreate
 from src.core.exceptions import BadRequestError, NotFoundError, UnprocessableEntityError
-from src.utils.security import PasswordHasher
+from src.models.user import User
+from src.repositories.user_repository import UserRepository, UserRepositoryProtocol
+from src.schemas.user import MessageResponse, ProfileResponse, UsageItemResponse, UsageResponse, UserCreate
 from src.services.tier_service import LIMITS
+from src.utils.security import PasswordHasher
 
 
 class UserServiceProtocol(Protocol):

@@ -1,5 +1,6 @@
 import json
-from typing import AsyncGenerator, Protocol
+from collections.abc import AsyncGenerator
+from typing import Protocol
 
 from fastapi import Depends
 

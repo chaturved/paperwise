@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel
 from typing import Any
+
+from pydantic import BaseModel
 
 DEFAULT_CONVERSATION_TITLE = "New conversation"
 

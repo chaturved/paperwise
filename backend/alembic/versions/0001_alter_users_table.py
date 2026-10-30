@@ -5,14 +5,16 @@ Revises: d2f9a4f38ca4
 Create Date: 2026-05-18 00:00:00.000000
 
 """
-from typing import Sequence, Union
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 
+from alembic import op
+
 revision: str = "0001_alter_users"
-down_revision: Union[str, Sequence[str], None] = "d2f9a4f38ca4"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "d2f9a4f38ca4"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

@@ -1,4 +1,4 @@
-from typing import Dict, Type
+from typing import ClassVar
 
 from src.config import settings
 from src.integrations.ai.base import AIProvider
@@ -7,7 +7,7 @@ from src.integrations.ai.huggingface import HuggingFaceProvider
 
 
 class AIProviderFactory:
-    PROVIDERS: Dict[str, Type[AIProvider]] = {
+    PROVIDERS: ClassVar[dict[str, type[AIProvider]]] = {
         "gemini": GeminiProvider,
         "huggingface": HuggingFaceProvider,
     }

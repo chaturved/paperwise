@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
-from typing import AsyncGenerator, Protocol
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
+from typing import Protocol
 
 from fastapi import Depends
 
@@ -105,7 +106,7 @@ class ConversationService(ConversationServiceProtocol):
         conv = self.conv_repo.get_by_id(conv_id, user_id)
         if not conv:
             raise NotFoundError("Conversation not found")
-        self.tier.check_history(plan, conv.created_at or datetime.now(timezone.utc))
+        self.tier.check_history(plan, conv.created_at or datetime.now(UTC))
         return [MessageOut.model_validate(m) for m in self.conv_repo.get_messages(conv_id)]
 
     async def ask(
@@ -120,7 +121,7 @@ class ConversationService(ConversationServiceProtocol):
         conv = self.conv_repo.get_by_id(conv_id, user_id)
         if not conv:
             raise NotFoundError("Conversation not found")
-        self.tier.check_history(plan, conv.created_at or datetime.now(timezone.utc))
+        self.tier.check_history(plan, conv.created_at or datetime.now(UTC))
         self.tier.check_and_log_ask(plan, user_id)
 
         self.conv_repo.add_message(conv_id, "user", question)

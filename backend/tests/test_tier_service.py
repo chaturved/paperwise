@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from unittest.mock import MagicMock
 
 import pytest
-from unittest.mock import MagicMock
 
 from src.core.enums import Plan
 from src.core.exceptions import PlanLimitError
@@ -69,15 +69,15 @@ class TestTierService:
     # ── check_history ─────────────────────────────────────────────────────────
 
     def test_history_free_too_old(self):
-        old = datetime.now(timezone.utc) - timedelta(days=8)
+        old = datetime.now(UTC) - timedelta(days=8)
         with pytest.raises(PlanLimitError) as exc:
             self.svc.check_history(Plan.FREE, old)
         assert exc.value.limit == "history"
 
     def test_history_free_within_limit(self):
-        recent = datetime.now(timezone.utc) - timedelta(days=7)
+        recent = datetime.now(UTC) - timedelta(days=7)
         self.svc.check_history(Plan.FREE, recent)
 
     def test_history_pro_any_age(self):
-        old = datetime.now(timezone.utc) - timedelta(days=365)
+        old = datetime.now(UTC) - timedelta(days=365)
         self.svc.check_history(Plan.PRO, old)

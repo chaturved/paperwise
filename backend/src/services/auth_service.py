@@ -1,20 +1,22 @@
 import hashlib
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from fastapi import Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
+
 from src.config import settings
 from src.core.exceptions import BadRequestError, NotFoundError, UnauthorizedError
-from src.repositories.user_repository import UserRepositoryProtocol, UserRepository
-from src.schemas.user import AuthResponse, MessageResponse, TokenResponse, UserCreate, UserResponse
-from src.services.token_service import TokenService, TokenServiceProtocol
-from src.services.user_service import UserServiceProtocol, UserService
 from src.integrations.google_oauth import GoogleOAuth
 from src.integrations.mailer import SmtpMailer
+from src.repositories.user_repository import UserRepository, UserRepositoryProtocol
+from src.schemas.user import AuthResponse, MessageResponse, TokenResponse, UserCreate, UserResponse
+from src.services.token_service import TokenService, TokenServiceProtocol
+from src.services.user_service import UserService, UserServiceProtocol
 from src.utils.security import PasswordHasher
 
 _log = logging.getLogger(__name__)
@@ -52,6 +54,13 @@ class AuthService(AuthServiceProtocol):
         self.tokens = tokens
         self.hasher = hasher
 
+    def _send_quietly(self, description: str, recipient: str, send: Callable[..., None], *args: str) -> None:
+        """Email is best effort: a mail outage must not fail signup, sign-in or a password reset."""
+        try:
+            send(*args)
+        except Exception:  # noqa: BLE001
+            _log.warning("Failed to send %s to %s", description, recipient, exc_info=True)
+
     def _set_auth_cookies(self, response: Response, user_id: int) -> None:
         response.set_cookie(settings.ACCESS_TOKEN_KEY, self.tokens.create_access_token(user_id), httponly=True, secure=True, samesite="lax")
         response.set_cookie(settings.REFRESH_TOKEN_KEY, self.tokens.create_refresh_token(user_id), httponly=True, secure=True, samesite="lax")
@@ -61,10 +70,7 @@ class AuthService(AuthServiceProtocol):
             raise BadRequestError("An account with this email already exists")
         user = self.user_service.create_user(user_in)
         self._set_auth_cookies(response, user.id)
-        try:
-            self.mailer.send_welcome(user.email, user.full_name.split()[0])
-        except Exception:
-            _log.warning("Failed to send welcome email to %s", user.email, exc_info=True)
+        self._send_quietly("welcome email", user.email, self.mailer.send_welcome, user.email, user.full_name.split()[0])
         return AuthResponse(user=UserResponse.model_validate(user))
 
     def login(self, response: Response, form_data: OAuth2PasswordRequestForm) -> AuthResponse:
@@ -117,17 +123,16 @@ class AuthService(AuthServiceProtocol):
                 user = self.repo.get_by_email(google_user.email)
                 if not user:
                     user = self.user_service.create_user_oauth(google_user.email, google_user.full_name)
-                    try:
-                        self.mailer.send_welcome(user.email, user.full_name.split()[0])
-                    except Exception:
-                        _log.warning("Failed to send welcome email to %s", user.email, exc_info=True)
+                    self._send_quietly(
+                        "welcome email", user.email, self.mailer.send_welcome, user.email, user.full_name.split()[0]
+                    )
                 self.repo.create_oauth_account(user.id, "google", google_user.provider_user_id, None, None)
 
             redirect_to = settings.APP_URL + ("/onboarding" if not user.onboarding_completed else "/dashboard")
             redirect_response = RedirectResponse(redirect_to)
             self._set_auth_cookies(redirect_response, user.id)
             return redirect_response
-        except Exception:
+        except Exception:  # noqa: BLE001 - any failure during sign-in sends the user back to the login page
             _log.exception("Unexpected error in google_callback")
             return RedirectResponse(settings.APP_URL + "/login?error=oauth_failed")
 
@@ -136,20 +141,17 @@ class AuthService(AuthServiceProtocol):
     def send_magic_link(self, email: str) -> MessageResponse:
         raw_token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expires_at = datetime.now(UTC) + timedelta(minutes=15)
         self.repo.invalidate_magic_tokens(email)
         self.repo.create_magic_token(email, token_hash, expires_at)
-        try:
-            self.mailer.send_magic_link(email, raw_token)
-        except Exception:
-            _log.warning("Failed to send magic link email to %s", email, exc_info=True)
+        self._send_quietly("magic link email", email, self.mailer.send_magic_link, email, raw_token)
         return MessageResponse(message="If an account exists, a link has been sent.")
 
     def verify_magic_link(self, token: str, response: Response):
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         mt = self.repo.get_magic_token(token_hash)
 
-        if not mt or mt.used_at or mt.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        if not mt or mt.used_at or mt.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
             return RedirectResponse(settings.APP_URL + "/login?error=invalid_link")
 
         user = self.repo.get_by_email(mt.email)
@@ -167,20 +169,17 @@ class AuthService(AuthServiceProtocol):
         if user:
             raw_token = secrets.token_urlsafe(32)
             token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-            expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+            expires_at = datetime.now(UTC) + timedelta(hours=1)
             self.repo.invalidate_reset_tokens(user.id)
             self.repo.create_reset_token(user.id, token_hash, expires_at)
-            try:
-                self.mailer.send_password_reset(email, raw_token)
-            except Exception:
-                _log.warning("Failed to send password reset email to %s", email, exc_info=True)
+            self._send_quietly("password reset email", email, self.mailer.send_password_reset, email, raw_token)
         return MessageResponse(message="If an account exists, a reset link has been sent.")
 
     def reset_password(self, token: str, new_password: str) -> MessageResponse:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         rt = self.repo.get_reset_token(token_hash)
 
-        if not rt or rt.used_at or rt.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        if not rt or rt.used_at or rt.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
             raise BadRequestError("Invalid or expired reset token")
 
         user = self.repo.get_by_id(rt.user_id)

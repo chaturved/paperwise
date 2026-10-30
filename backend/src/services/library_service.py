@@ -8,7 +8,7 @@ from fastapi import Depends
 from src.core.enums import DocumentStatus, Plan
 from src.core.exceptions import BadRequestError, ConflictError, NotFoundError
 from src.integrations.documents import ContentTypes
-from src.integrations.storage import S3Storage
+from src.integrations.storage import S3Storage, StorageError
 from src.models import Library
 from src.repositories.library_repository import (
     LibraryRepository,
@@ -138,7 +138,7 @@ class LibraryService(LibraryServiceProtocol):
             try:
                 if lib.path:
                     self.storage.delete_file(lib.path)
-            except Exception:
+            except StorageError:
                 _log.warning("Failed to delete file %s", lib.path, exc_info=True)
         self.repo.clear_user_library(user_id)
         return MessageResponse(message="Library cleared")

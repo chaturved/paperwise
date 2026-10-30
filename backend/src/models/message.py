@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -20,7 +20,7 @@ class Message(Base):
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id", ondelete="CASCADE"))
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
-    meta: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, server_default=func.now())
+    meta: Mapped[Any | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
 
     conversation: Mapped[Conversation] = relationship("Conversation", back_populates="messages")

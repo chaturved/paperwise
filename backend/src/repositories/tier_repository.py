@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from fastapi import Depends
@@ -19,7 +19,7 @@ class TierRepository(TierRepositoryProtocol):
         self.db = db
 
     def count_queries_24h(self, user_id: int) -> int:
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
         stmt = (
             select(func.count())
             .select_from(QueryUsageLog)

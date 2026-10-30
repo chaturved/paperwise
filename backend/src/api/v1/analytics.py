@@ -1,5 +1,5 @@
-from pydantic import BaseModel
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from src.core.dependencies import get_current_user_id
 from src.services.analytics_service import AnalyticsService, AnalyticsServiceProtocol

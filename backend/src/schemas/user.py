@@ -91,7 +91,7 @@ class UsageItemResponse(BaseModel):
 
 class UsageResponse(BaseModel):
     documents: UsageItemResponse
-    queries_today: UsageItemResponse
+    queries_24h: UsageItemResponse
     storage_bytes: UsageItemResponse
 
 

@@ -59,6 +59,17 @@ class TestTierService:
         self.svc.check_and_log_ask(Plan.FREE, user_id=1)
         self.mock_repo.log_query.assert_called_once_with(1)
 
+    def test_ask_returns_the_log_entry_so_it_can_be_refunded(self):
+        self.mock_repo.count_queries_24h.return_value = 0
+        self.mock_repo.log_query.return_value = 42
+
+        assert self.svc.check_and_log_ask(Plan.FREE, user_id=1) == 42
+
+    def test_refund_removes_the_log_entry(self):
+        self.svc.refund_ask(42)
+
+        self.mock_repo.remove_query.assert_called_once_with(42)
+
     def test_ask_pro_no_limit(self):
         self.mock_repo.count_queries_24h.return_value = 10000
         self.svc.check_and_log_ask(Plan.PRO, user_id=1)

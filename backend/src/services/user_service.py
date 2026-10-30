@@ -105,6 +105,6 @@ class UserService(UserServiceProtocol):
         max_bytes = limits["max_file_mb"] * 1024 * 1024 if limits["max_file_mb"] else None
         return UsageResponse(
             documents=UsageItemResponse(used=self.repo.count_documents(user_id), limit=limits["max_docs"]),
-            queries_today=UsageItemResponse(used=self.repo.count_queries_today(user_id), limit=limits["max_queries_day"]),
+            queries_24h=UsageItemResponse(used=self.repo.count_queries_24h(user_id), limit=limits["max_queries_day"]),
             storage_bytes=UsageItemResponse(used=self.repo.sum_storage_bytes(user_id), limit=max_bytes),
         )

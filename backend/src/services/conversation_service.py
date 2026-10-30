@@ -8,6 +8,7 @@ from src.core.enums import Plan
 from src.core.exceptions import NotFoundError
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
+from src.models import Conversation
 from src.repositories.conversation_repository import (
     ConversationRepository,
     ConversationRepositoryProtocol,
@@ -125,8 +126,24 @@ class ConversationService(ConversationServiceProtocol):
         if not conv:
             raise NotFoundError("Conversation not found")
         self.tier.check_history(plan, conv.created_at or datetime.now(UTC))
-        self.tier.check_and_log_ask(plan, user_id)
+        log_id = self.tier.check_and_log_ask(plan, user_id)
 
+        try:
+            async for event in self._answer(conv, conv_id, user_id, question, filters, top_k):
+                yield event
+        except Exception:
+            self.tier.refund_ask(log_id)
+            raise
+
+    async def _answer(
+        self,
+        conv: Conversation,
+        conv_id: int,
+        user_id: int,
+        question: str,
+        filters: AskFilters | None,
+        top_k: int,
+    ) -> AsyncGenerator[tuple[str, dict | str], None]:
         self.conv_repo.add_message(conv_id, "user", question)
 
         query_vector = await self.ai.get_embedding(question)

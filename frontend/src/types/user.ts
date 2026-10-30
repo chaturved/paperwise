@@ -18,6 +18,6 @@ export interface UsageItem {
 
 export interface Usage {
   documents: UsageItem;
-  queries_today: UsageItem;
+  queries_24h: UsageItem;
   storage_bytes: UsageItem;
 }

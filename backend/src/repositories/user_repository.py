@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from fastapi import Depends
@@ -6,11 +6,10 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.models.conversation import Conversation
 from src.models.library import Library
 from src.models.magic_token import MagicToken
-from src.models.message import Message
 from src.models.oauth_account import OAuthAccount
+from src.models.query_usage_log import QueryUsageLog
 from src.models.reset_token import ResetToken
 from src.models.user import User
 
@@ -39,7 +38,7 @@ class UserRepositoryProtocol(Protocol):
     def get_reset_token(self, token_hash: str) -> ResetToken | None: ...
     def mark_reset_token_used(self, rt: ResetToken) -> None: ...
     def count_documents(self, user_id: int) -> int: ...
-    def count_queries_today(self, user_id: int) -> int: ...
+    def count_queries_24h(self, user_id: int) -> int: ...
     def sum_storage_bytes(self, user_id: int) -> int: ...
 
 
@@ -138,17 +137,14 @@ class UserRepository(UserRepositoryProtocol):
     def count_documents(self, user_id: int) -> int:
         return self.db.query(Library).filter(Library.user_id == user_id).count()
 
-    def count_queries_today(self, user_id: int) -> int:
-        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    def count_queries_24h(self, user_id: int) -> int:
+        """Questions in the last 24 hours, counted from the same log that enforces the daily limit."""
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
         return (
-            self.db.query(Message)
-            .join(Conversation, Message.conversation_id == Conversation.id)
-            .filter(
-                Conversation.user_id == user_id,
-                Message.role == "user",
-                Message.created_at >= today_start,
-            )
-            .count()
+            self.db.query(func.count(QueryUsageLog.id))
+            .filter(QueryUsageLog.user_id == user_id, QueryUsageLog.created_at >= cutoff)
+            .scalar()
+            or 0
         )
 
     def sum_storage_bytes(self, user_id: int) -> int:

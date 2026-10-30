@@ -22,3 +22,8 @@ class TestTierRepository:
         self.repo.log_query(user_id=1)
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()
+
+    def test_remove_query_deletes_the_entry_and_commits(self):
+        self.repo.remove_query(log_id=5)
+        self.db.query.return_value.filter.return_value.delete.assert_called_once()
+        self.db.commit.assert_called_once()

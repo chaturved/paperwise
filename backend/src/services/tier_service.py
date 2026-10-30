@@ -42,7 +42,8 @@ LIMITS: dict[Plan, PlanLimits] = {
 
 class TierServiceProtocol(Protocol):
     def check_upload_metadata(self, plan: Plan, files: Sequence[UploadMeta], current_doc_count: int) -> None: ...
-    def check_and_log_ask(self, plan: Plan, user_id: int) -> None: ...
+    def check_and_log_ask(self, plan: Plan, user_id: int) -> int: ...
+    def refund_ask(self, log_id: int) -> None: ...
     def check_history(self, plan: Plan, created_at: datetime) -> None: ...
 
 
@@ -65,11 +66,15 @@ class TierService(TierServiceProtocol):
             if ext not in limits["allowed_types"]:
                 raise PlanLimitError("file_type")
 
-    def check_and_log_ask(self, plan: Plan, user_id: int) -> None:
+    def check_and_log_ask(self, plan: Plan, user_id: int) -> int:
+        """Count a question against the limit before it is answered. Returns the entry, to refund if the answer fails."""
         limits = self._limits(plan)
         if limits["max_queries_day"] is not None and self.repo.count_queries_24h(user_id) >= limits["max_queries_day"]:
             raise PlanLimitError("queries")
-        self.repo.log_query(user_id)
+        return self.repo.log_query(user_id)
+
+    def refund_ask(self, log_id: int) -> None:
+        self.repo.remove_query(log_id)
 
     def check_history(self, plan: Plan, created_at: datetime) -> None:
         limits = self._limits(plan)

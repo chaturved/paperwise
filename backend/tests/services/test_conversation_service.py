@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.core.enums import Plan
-from src.core.exceptions import NotFoundError
+from src.core.exceptions import NotFoundError, PlanLimitError
 from src.integrations.ai.base import AIProvider
 from src.repositories.conversation_repository import ConversationRepositoryProtocol
 from src.repositories.library_repository import LibraryRepositoryProtocol
@@ -188,6 +188,68 @@ class TestConversationService:
         assert ("token", "hello") in events
         assert ("token", " world") in events
         assert events[-1] == ("cited", [])
+
+    async def test_a_question_that_gets_an_answer_stays_counted(self):
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        self.mock_tier.check_and_log_ask.return_value = 77
+        self.mock_lib_repo.get_top_k_chunks.return_value = []
+
+        async def fake_stream(chunks, question):
+            yield "answer"
+
+        with (
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
+            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
+            patch.object(self.mock_answers, "stream", fake_stream),
+        ):
+            async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
+                pass
+
+        self.mock_tier.refund_ask.assert_not_called()
+
+    async def test_a_question_whose_answer_fails_is_refunded(self):
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        self.mock_tier.check_and_log_ask.return_value = 77
+
+        with (
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(side_effect=RuntimeError("quota"))),
+            pytest.raises(RuntimeError),
+        ):
+            async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
+                pass
+
+        self.mock_tier.refund_ask.assert_called_once_with(77)
+
+    async def test_a_question_that_fails_while_streaming_is_refunded(self):
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        self.mock_tier.check_and_log_ask.return_value = 78
+        self.mock_lib_repo.get_top_k_chunks.return_value = []
+
+        async def broken_stream(chunks, question):
+            yield "partial"
+            raise RuntimeError("model went away")
+
+        with (
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
+            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
+            patch.object(self.mock_answers, "stream", broken_stream),
+            pytest.raises(RuntimeError),
+        ):
+            async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
+                pass
+
+        self.mock_tier.refund_ask.assert_called_once_with(78)
+
+    async def test_a_question_over_the_limit_is_refused_without_a_refund(self):
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        self.mock_tier.check_and_log_ask.side_effect = PlanLimitError("queries")
+
+        with pytest.raises(PlanLimitError):
+            async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
+                pass
+
+        self.mock_tier.refund_ask.assert_not_called()
+        self.mock_conv_repo.add_message.assert_not_called()
 
     async def test_ask_auto_renames_new_conversation(self):
         conv = _make_conv(title="New conversation")

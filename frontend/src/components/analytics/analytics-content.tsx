@@ -109,7 +109,7 @@ export function AnalyticsContent() {
               <SettingsSection title="Plan limits" description="Your document, question and storage allowances.">
                 <div className="max-w-[620px] space-y-6">
                   <LimitBar label="Documents" {...accountUsage.documents} />
-                  <LimitBar label="Questions today" {...accountUsage.queries_today} />
+                  <LimitBar label="Questions, last 24 hours" {...accountUsage.queries_24h} />
                   <LimitBar label="Storage" used={storageMb(accountUsage.storage_bytes.used) ?? 0} limit={storageMb(accountUsage.storage_bytes.limit)} unit=" MB" />
                 </div>
               </SettingsSection>

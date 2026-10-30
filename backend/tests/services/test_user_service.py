@@ -200,15 +200,15 @@ class TestUserService:
         user = _make_user(plan=Plan.FREE)
         self.mock_repo.get_by_id.return_value = user
         self.mock_repo.count_documents.return_value = 2
-        self.mock_repo.count_queries_today.return_value = 5
+        self.mock_repo.count_queries_24h.return_value = 5
         self.mock_repo.sum_storage_bytes.return_value = 1024
 
         result = self.svc.get_usage(user_id=1)
 
         assert result.documents.used == 2
         assert result.documents.limit == 5
-        assert result.queries_today.used == 5
-        assert result.queries_today.limit == 20
+        assert result.queries_24h.used == 5
+        assert result.queries_24h.limit == 20
         assert result.storage_bytes.used == 1024
         assert result.storage_bytes.limit == 10 * 1024 * 1024
 
@@ -216,10 +216,10 @@ class TestUserService:
         user = _make_user(plan=Plan.PRO)
         self.mock_repo.get_by_id.return_value = user
         self.mock_repo.count_documents.return_value = 100
-        self.mock_repo.count_queries_today.return_value = 500
+        self.mock_repo.count_queries_24h.return_value = 500
         self.mock_repo.sum_storage_bytes.return_value = 0
 
         result = self.svc.get_usage(user_id=1)
 
         assert result.documents.limit is None
-        assert result.queries_today.limit is None
+        assert result.queries_24h.limit is None

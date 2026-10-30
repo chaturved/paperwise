@@ -2,9 +2,11 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from src.models.magic_token import MagicToken
+from src.models.query_usage_log import QueryUsageLog
 from src.models.reset_token import ResetToken
 from src.models.user import User
 from src.repositories.user_repository import UserRepository
@@ -167,10 +169,10 @@ class TestUserRepository:
 
         assert result == 7
 
-    def test_count_queries_today_returns_count(self):
-        self.db.query.return_value.join.return_value.filter.return_value.count.return_value = 3
+    def test_count_queries_24h_returns_count(self):
+        self.db.query.return_value.filter.return_value.scalar.return_value = 3
 
-        result = self.repo.count_queries_today(user_id=1)
+        result = self.repo.count_queries_24h(user_id=1)
 
         assert result == 3
 
@@ -187,3 +189,22 @@ class TestUserRepository:
         result = self.repo.sum_storage_bytes(user_id=1)
 
         assert result == 0
+
+
+class TestQuestionCountMatchesTheLimit:
+    """Run against a real database: the usage meter must read the same log that the daily limit reads."""
+
+    def test_only_this_users_questions_from_the_last_24_hours_are_counted(self):
+        engine = create_engine("sqlite://")
+        QueryUsageLog.__table__.create(engine)
+        now = datetime.now(UTC).replace(tzinfo=None)
+        with Session(engine) as session:
+            session.add_all([
+                QueryUsageLog(user_id=1, created_at=now),
+                QueryUsageLog(user_id=1, created_at=now - timedelta(hours=23)),
+                QueryUsageLog(user_id=1, created_at=now - timedelta(hours=25)),
+                QueryUsageLog(user_id=2, created_at=now),
+            ])
+            session.commit()
+
+            assert UserRepository(db=session).count_queries_24h(user_id=1) == 2

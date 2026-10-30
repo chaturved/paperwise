@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.core.exceptions import BadRequestError, NotFoundError, UnauthorizedError
+from src.integrations.mailer import SmtpMailer
 from src.repositories.user_repository import UserRepositoryProtocol
 from src.services.auth_service import AuthService
 from src.services.user_service import UserServiceProtocol
@@ -33,7 +34,8 @@ class TestAuthService:
     def setup(self) -> None:
         self.mock_repo = MagicMock(spec_set=UserRepositoryProtocol)
         self.mock_user_svc = MagicMock(spec_set=UserServiceProtocol)
-        self.svc = AuthService(repo=self.mock_repo, user_service=self.mock_user_svc)
+        self.mock_mailer = MagicMock(spec_set=SmtpMailer)
+        self.svc = AuthService(repo=self.mock_repo, user_service=self.mock_user_svc, mailer=self.mock_mailer)
         self.response = MagicMock()
         self.request = MagicMock()
 
@@ -59,17 +61,18 @@ class TestAuthService:
         with (
             patch("src.services.auth_service.create_access_token", return_value="access"),
             patch("src.services.auth_service.create_refresh_token", return_value="refresh"),
-            patch("src.services.auth_service.send_welcome_email"),
         ):
             result = self.svc.signup(user_in, self.response)
 
         self.mock_user_svc.create_user.assert_called_once_with(user_in)
+        self.mock_mailer.send_welcome.assert_called_once_with("user@example.com", "Test")
         self.response.set_cookie.assert_called()
         assert result.user.id == 1
 
     def test_signup_swallows_welcome_email_failure(self):
         self.mock_repo.get_by_email.return_value = None
         self.mock_user_svc.create_user.return_value = _make_user()
+        self.mock_mailer.send_welcome.side_effect = Exception("smtp down")
 
         from src.schemas.user import UserCreate
         user_in = UserCreate(email="new@example.com", password="pass123", full_name="New User")
@@ -77,7 +80,6 @@ class TestAuthService:
         with (
             patch("src.services.auth_service.create_access_token", return_value="access"),
             patch("src.services.auth_service.create_refresh_token", return_value="refresh"),
-            patch("src.services.auth_service.send_welcome_email", side_effect=Exception("smtp down")),
         ):
             result = self.svc.signup(user_in, self.response)
 
@@ -179,16 +181,16 @@ class TestAuthService:
     # ── send_magic_link ───────────────────────────────────────────────────────
 
     def test_send_magic_link_invalidates_old_and_creates_new(self):
-        with patch("src.services.auth_service.send_magic_link_email"):
-            result = self.svc.send_magic_link("user@example.com")
+        result = self.svc.send_magic_link("user@example.com")
 
+        self.mock_mailer.send_magic_link.assert_called_once()
         self.mock_repo.invalidate_magic_tokens.assert_called_once_with("user@example.com")
         self.mock_repo.create_magic_token.assert_called_once()
         assert "sent" in result.message.lower() or "link" in result.message.lower()
 
     def test_send_magic_link_swallows_email_failure(self):
-        with patch("src.services.auth_service.send_magic_link_email", side_effect=Exception("smtp")):
-            result = self.svc.send_magic_link("user@example.com")
+        self.mock_mailer.send_magic_link.side_effect = Exception("smtp")
+        result = self.svc.send_magic_link("user@example.com")
 
         assert result.message is not None
 
@@ -254,9 +256,9 @@ class TestAuthService:
     def test_forgot_password_creates_token_and_sends_email(self):
         self.mock_repo.get_by_email.return_value = _make_user()
 
-        with patch("src.services.auth_service.send_password_reset_email"):
-            result = self.svc.forgot_password("user@example.com")
+        result = self.svc.forgot_password("user@example.com")
 
+        self.mock_mailer.send_password_reset.assert_called_once()
         self.mock_repo.invalidate_reset_tokens.assert_called_once_with(1)
         self.mock_repo.create_reset_token.assert_called_once()
         assert result.message is not None

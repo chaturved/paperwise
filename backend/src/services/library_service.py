@@ -14,7 +14,7 @@ from src.schemas.library import LibraryDocResponse, LibraryResponse, UploadError
 from src.schemas.user import MessageResponse
 from src.services.tier_service import TierService, TierServiceProtocol
 from src.utils.hugging_face import get_embeddings
-from src.utils.storage_utils import S3Storage
+from src.integrations.storage import S3Storage
 from src.utils.text_utils import chunk_text, extract_text_from_bytes
 
 

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from fastapi import UploadFile
 
 from src.config import settings
-from src.utils.storage_utils import S3Storage
+from src.integrations.storage import S3Storage
 
 
 async def test_s3_storage_uploads_file_and_returns_its_url() -> None:
@@ -12,8 +12,8 @@ async def test_s3_storage_uploads_file_and_returns_its_url() -> None:
     file = UploadFile(filename="report.pdf", file=BytesIO(b"document"))
 
     with (
-        patch("src.utils.storage_utils.boto3.client", return_value=client),
-        patch("src.utils.storage_utils.uuid.uuid4", return_value="file-id"),
+        patch("src.integrations.storage.boto3.client", return_value=client),
+        patch("src.integrations.storage.uuid.uuid4", return_value="file-id"),
     ):
         storage = S3Storage()
         url, contents = await storage.save_raw_file(file, user_id=7)
@@ -30,7 +30,7 @@ async def test_s3_storage_uploads_file_and_returns_its_url() -> None:
 
 def test_s3_storage_deletes_file_by_storage_key() -> None:
     client = MagicMock()
-    with patch("src.utils.storage_utils.boto3.client", return_value=client):
+    with patch("src.integrations.storage.boto3.client", return_value=client):
         storage = S3Storage()
 
     storage.delete_file(f"https://example.com/object/{settings.S3_LIBRARY_BUCKET}/7/file-id/report.pdf")

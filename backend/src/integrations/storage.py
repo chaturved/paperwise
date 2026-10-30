@@ -6,8 +6,8 @@ import botocore.exceptions
 from botocore.client import Config
 from fastapi import UploadFile
 
-from ..config import settings
-from ..core.exceptions import AppError
+from src.config import settings
+from src.core.exceptions import AppError
 
 
 class StorageError(AppError):

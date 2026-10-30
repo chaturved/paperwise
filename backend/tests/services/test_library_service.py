@@ -9,7 +9,7 @@ from src.core.exceptions import NotFoundError, UploadFailedError
 from src.repositories.library_repository import LibraryRepositoryProtocol
 from src.services.library_service import LibraryService
 from src.services.tier_service import TierServiceProtocol
-from src.utils.storage_utils import S3Storage
+from src.integrations.storage import S3Storage
 
 
 def _make_lib(id=1, name="doc.pdf", type="pdf", size=1024, path: str | None = "/tmp/doc.pdf"):

@@ -1554,7 +1554,7 @@ These are fixes to the existing codebase required before new features are layere
 |---|---|---|
 | `src/main.py` | `allow_origins=["*"]` hardcoded | Read `ALLOWED_ORIGINS` env var, split on comma, use as origins list |
 | `src/repositories/library_repository.py` | `List`, `Session`, `Library`, `LibraryChunk` imported twice (lines 1–2 duplicate lines 6–9) | Remove the first four import lines, keep the SQLAlchemy ones |
-| `src/utils/storage_utils.py` | `put_object` and `delete_object` calls have no error handling | Wrap in try/except `botocore.exceptions.ClientError`, raise `HTTPException(502)` |
+| `src/integrations/storage.py` | `put_object` and `delete_object` calls have no error handling | Wrap in try/except `botocore.exceptions.ClientError`, raise `HTTPException(502)` |
 | `src/api/v1/query.py` | SSE stream ends with `data: [DONE]` even on LLM failure | Catch exceptions in `streamer()`, yield `event: error\ndata: {...}\n\n` before returning |
 | `src/utils/text_utils.py` | Unsupported file extension returns `""` silently | Raise `HTTPException(400, "Unsupported file type: .xyz")` |
 | `requirements.txt` | `certifi` used in `hugging_face.py` but not listed | Add `certifi` |

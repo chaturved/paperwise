@@ -121,13 +121,14 @@ backend/src/
     user.py
     conversation.py
     query.py
-  utils/                ← Shared helpers (file parsing, storage, embeddings, email)
-    email_utils.py
+  integrations/         ← Adapters for external services
+    storage.py          ← S3 / Supabase Storage
+    mailer.py           ← SMTP email
+  utils/                ← Shared helpers (file parsing, embeddings, query building)
     hugging_face.py
     jwt.py
     query_utils.py
     security.py
-    storage_utils.py
     text_utils.py
   migrations/           ← Alembic migration files
 ```

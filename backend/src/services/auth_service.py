@@ -18,7 +18,7 @@ from src.services.token_service import (
     validate_refresh_token,
 )
 from src.services.user_service import UserServiceProtocol, UserService
-from src.utils.email_utils import send_magic_link_email, send_password_reset_email, send_welcome_email
+from src.integrations.mailer import SmtpMailer
 from src.utils.security import hash_password, verify_password
 
 _log = logging.getLogger(__name__)
@@ -54,9 +54,11 @@ class AuthService(AuthServiceProtocol):
         self,
         repo: UserRepositoryProtocol = Depends(UserRepository),
         user_service: UserServiceProtocol = Depends(UserService),
+        mailer: SmtpMailer = Depends(SmtpMailer),
     ):
         self.repo = repo
         self.user_service = user_service
+        self.mailer = mailer
 
     def _set_auth_cookies(self, response: Response, user_id: int) -> None:
         response.set_cookie(settings.ACCESS_TOKEN_KEY, create_access_token(user_id), httponly=True, secure=True, samesite="lax")
@@ -68,7 +70,7 @@ class AuthService(AuthServiceProtocol):
         user = self.user_service.create_user(user_in)
         self._set_auth_cookies(response, user.id)
         try:
-            send_welcome_email(user.email, user.full_name.split()[0])
+            self.mailer.send_welcome(user.email, user.full_name.split()[0])
         except Exception:
             _log.warning("Failed to send welcome email to %s", user.email, exc_info=True)
         return AuthResponse(user=UserResponse.model_validate(user))
@@ -129,7 +131,7 @@ class AuthService(AuthServiceProtocol):
                 if not user:
                     user = self.user_service.create_user_oauth(email, full_name)
                     try:
-                        send_welcome_email(user.email, user.full_name.split()[0])
+                        self.mailer.send_welcome(user.email, user.full_name.split()[0])
                     except Exception:
                         _log.warning("Failed to send welcome email to %s", user.email, exc_info=True)
                 self.repo.create_oauth_account(user.id, "google", provider_user_id, None, None)
@@ -151,7 +153,7 @@ class AuthService(AuthServiceProtocol):
         self.repo.invalidate_magic_tokens(email)
         self.repo.create_magic_token(email, token_hash, expires_at)
         try:
-            send_magic_link_email(email, raw_token)
+            self.mailer.send_magic_link(email, raw_token)
         except Exception:
             _log.warning("Failed to send magic link email to %s", email, exc_info=True)
         return MessageResponse(message="If an account exists, a link has been sent.")
@@ -182,7 +184,7 @@ class AuthService(AuthServiceProtocol):
             self.repo.invalidate_reset_tokens(user.id)
             self.repo.create_reset_token(user.id, token_hash, expires_at)
             try:
-                send_password_reset_email(email, raw_token)
+                self.mailer.send_password_reset(email, raw_token)
             except Exception:
                 _log.warning("Failed to send password reset email to %s", email, exc_info=True)
         return MessageResponse(message="If an account exists, a reset link has been sent.")

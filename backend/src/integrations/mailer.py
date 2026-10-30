@@ -1,27 +1,29 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
 from src.config import settings
 
 
-def _send(to_email: str, subject: str, html: str, plain: str) -> None:
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
-    msg["To"] = to_email
-    msg.attach(MIMEText(plain, "plain"))
-    msg.attach(MIMEText(html, "html"))
+class SmtpMailer:
+    @staticmethod
+    def _send(to_email: str, subject: str, html: str, plain: str) -> None:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
+        msg["To"] = to_email
+        msg.attach(MIMEText(plain, "plain"))
+        msg.attach(MIMEText(html, "html"))
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        server.starttls()
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
 
-
-def send_welcome_email(to_email: str, first_name: str) -> None:
-    subject = "Welcome to Paperwise 👋"
-    plain = f"Hi {first_name},\n\nWelcome to Paperwise! Upload a document and start chatting.\n\n{settings.APP_URL}/dashboard"
-    html = f"""
+    def send_welcome(self, to_email: str, first_name: str) -> None:
+        subject = "Welcome to Paperwise 👋"
+        plain = f"Hi {first_name},\n\nWelcome to Paperwise! Upload a document and start chatting.\n\n{settings.APP_URL}/dashboard"
+        html = f"""
 <div style="background:#09090b;color:#fafafa;font-family:sans-serif;max-width:600px;margin:auto;padding:40px 32px">
   <h1 style="color:#6366f1;margin-bottom:8px">Paperwise</h1>
   <h2>Welcome, {first_name}! 👋</h2>
@@ -36,14 +38,13 @@ def send_welcome_email(to_email: str, first_name: str) -> None:
   <hr style="border-color:#27272a;margin:32px 0">
   <p style="color:#52525b;font-size:12px">© 2025 Paperwise</p>
 </div>"""
-    _send(to_email, subject, html, plain)
+        self._send(to_email, subject, html, plain)
 
-
-def send_magic_link_email(to_email: str, token: str) -> None:
-    link = f"{settings.APP_URL}/auth/magic-link/verify?token={token}"
-    subject = "Your Paperwise sign-in link"
-    plain = f"Click to sign in: {link}\n\nThis link expires in 15 minutes."
-    html = f"""
+    def send_magic_link(self, to_email: str, token: str) -> None:
+        link = f"{settings.APP_URL}/auth/magic-link/verify?token={token}"
+        subject = "Your Paperwise sign-in link"
+        plain = f"Click to sign in: {link}\n\nThis link expires in 15 minutes."
+        html = f"""
 <div style="background:#09090b;color:#fafafa;font-family:sans-serif;max-width:600px;margin:auto;padding:40px 32px">
   <h1 style="color:#6366f1;margin-bottom:8px">Paperwise</h1>
   <p>Click the button below to sign in to Paperwise.</p>
@@ -53,14 +54,13 @@ def send_magic_link_email(to_email: str, token: str) -> None:
   <hr style="border-color:#27272a;margin:32px 0">
   <p style="color:#52525b;font-size:12px">© 2025 Paperwise</p>
 </div>"""
-    _send(to_email, subject, html, plain)
+        self._send(to_email, subject, html, plain)
 
-
-def send_password_reset_email(to_email: str, token: str) -> None:
-    link = f"{settings.APP_URL}/reset-password?token={token}"
-    subject = "Reset your Paperwise password"
-    plain = f"Reset your password: {link}\n\nThis link expires in 1 hour."
-    html = f"""
+    def send_password_reset(self, to_email: str, token: str) -> None:
+        link = f"{settings.APP_URL}/reset-password?token={token}"
+        subject = "Reset your Paperwise password"
+        plain = f"Reset your password: {link}\n\nThis link expires in 1 hour."
+        html = f"""
 <div style="background:#09090b;color:#fafafa;font-family:sans-serif;max-width:600px;margin:auto;padding:40px 32px">
   <h1 style="color:#6366f1;margin-bottom:8px">Paperwise</h1>
   <p>We received a request to reset the password for your account.</p>
@@ -70,4 +70,4 @@ def send_password_reset_email(to_email: str, token: str) -> None:
   <hr style="border-color:#27272a;margin:32px 0">
   <p style="color:#52525b;font-size:12px">© 2025 Paperwise</p>
 </div>"""
-    _send(to_email, subject, html, plain)
+        self._send(to_email, subject, html, plain)

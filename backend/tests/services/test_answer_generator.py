@@ -1,10 +1,21 @@
 from unittest.mock import AsyncMock, MagicMock
 
 from src.integrations.ai.base import AIProvider
-from src.services.answer_generator import AnswerGenerator
+from src.services.answer_generator import NOT_FOUND_MESSAGE, AnswerGenerator
 from src.utils.chunk_formatter import ChunkFormatter
 
-CHUNKS = [{"library_name": "a.pdf", "library_type": "pdf", "library_path": "/a", "chunk_index": 0, "text": "alpha"}]
+CHUNKS = [
+    {
+        "library_id": 1,
+        "library_name": "a.pdf",
+        "library_type": "pdf",
+        "library_path": "/a",
+        "chunk_index": 0,
+        "page_number": None,
+        "text": "alpha",
+    }
+]
+CHUNK_ON_PAGE_3 = {**CHUNKS[0], "page_number": 3}
 
 
 def _ai() -> MagicMock:
@@ -56,7 +67,20 @@ class TestStream:
 
         ai.stream_chat = fake_stream
 
-        tokens = [t async for t in _generator(ai).stream("the context", "the question")]
+        chunks = [CHUNK_ON_PAGE_3]
+
+        tokens = [t async for t in _generator(ai).stream(chunks, "the question")]
 
         assert tokens == ["x", "y"]
-        assert "the context" in prompts[0] and "the question" in prompts[0]
+        assert "[1] a.pdf, page 3\nalpha" in prompts[0]
+        assert "the question" in prompts[0]
+        assert "cite it with its number in square brackets" in prompts[0]
+        assert NOT_FOUND_MESSAGE in prompts[0]
+
+    async def test_says_it_could_not_find_the_answer_without_calling_the_model_when_nothing_was_retrieved(self):
+        ai = _ai()
+
+        tokens = [t async for t in _generator(ai).stream([], "the question")]
+
+        assert tokens == [NOT_FOUND_MESSAGE]
+        ai.stream_chat.assert_not_called()

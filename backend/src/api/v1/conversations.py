@@ -83,6 +83,8 @@ async def ask_question(
                     yield f"data: {json.dumps({'meta': data})}\n\n"
                 elif event_type == "token":
                     yield f"data: {json.dumps({'token': data})}\n\n"
+                elif event_type == "cited":
+                    yield f"data: {json.dumps({'cited': data})}\n\n"
         except AppError as e:
             yield f"event: error\ndata: {json.dumps({'message': e.message})}\n\n"
         except Exception:  # noqa: BLE001 - the stream is already open, so the error has to travel as an event

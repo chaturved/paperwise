@@ -24,9 +24,10 @@ from src.schemas.conversation import (
     MessageOut,
 )
 from src.schemas.user import MessageResponse
-from src.services.answer_generator import AnswerGenerator, AnswerGeneratorProtocol
+from src.services.answer_generator import NOT_FOUND_MESSAGE, AnswerGenerator, AnswerGeneratorProtocol
 from src.services.tier_service import TierService, TierServiceProtocol
 from src.utils.chunk_formatter import ChunkFormatter
+from src.utils.citations import CitationExtractor
 
 
 class ConversationServiceProtocol(Protocol):
@@ -56,6 +57,7 @@ class ConversationService(ConversationServiceProtocol):
         ai: AIProvider = Depends(get_ai_provider),
         answers: AnswerGeneratorProtocol = Depends(AnswerGenerator),
         formatter: ChunkFormatter = Depends(ChunkFormatter),
+        citations: CitationExtractor = Depends(CitationExtractor),
     ):
         self.conv_repo = conv_repo
         self.lib_repo = lib_repo
@@ -63,6 +65,7 @@ class ConversationService(ConversationServiceProtocol):
         self.ai = ai
         self.answers = answers
         self.formatter = formatter
+        self.citations = citations
 
     def list_conversations(self, user_id: int) -> list[ConversationOut]:
         return [ConversationOut.model_validate(c) for c in self.conv_repo.get_all(user_id)]
@@ -130,24 +133,23 @@ class ConversationService(ConversationServiceProtocol):
         doc_id = filters.doc_id if filters else None
         results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
         chunks = self.formatter.from_results(results)
-        context_text = self.formatter.context_text(chunks)
+        sources = self.formatter.sources(chunks)
 
         description, badges = await self.answers.describe(chunks, question)
-        meta = {
-            "description": description,
-            "badges": badges,
-            "snippets": self.formatter.snippets(chunks),
-            "sources": self.formatter.sources(chunks),
-        }
+        meta = {"description": description, "badges": badges, "sources": sources}
 
         yield "meta", meta
 
         full_answer = ""
-        async for token in self.answers.stream(context_text, question):
+        async for token in self.answers.stream(chunks, question):
             full_answer += token
             yield "token", token
 
-        self.conv_repo.add_message(conv_id, "assistant", full_answer, meta)
+        cited = [] if full_answer.strip().startswith(NOT_FOUND_MESSAGE) else self.citations.cited(full_answer, len(sources))
+        yield "cited", cited
+
+        stored_meta = {**meta, "sources": [s for s in sources if s["n"] in cited], "cited": cited}
+        self.conv_repo.add_message(conv_id, "assistant", full_answer, stored_meta)
 
         if conv.title == "New conversation":
             short_q = question[:60] + ("…" if len(question) > 60 else "")

@@ -75,7 +75,7 @@ class AnalyticsRepository(AnalyticsRepositoryProtocol):
     def get_top_cited_docs(self, user_id: int, limit: int = 10) -> list[dict]:
         rows = self.db.execute(
             text("""
-                SELECT source->>'name' AS doc_name, COUNT(*) AS citation_count
+                SELECT source->>'name' AS doc_name, COUNT(DISTINCT m.id) AS citation_count
                 FROM messages m
                 JOIN conversations c ON c.id = m.conversation_id
                 CROSS JOIN jsonb_array_elements(m.meta->'sources') AS source

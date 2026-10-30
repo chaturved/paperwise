@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,10 +9,11 @@ from src.core.exceptions import NotFoundError
 from src.integrations.ai.base import AIProvider
 from src.repositories.conversation_repository import ConversationRepositoryProtocol
 from src.repositories.library_repository import LibraryRepositoryProtocol
-from src.services.answer_generator import AnswerGeneratorProtocol
+from src.services.answer_generator import NOT_FOUND_MESSAGE, AnswerGeneratorProtocol
 from src.services.conversation_service import ConversationService
 from src.services.tier_service import TierServiceProtocol
 from src.utils.chunk_formatter import ChunkFormatter
+from src.utils.citations import CitationExtractor
 
 
 def _make_conv(id=1, title="New conversation", days_old=0):
@@ -37,6 +39,7 @@ class TestConversationService:
             ai=self.mock_ai,
             answers=self.mock_answers,
             formatter=ChunkFormatter(),
+            citations=CitationExtractor(),
         )
 
     # ── list_conversations ────────────────────────────────────────────────────
@@ -174,7 +177,7 @@ class TestConversationService:
         mock_vector = [0.1, 0.2]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ctx, question):
+        async def fake_stream(chunks, question):
             yield "hello"
             yield " world"
 
@@ -187,9 +190,10 @@ class TestConversationService:
             async for event in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
                 events.append(event)
 
-        assert events[0] == ("meta", {"description": "desc", "badges": ["b1"], "snippets": [], "sources": []})
+        assert events[0] == ("meta", {"description": "desc", "badges": ["b1"], "sources": []})
         assert ("token", "hello") in events
         assert ("token", " world") in events
+        assert events[-1] == ("cited", [])
 
     async def test_ask_auto_renames_new_conversation(self):
         conv = _make_conv(title="New conversation")
@@ -197,7 +201,7 @@ class TestConversationService:
         mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ctx, question):
+        async def fake_stream(chunks, question):
             yield "answer"
 
         with (
@@ -216,7 +220,7 @@ class TestConversationService:
         mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ctx, question):
+        async def fake_stream(chunks, question):
             yield "answer"
 
         with (
@@ -228,3 +232,47 @@ class TestConversationService:
                 pass
 
         self.mock_conv_repo.touch.assert_called_once_with(conv)
+
+    async def _ask_with_passages(self, answer: str):
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        passages = [
+            (SimpleNamespace(chunk_index=i, page_number=i + 1, chunk_text=f"passage {i + 1}"),
+             SimpleNamespace(id=7, name="lease.pdf", type="pdf", path="/lease.pdf"))
+            for i in range(3)
+        ]
+        self.mock_lib_repo.get_top_k_chunks.return_value = passages
+
+        async def fake_stream(chunks, question):
+            yield answer
+
+        with (
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
+            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("desc", []))),
+            patch.object(self.mock_answers, "stream", fake_stream),
+        ):
+            return [event async for event in self.svc.ask(1, 1, "when is rent due?", None, 5, Plan.FREE)]
+
+    async def test_ask_sends_every_retrieved_passage_as_a_numbered_source_up_front(self):
+        events = await self._ask_with_passages("Rent is due monthly [2].")
+
+        sources = events[0][1]["sources"]
+        assert [s["n"] for s in sources] == [1, 2, 3]
+        assert sources[1] == {"n": 2, "doc_id": 7, "name": "lease.pdf", "page": 2, "quote": "passage 2", "icon": "pdf"}
+
+    async def test_ask_reports_only_citations_that_match_a_real_source(self):
+        events = await self._ask_with_passages("Rent is due monthly [2], plus a late fee [9].")
+
+        assert events[-1] == ("cited", [2])
+
+    async def test_ask_stores_only_the_cited_sources_with_the_answer(self):
+        await self._ask_with_passages("Rent is due monthly [2].")
+
+        stored = self.mock_conv_repo.add_message.call_args_list[-1].args[3]
+        assert [s["n"] for s in stored["sources"]] == [2]
+        assert stored["cited"] == [2]
+
+    async def test_ask_does_not_cite_anything_when_the_answer_says_it_was_not_found(self):
+        events = await self._ask_with_passages(f"{NOT_FOUND_MESSAGE} [1]")
+
+        assert events[-1] == ("cited", [])
+        assert self.mock_conv_repo.add_message.call_args_list[-1].args[3]["sources"] == []

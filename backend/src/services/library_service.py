@@ -3,7 +3,6 @@ import logging
 from typing import Protocol
 
 from fastapi import Depends, UploadFile
-from fastapi.concurrency import run_in_threadpool
 
 from src.core.enums import Plan
 from src.core.exceptions import BadRequestError, NotFoundError, UploadFailedError
@@ -15,7 +14,8 @@ from src.services.tier_service import TierService, TierServiceProtocol
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
 from src.integrations.storage import S3Storage
-from src.utils.text_utils import chunk_text, clean_text, extract_text_from_bytes
+from src.utils.isolated_extract import extract_text_isolated
+from src.utils.text_utils import chunk_text, clean_text
 
 _log = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class LibraryService(LibraryServiceProtocol):
                 f.file.seek(0)
 
                 ext = (f.filename or "").split(".")[-1].lower()
-                extracted_text = await run_in_threadpool(extract_text_from_bytes, raw, ext)
+                extracted_text = await extract_text_isolated(raw, ext)
                 if not clean_text(extracted_text):
                     raise BadRequestError(
                         "No readable text found. Scanned or image-only files aren't supported yet."

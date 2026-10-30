@@ -76,7 +76,7 @@ class TestLibraryService:
         self.mock_storage.save_raw_file.return_value = ("/url/new.pdf", b"content")
 
         with (
-            patch("src.services.library_service.extract_text_from_bytes", return_value="extracted text"),
+            patch("src.services.library_service.extract_text_isolated", AsyncMock(return_value="extracted text")),
             patch("src.services.library_service.chunk_text", return_value=["chunk"]),
             patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[[0.1]])),
         ):
@@ -96,7 +96,7 @@ class TestLibraryService:
         self.mock_storage.save_raw_file.return_value = ("/url/report.pdf", b"pdf bytes")
 
         with (
-            patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
+            patch("src.services.library_service.extract_text_isolated", AsyncMock(return_value="text")),
             patch("src.services.library_service.chunk_text", return_value=["chunk 1"]),
             patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
         ):
@@ -113,7 +113,7 @@ class TestLibraryService:
         file = _make_file("scan.pdf", b"%PDF-scanned")
 
         with (
-            patch("src.services.library_service.extract_text_from_bytes", return_value="  \n "),
+            patch("src.services.library_service.extract_text_isolated", AsyncMock(return_value="  \n ")),
             pytest.raises(UploadFailedError) as exc_info,
         ):
             await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
@@ -129,7 +129,7 @@ class TestLibraryService:
         self.mock_storage.save_raw_file.side_effect = RuntimeError("storage down")
 
         with (
-            patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
+            patch("src.services.library_service.extract_text_isolated", AsyncMock(return_value="text")),
             pytest.raises(UploadFailedError) as exc_info,
         ):
             await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
@@ -156,7 +156,7 @@ class TestLibraryService:
 
         self.mock_storage.save_raw_file.side_effect = fake_save
         with (
-            patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
+            patch("src.services.library_service.extract_text_isolated", AsyncMock(return_value="text")),
             patch("src.services.library_service.chunk_text", return_value=["chunk"]),
             patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
         ):
@@ -199,7 +199,7 @@ class TestLibraryService:
         self.mock_storage.save_raw_file.return_value = ("/url/new.pdf", b"new content")
 
         with (
-            patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
+            patch("src.services.library_service.extract_text_isolated", AsyncMock(return_value="text")),
             patch("src.services.library_service.chunk_text", return_value=["chunk"]),
             patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
         ):

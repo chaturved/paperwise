@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     MAX_DOCX_ENTRIES: int = 2000
     MAX_PDF_PAGES: int = 1000
     MAX_EXTRACTED_CHARS: int = 3_000_000
+    # Parsing runs in a separate worker process so a hostile file can only hurt its own worker.
+    EXTRACT_TIMEOUT_SECONDS: int = 30
+    EXTRACT_MAX_MEMORY_MB: int = 2048  # enforced on Linux (the Docker image); macOS ignores address-space limits
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 

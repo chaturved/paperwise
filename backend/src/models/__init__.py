@@ -1,4 +1,5 @@
 from .conversation import Conversation
+from .demo_request import DemoRequest
 from .library import Library
 from .library_chunk import LibraryChunk
 from .magic_token import MagicToken

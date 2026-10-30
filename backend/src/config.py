@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = "noreply@paperwise.ai"
 
     APP_URL: str = "http://localhost:3000"
+    DEMO_REQUEST_NOTIFY_EMAIL: str = ""  # where new demo requests are emailed; empty means they are only stored
 
     JWT_SECRET_KEY: str
     SESSION_SECRET_KEY: str

@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     # Parsing runs in a separate worker process so a hostile file can only hurt its own worker.
     EXTRACT_TIMEOUT_SECONDS: int = 30
     EXTRACT_MAX_MEMORY_MB: int = 2048  # enforced on Linux (the Docker image); macOS ignores address-space limits
+    EXTRACT_MAX_CONCURRENCY: int = 2  # workers allowed at once per server process; extra uploads wait their turn
+    EXTRACT_QUEUE_TIMEOUT_SECONDS: int = 60  # how long an upload may wait for a free worker before it is refused
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 

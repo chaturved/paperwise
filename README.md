@@ -61,7 +61,7 @@ flowchart LR
   |---|---|---|
   | Documents | 5 | Unlimited |
   | Max file size | 10 MB | 50 MB |
-  | File types | pdf, txt, md | pdf, docx, txt, md |
+  | File types | pdf, docx, txt, md | pdf, docx, txt, md |
   | Queries / day | 20 | Unlimited |
   | Conversation history | 7 days | Unlimited |
 

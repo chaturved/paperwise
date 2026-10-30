@@ -8,14 +8,13 @@ import { SiteNav } from "@/components/site/site-nav";
 const freeFeatures = [
   "5 documents in your library",
   "20 questions every 24 hours",
-  "PDF, TXT, and Markdown files",
+  "PDF, DOCX, TXT, and Markdown files",
   "10 MB per file",
   "7 days of conversation history",
 ];
 
 const proFeatures = [
   "Unlimited documents and questions",
-  "PDF, DOCX, TXT, and Markdown files",
   "50 MB per file",
   "Full conversation history",
 ];
@@ -23,7 +22,6 @@ const proFeatures = [
 const compareRows = [
   { label: "Documents", free: "5", pro: "Unlimited" },
   { label: "Questions", free: "20 every 24 hours", pro: "Unlimited" },
-  { label: "File types", free: "PDF, TXT, Markdown", pro: "PDF, DOCX, TXT, Markdown" },
   { label: "File size", free: "10 MB", pro: "50 MB" },
   { label: "Conversation history", free: "7 days", pro: "Full" },
 ];

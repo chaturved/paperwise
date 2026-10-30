@@ -20,7 +20,7 @@ LIMITS: dict[Plan, PlanLimits] = {
     Plan.FREE: {
         "max_docs": 5,
         "max_file_mb": 10,
-        "allowed_types": {"pdf", "txt", "md"},
+        "allowed_types": {"pdf", "docx", "txt", "md"},
         "max_queries_day": 20,
         "history_days": 7,
     },

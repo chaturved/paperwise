@@ -19,12 +19,12 @@ export const megaMenus: MegaMenu[] = [
     columns: [
       [
         { label: "Chat with documents", description: "Ask in plain language and get an answer with its source.", href: "/product" },
-        { label: "Sources", description: "See the file and the quote behind each answer.", href: "/product#sources" },
+        { label: "Sources", description: "See the files and passages used for each answer.", href: "/product#sources" },
         { label: "Library", description: "Keep your files together and choose which one to ask about.", href: "/product#library" },
       ],
       [
         { label: "Saved conversations", description: "Come back to a past chat without asking again.", href: "/product#history" },
-        { label: "Pro", description: "Unlimited documents and questions, plus DOCX support.", href: "/pricing", badge: "SOON" },
+        { label: "Pro", description: "Unlimited documents and questions, larger files and full history.", href: "/pricing", badge: "SOON" },
       ],
     ],
     feature: { title: "Free plan, available now", description: "Five documents and twenty questions a day, with no payment needed.", href: "/pricing", tone: "paint" },

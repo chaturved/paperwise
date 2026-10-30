@@ -36,10 +36,14 @@ class TestTierService:
         assert exc.value.limit == "file_size"
 
     def test_upload_free_disallowed_type(self):
-        files = [UploadFile(filename="report.docx", file=io.BytesIO(b""), size=1024)]
+        files = [UploadFile(filename="slides.pptx", file=io.BytesIO(b""), size=1024)]
         with pytest.raises(PlanLimitError) as exc:
             self.svc.check_upload(Plan.FREE, files, current_doc_count=0)
         assert exc.value.limit == "file_type"
+
+    def test_upload_free_allows_docx(self):
+        files = [UploadFile(filename="contract.docx", file=io.BytesIO(b""), size=1024)]
+        self.svc.check_upload(Plan.FREE, files, current_doc_count=0)
 
     def test_upload_pro_no_doc_limit(self):
         files = [UploadFile(filename="a.pdf", file=io.BytesIO(b""), size=1024)]

@@ -5,7 +5,7 @@ from typing import Protocol
 from fastapi import Depends, UploadFile
 
 from src.core.enums import Plan
-from src.core.exceptions import NotFoundError, UploadFailedError
+from src.core.exceptions import BadRequestError, NotFoundError, UploadFailedError
 from src.models import Library, LibraryChunk
 from src.repositories.library_repository import LibraryRepository, LibraryRepositoryProtocol
 from src.schemas.library import LibraryDocResponse, LibraryResponse, UploadErrorResponse, UploadItemResponse, UploadResponse
@@ -14,7 +14,7 @@ from src.services.tier_service import TierService, TierServiceProtocol
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
 from src.integrations.storage import S3Storage
-from src.utils.text_utils import chunk_text, extract_text_from_bytes
+from src.utils.text_utils import chunk_text, clean_text, extract_text_from_bytes
 
 _log = logging.getLogger(__name__)
 
@@ -62,10 +62,15 @@ class LibraryService(LibraryServiceProtocol):
                     raise ValueError("This file has already been uploaded")
                 f.file.seek(0)
 
+                ext = (f.filename or "").split(".")[-1].lower()
+                extracted_text = extract_text_from_bytes(raw, ext)
+                if not clean_text(extracted_text):
+                    raise BadRequestError(
+                        "No readable text found. Scanned or image-only files aren't supported yet."
+                    )
+
                 file_url, contents = await self.storage.save_raw_file(f, user_id)
                 size_bytes = len(contents)
-                ext = (f.filename or "").split(".")[-1].lower()
-                extracted_text = extract_text_from_bytes(contents, ext)
 
                 chunks = chunk_text(extracted_text)
                 embeddings = await self.ai.get_embeddings(chunks)

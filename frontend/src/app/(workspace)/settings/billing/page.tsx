@@ -8,7 +8,7 @@ const FREE_FEATURES = [
   "Up to 5 documents",
   "20 queries / day",
   "10 MB per file",
-  "PDF, TXT, and Markdown files",
+  "PDF, DOCX, TXT, and Markdown files",
   "7 days of conversation history",
 ];
 
@@ -16,7 +16,6 @@ const PRO_FEATURES = [
   "Unlimited documents",
   "Unlimited queries",
   "50 MB per file",
-  "PDF, DOCX, TXT, and Markdown files",
   "Full conversation history",
 ];
 

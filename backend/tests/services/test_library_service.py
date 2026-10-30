@@ -107,13 +107,31 @@ class TestLibraryService:
         self.mock_repo.add.assert_called_once()
         self.mock_repo.add_chunks.assert_called_once()
 
+    async def test_save_files_rejects_file_with_no_readable_text(self):
+        self.mock_repo.get_all.return_value = []
+
+        file = _make_file("scan.pdf", b"%PDF-scanned")
+
+        with (
+            patch("src.services.library_service.extract_text_from_bytes", return_value="  \n "),
+            pytest.raises(UploadFailedError) as exc_info,
+        ):
+            await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
+
+        assert "No readable text found" in exc_info.value.errors[0].error
+        self.mock_storage.save_raw_file.assert_not_called()
+        self.mock_repo.add.assert_not_called()
+
     async def test_save_files_captures_per_file_error(self):
         self.mock_repo.get_all.return_value = []
 
-        file = _make_file("bad.pdf", b"")
+        file = _make_file("bad.pdf", b"content")
         self.mock_storage.save_raw_file.side_effect = RuntimeError("storage down")
 
-        with pytest.raises(UploadFailedError) as exc_info:
+        with (
+            patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
+            pytest.raises(UploadFailedError) as exc_info,
+        ):
             await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
 
         errors = exc_info.value.errors

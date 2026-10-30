@@ -66,7 +66,7 @@ export default function TermsPage() {
             "5 documents stored simultaneously",
             "20 AI queries in a rolling 24-hour window",
             "10 MB maximum file size",
-            "PDF, TXT, and Markdown file formats",
+            "PDF, DOCX, TXT, and Markdown file formats",
             "7-day conversation history retention",
           ]} />
           <P>We reserve the right to adjust free tier limits with reasonable notice. If you exceed limits, queries will be blocked until the next reset or until you upgrade.</P>

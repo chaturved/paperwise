@@ -18,16 +18,16 @@ const useCases = [
     tone: "paint" as const,
     file: "lease.docx",
     questions: ["What notice do I need to give to end the lease?", "When is payment due?", "Does the agreement renew automatically?"],
-    tips: [{ title: "Ask about one clause at a time", text: "Narrow questions return a tighter quote you can check quickly." }, { title: "Follow up", text: "Ask what an exception means without restating the first question." }],
+    tips: [{ title: "Ask about one clause at a time", text: "Narrow questions return a tighter passage you can check quickly." }, { title: "Follow up", text: "Ask what an exception means without restating the first question." }],
   },
   {
     id: "reports",
     title: "Reports and research",
-    description: "Pull a figure or a finding out of a long report and see the passage it came from.",
+    description: "Pull a figure or a finding out of a long report and see the passages it used.",
     tone: "warm" as const,
     file: "report.pdf",
     questions: ["How much time do teams lose searching?", "What does the report recommend for next quarter?", "Which finding is the strongest?"],
-    tips: [{ title: "Ask for a number", text: "Specific figures are easy to verify against the quote." }, { title: "Summarize first", text: "Start with a summary, then ask about the parts that matter." }],
+    tips: [{ title: "Ask for a number", text: "Specific figures are easy to verify against the passage." }, { title: "Summarize first", text: "Start with a summary, then ask about the parts that matter." }],
   },
   {
     id: "notes",
@@ -36,7 +36,7 @@ const useCases = [
     tone: "paint" as const,
     file: "notes.docx",
     questions: ["Who owns the budget follow-up?", "What did we decide about the launch date?", "Which risks are still open?"],
-    tips: [{ title: "Keep notes in your library", text: "Add each meeting once and ask across time." }, { title: "Check the quote", text: "Confirm the wording before you share a decision." }],
+    tips: [{ title: "Keep notes in your library", text: "Add each meeting once and ask across time." }, { title: "Check the passage", text: "Confirm the wording before you share a decision." }],
   },
   {
     id: "study",

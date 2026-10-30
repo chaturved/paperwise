@@ -18,7 +18,7 @@ export default function LandingPage() {
       <SiteNav />
       <main>
         <PageHero first title="Know exactly where every answer comes from">
-          <p>Paperwise answers questions about your documents and shows you the quote behind each one.</p>
+          <p>Paperwise answers questions about your documents and shows you the passages it used.</p>
           <AuthActionLink signedOutLabel="Upload a file" signedInLabel="Continue in your workspace" arrow="right" className="btn-primary btn-lg" />
         </PageHero>
 
@@ -26,7 +26,7 @@ export default function LandingPage() {
           <ProductPreview />
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <PaintedCard title="For contracts and policies" text="Check a clause, a deadline or a requirement and see the passage it came from." cta={{ label: "Explore the product", href: "/product" }}>
+            <PaintedCard title="For contracts and policies" text="Check a clause, a deadline or a requirement and see the passages it used." cta={{ label: "Explore the product", href: "/product" }}>
               <CitedRows title="Office lease" rows={[
                 { text: "Termination notice", source: "lease.docx" },
                 { text: "Payment terms", source: "lease.docx" },

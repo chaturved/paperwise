@@ -7,7 +7,7 @@ import { SiteNav } from "@/components/site/site-nav";
 
 export const metadata: Metadata = {
   title: "Product — Paperwise",
-  description: "Ask questions of your documents and see the quote behind every answer.",
+  description: "Ask questions of your documents and see the passages behind every answer.",
 };
 
 export default function ProductPage() {
@@ -16,7 +16,7 @@ export default function ProductPage() {
       <SiteNav />
       <main>
         <PageHero crumbs={[{ label: "Product", href: "/product" }, { label: "Chat with documents" }]} title="The fastest way to check a document">
-          <p>Upload a file, ask a question, and read the quote behind the answer.</p>
+          <p>Upload a file, ask a question, and see the passages behind the answer.</p>
           <AuthActionLink signedOutLabel="Upload a file" signedInLabel="Open your workspace" arrow="right" className="btn-primary btn-lg" />
         </PageHero>
 
@@ -26,18 +26,18 @@ export default function ProductPage() {
             <ChipRow chips={["Summarize", "Find a clause", "View all"]} />
           </StageWindow>
 
-          <Statement lead="Find the answer, then find the source." rest="Every reply lists the documents and quotes it used, so you can verify it before you rely on it." />
+          <Statement lead="Find the answer, then find the source." rest="Every reply lists the documents and passages it used, so you can check them before you rely on it." />
 
           <section className="pb-20">
-            <SectionHead id="sources" title="Every answer shows its sources" description="Under each reply, Paperwise lists the documents and the quotes it used." />
+            <SectionHead id="sources" title="Every answer shows its sources" description="Under each reply, Paperwise lists the documents and passages it used." />
             <PaintedSplit
               card={<CitedRows title="Termination and notice" rows={[
                 { text: "The tenant must give 90 days of written notice before terminating the lease early.", source: "lease.docx" },
                 { text: "Either party may end the agreement under the conditions below.", source: "lease.docx" },
               ]} />}
               rows={[
-                { title: "Source quotes", text: "See the passage from your file that supports each answer." },
-                { title: "Read more on demand", text: "Select a source to expand the full quote." },
+                { title: "Retrieved passages", text: "See the passages Paperwise pulled from your files to write each answer." },
+                { title: "Read more on demand", text: "Select a source to expand its full passage." },
                 { title: "Feedback on every answer", text: "Mark a reply as helpful or not so you can keep track of what worked." },
               ]}
             />

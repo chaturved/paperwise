@@ -28,7 +28,7 @@ export const megaMenus: MegaMenu[] = [
         { label: "Pro", description: "Unlimited documents and questions, larger files and full history.", href: "/pricing", badge: "SOON" },
       ],
     ],
-    feature: { title: "Free plan, available now", description: "Five documents and twenty questions a day, with no payment needed.", href: "/pricing", tone: "paint" },
+    feature: { title: "Free plan, available now", description: "Start with Free. No payment details needed.", href: "/pricing", tone: "paint" },
   },
   {
     id: "solutions",

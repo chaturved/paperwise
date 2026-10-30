@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { HeroCtas, PaintedCtaButtons } from "@/components/site/cta-buttons";
-import { MetricRows, PageHero, PaintedCta, PaintedSplit, SectionHead, Statement } from "@/components/site/page-sections";
+import { PageHero, PaintedCta, PaintedSplit, SectionHead, Statement } from "@/components/site/page-sections";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 
@@ -47,14 +47,9 @@ export function AudiencePage({ content }: { content: AudienceContent }) {
           </section>
 
           <section className="pb-24">
-            <SectionHead title="Start free" description="What the Free plan includes today. Pro, with unlimited documents, is coming soon." />
-            <MetricRows rows={[
-              { label: "Documents in your library", value: "5" },
-              { label: "Questions every 24 hours", value: "20" },
-              { label: "Maximum file size", value: "10 MB" },
-            ]} />
-            <p className="mt-8 max-w-[60ch] text-sm leading-relaxed text-ink/55">
-              Paperwise helps you read faster. It is not a lawyer or other professional, so for a decision that matters, check the source.{" "}
+            <p className="max-w-[60ch] text-sm leading-relaxed text-ink/55">
+              Free to start: <Link href="/pricing" className="underline underline-offset-4">see what each plan includes</Link>. Paperwise helps you read faster.
+              It is not a lawyer or other professional, so for a decision that matters, check the source.{" "}
               <Link href="/legal/ai" className="underline underline-offset-4">How AI is used</Link>.
             </p>
           </section>

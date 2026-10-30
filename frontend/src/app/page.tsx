@@ -2,7 +2,7 @@ import { KeyRound, Lock, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { HeroCtas, PaintedCtaButtons } from "@/components/site/cta-buttons";
 import { FaqList } from "@/components/site/faq-list";
-import { DetailRows, LinkRows, MetricRows, PageHero, PaintedCard, PaintedCta, SectionHead, Statement, StepColumns } from "@/components/site/page-sections";
+import { DetailRows, LinkRows, PageHero, PaintedCard, PaintedCta, SectionHead, Statement, StepColumns } from "@/components/site/page-sections";
 import { CitedRows, ProductPreview } from "@/components/site/product-preview";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
@@ -67,17 +67,12 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section className="border-t border-line pb-24 pt-8">
-            <div className="grid gap-7 md:grid-cols-2">
-              <h2 className="max-w-[16ch] text-[32px] font-medium leading-[1.1] tracking-[-0.01em]">Start free, with room to grow</h2>
-              <p className="max-w-[40ch] text-xl leading-[1.3] text-ink/75">What the Free plan includes today. <Link href="/pricing" className="underline underline-offset-4">See all plans</Link>.</p>
+          <section className="pb-24">
+            <SectionHead title="Start free, with room to grow" description="The Free plan needs no payment details. Pro is coming soon." />
+            <div className="mt-10 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
+              <span aria-hidden />
+              <LinkRows items={[{ label: "Plans and pricing", text: "What Free includes today and what Pro adds.", href: "/pricing" }]} />
             </div>
-            <MetricRows rows={[
-              { label: "Documents in your library", value: "5" },
-              { label: "Questions every 24 hours", value: "20" },
-              { label: "Maximum file size", value: "10 MB" },
-              { label: "Conversation history", value: "7 days" },
-            ]} />
           </section>
         </div>
 
@@ -86,7 +81,7 @@ export default function LandingPage() {
             id: "common-questions",
             title: "Common questions",
             items: [
-              { question: "What can I upload?", answer: "PDF, Word, plain text and Markdown files. On the Free plan each file can be up to 10 MB." },
+              { question: "What can I upload?", answer: "PDF, Word, plain text and Markdown files." },
               { question: "Can I trust the answers?", answer: "Every answer cites numbered passages from your documents, so you can read the original words. AI can still be wrong, so check the source for anything that matters." },
               { question: "Who can see my documents?", answer: "Only you. Your files are stored privately and no other Paperwise customer can open them." },
             ],

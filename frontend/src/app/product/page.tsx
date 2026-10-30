@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { HeroCtas, PaintedCtaButtons } from "@/components/site/cta-buttons";
-import { MetricRows, PageHero, PaintedCta, PaintedSplit, SectionHead, Statement } from "@/components/site/page-sections";
+import { PageHero, PaintedCta, PaintedSplit, SectionHead, Statement } from "@/components/site/page-sections";
 import { ChipRow, CitedRows, ComposerCard, StageWindow, UploadCard } from "@/components/site/product-preview";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
@@ -46,15 +46,13 @@ export default function ProductPage() {
           <section className="pb-20">
             <SectionHead id="library" title="Keep your files in one library" description="Add a document once, then choose which one to ask about." />
             <PaintedSplit tone="warm" card={<UploadCard />} rows={[
-              { title: "5 documents on Free", text: "Pro lifts the limit when it launches." },
-              { title: "10 MB per file on Free", text: "Pro raises this to 50 MB." },
+              { title: "Room that grows with your plan", text: "Pro raises the document and file size limits when it launches." },
               { title: "Conversations you can follow up", text: "Ask a follow-up and the chat keeps its context." },
             ]} />
           </section>
 
           <section className="pb-24">
-            <SectionHead id="history" title="Pick up where you left off" description="Past conversations are saved to your account, so you never have to ask the same question twice." />
-            <MetricRows rows={[{ label: "History on the Free plan", value: "7 days" }, { label: "History on Pro", value: "Full" }]} />
+            <SectionHead id="history" title="Pick up where you left off" description="Past conversations are saved to your account, so you never have to ask the same question twice. How far back you can open them depends on your plan." />
           </section>
         </div>
 

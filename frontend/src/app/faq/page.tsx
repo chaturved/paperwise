@@ -18,9 +18,9 @@ const groups: FaqGroup[] = [
     id: "getting-started",
     title: "Getting started",
     items: [
-      { question: "What can I upload?", answer: "PDF, Word (.docx), plain text and Markdown files. On the Free plan each file can be up to 10 MB." },
+      { question: "What can I upload?", answer: "PDF, Word (.docx), plain text and Markdown files. The size limit for each file depends on your plan." },
       { question: "Can I upload a scanned document?", answer: "Not yet. Paperwise reads the text in a file, so a scan or an image-only PDF with no selectable text cannot be read. PDFs and Word files that contain real text work." },
-      { question: "How many documents and questions do I get?", answer: "The Free plan includes 5 documents in your library and 20 questions every 24 hours." },
+      { question: "How many documents and questions do I get?", answer: <>It depends on your plan. <Link href="/pricing" className={link}>Pricing</Link> shows what Free and Pro include.</> },
     ],
   },
   {

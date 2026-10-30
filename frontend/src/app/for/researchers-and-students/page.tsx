@@ -27,7 +27,7 @@ export default function ResearchersAndStudentsPage() {
             { title: "Definitions and concepts", text: "Look up a term the way the author defines it." },
             { title: "Lecture notes and textbooks", text: "Ask a chapter or a set of notes a question instead of paging through it." },
             { title: "Assignment briefs", text: "Check exactly what is asked, what it is marked on and when it is due." },
-            { title: "Your reading list", text: "Add each document once, then choose which one to ask about. Free holds five at a time." },
+            { title: "Your reading list", text: "Add each document once, then choose which one to ask about." },
           ],
         },
         questions: [

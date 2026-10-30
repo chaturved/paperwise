@@ -37,6 +37,7 @@ class TestLibraryService:
     def setup(self) -> None:
         self.mock_repo = MagicMock(spec_set=LibraryRepositoryProtocol)
         self.mock_repo.get_by_content_hash.return_value = None
+        self.mock_repo.page_counts.return_value = {}
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_storage = MagicMock(spec_set=S3Storage)
         self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes())
@@ -52,6 +53,14 @@ class TestLibraryService:
         assert result.count == 2
         assert result.total_size_bytes == 300
         assert len(result.sections) == 2
+
+    def test_get_library_data_includes_the_page_count_when_the_document_has_pages(self):
+        self.mock_repo.get_all.return_value = [_make_lib(id=1), _make_lib(id=2, type="docx")]
+        self.mock_repo.page_counts.return_value = {1: 12}
+
+        result = self.svc.get_library_data(user_id=1)
+
+        assert [doc.pages for doc in result.sections] == [12, None]
 
     def test_get_library_data_empty_library(self):
         self.mock_repo.get_all.return_value = []

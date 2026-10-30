@@ -17,6 +17,7 @@ def _now() -> datetime:
 class LibraryRepositoryProtocol(Protocol):
     def get_all(self, user_id: int) -> list[Library]: ...
     def count_active(self, user_id: int) -> int: ...
+    def page_counts(self, user_id: int) -> dict[int, int]: ...
     def get(self, doc_id: int) -> Library | None: ...
     def get_by_id(self, doc_id: int, user_id: int) -> Library | None: ...
     def get_by_content_hash(self, user_id: int, content_hash: str) -> Library | None: ...
@@ -56,6 +57,17 @@ class LibraryRepository(LibraryRepositoryProtocol):
             .scalar()
             or 0
         )
+
+    def page_counts(self, user_id: int) -> dict[int, int]:
+        """The highest page number stored for each of the user's documents that has pages."""
+        rows = (
+            self.db.query(LibraryChunk.library_id, func.max(LibraryChunk.page_number))
+            .join(Library, Library.id == LibraryChunk.library_id)
+            .filter(Library.user_id == user_id, LibraryChunk.page_number.isnot(None))
+            .group_by(LibraryChunk.library_id)
+            .all()
+        )
+        return {library_id: pages for library_id, pages in rows}
 
     def get(self, doc_id: int) -> Library | None:
         return self.db.get(Library, doc_id)

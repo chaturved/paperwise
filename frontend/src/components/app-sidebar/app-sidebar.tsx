@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ChevronRight, FileText, Plus, Search } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { FileText, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { ConversationSearchDialog } from "@/components/conversations/conversation-search-dialog";
 import { useAccountUsage } from "@/hooks/useAccountUsage";
@@ -11,7 +11,6 @@ import { useConversations } from "@/hooks/useConversations";
 import type { Conversation } from "@/types";
 import { AccountMenu } from "./account-menu";
 import { ConversationList } from "./conversation-list";
-import { LibrarySection } from "./library-section";
 import { PlanMeter } from "./plan-meter";
 
 interface Props {
@@ -26,9 +25,9 @@ interface Props {
 export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, onNewChat, onConversationsChange, refreshKey }: Props) {
   const router = useRouter();
   const { conversations, refresh, remove, rename } = useConversations(onConversationsChange);
-  const [libraryOpen, setLibraryOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const usage = useAccountUsage(refreshKey);
+  const onLibraryPage = usePathname().startsWith("/library");
 
   useEffect(() => {
     refresh();
@@ -85,19 +84,15 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
         >
           <Plus size={16} strokeWidth={2} /> New chat
         </button>
-        <button
-          type="button"
-          onClick={() => setLibraryOpen((open) => !open)}
-          aria-expanded={libraryOpen}
-          className={`flex h-10 w-full items-center gap-3 rounded px-3 text-left text-sm text-ink/80 transition hover:bg-ink/[0.05] hover:text-ink ${libraryOpen ? "bg-ink/[0.05]" : ""}`}
+        <Link
+          href="/library"
+          aria-current={onLibraryPage ? "page" : undefined}
+          className={`flex h-10 w-full items-center gap-3 rounded px-3 text-sm transition hover:bg-ink/[0.05] hover:text-ink ${onLibraryPage ? "bg-ink/[0.08] font-medium text-ink" : "text-ink/80"}`}
         >
           <FileText size={17} strokeWidth={1.7} /> Library
           {usage && <span className="ml-auto font-mono text-xs text-muted">{usage.documents.used}</span>}
-          <ChevronRight size={15} className={`text-ink/40 transition-transform ${libraryOpen ? "rotate-90" : ""} ${usage ? "" : "ml-auto"}`} />
-        </button>
+        </Link>
       </nav>
-
-      {libraryOpen && <LibrarySection refreshKey={refreshKey} />}
 
       <ConversationList conversations={conversations} activeId={activeConvId} onSelect={handleSelect} onRename={handleRename} onDelete={handleDelete} />
 

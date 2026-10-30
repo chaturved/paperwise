@@ -8,6 +8,7 @@ export interface LibraryDoc {
   created_at: string;
   status: DocumentStatus;
   error_message: string | null;
+  pages: number | null;
 }
 
 export interface LibraryData {

@@ -54,10 +54,11 @@ class LibraryService(LibraryServiceProtocol):
 
     def get_library_data(self, user_id: int) -> LibraryResponse:
         rows = self.repo.get_all(user_id)
+        pages = self.repo.page_counts(user_id)
         return LibraryResponse(
             count=len(rows),
             total_size_bytes=sum(r.size for r in rows),
-            sections=[LibraryDocResponse.model_validate(r) for r in rows],
+            sections=[LibraryDocResponse.model_validate(r).model_copy(update={"pages": pages.get(r.id)}) for r in rows],
         )
 
     def create_uploads(self, user_id: int, plan: Plan, request: CreateUploadsRequest) -> CreateUploadsResponse:

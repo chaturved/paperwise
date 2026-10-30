@@ -1,5 +1,6 @@
 "use client";
 
+import { CONTRACT_PROMPTS } from "@/lib/contract-prompts";
 import { InputBox } from "./input-box";
 
 interface DashboardWelcomeProps {
@@ -11,21 +12,18 @@ interface DashboardWelcomeProps {
   onAttach: (files: File[]) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   documentCount: number | null;
+  scopeName: string | null;
+  onClearScope: () => void;
 }
 
-const STARTERS = [
-  "Summarize the key points",
-  "What are the payment terms and deadlines?",
-  "List every date and amount mentioned",
-];
-
-function scopeLabel(count: number | null): string | undefined {
+function scopeLabel(count: number | null, scopeName: string | null): string | undefined {
+  if (scopeName) return `Asking in ${scopeName}`;
   if (count === null) return undefined;
   if (count === 0) return "No documents yet";
   return `Asking across ${count} document${count === 1 ? "" : "s"}`;
 }
 
-export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, documentCount }: DashboardWelcomeProps) {
+export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, documentCount, scopeName, onClearScope }: DashboardWelcomeProps) {
   const hasDocuments = (documentCount ?? 0) > 0;
 
   return (
@@ -42,22 +40,24 @@ export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploa
           isUploading={isUploading}
           onAttach={onAttach}
           textareaRef={textareaRef}
-          scope={scopeLabel(documentCount)}
+          scope={scopeLabel(documentCount, scopeName)}
+          onClearScope={scopeName ? onClearScope : undefined}
         />
 
         {hasDocuments ? (
           <>
-            <p className="mb-3 mt-7 text-[13px] text-muted">Try asking</p>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {STARTERS.map((starter) => (
+            <p className="mb-3 mt-7 text-[13px] text-muted">Review a contract</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {CONTRACT_PROMPTS.map((prompt) => (
                 <button
-                  key={starter}
+                  key={prompt.title}
                   type="button"
-                  onClick={() => onSend(starter)}
+                  onClick={() => onSend(prompt.question)}
                   disabled={isStreaming}
-                  className="rounded-lg border border-line bg-surface px-[18px] py-4 text-left text-[15px] leading-snug transition hover:border-field disabled:opacity-60"
+                  className="rounded-lg border border-line bg-surface px-[18px] py-4 text-left transition hover:border-field disabled:opacity-60"
                 >
-                  {starter}
+                  <span className="block text-[15px] font-medium">{prompt.title}</span>
+                  <span className="mt-1 block text-[13px] text-muted">{prompt.detail}</span>
                 </button>
               ))}
             </div>

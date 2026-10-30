@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { useAppLayout } from "@/context/AppLayoutContext";
 import { useSSEStream } from "@/hooks/useSSEStream";
 import { useAccountUsage } from "@/hooks/useAccountUsage";
-import { useDocumentUpload } from "@/hooks/useDocumentUpload";
-import { apiErrorMessage, historyLimitReached } from "@/lib/api-error";
+import { useAttachDocuments } from "@/hooks/useAttachDocuments";
+import { useLibrary } from "@/hooks/useLibrary";
+import { historyLimitReached } from "@/lib/api-error";
 import { createConversation, getMessages } from "@/lib/api/conversations";
 import type { Message } from "@/types";
 import { AddDocumentButton } from "./add-document-button";
@@ -31,8 +32,18 @@ function DashboardInner() {
   const [historyLocked, setHistoryLocked] = useState(false);
   const [inputValue, setInputValue]     = useState("");
   const [sidebarRefresh, setSidebarRefresh] = useState(0);
-  const { upload: uploadDocuments, uploading: isUploading } = useDocumentUpload(() => setSidebarRefresh((value) => value + 1));
+  const { attach: handleAttach, uploading: isUploading } = useAttachDocuments(() => setSidebarRefresh((value) => value + 1));
   const usage = useAccountUsage(sidebarRefresh);
+  const { documents, loaded: libraryLoaded } = useLibrary();
+  const [docId, setDocId] = useState<number | null>(() => {
+    const id = Number(params.get("doc"));
+    return Number.isInteger(id) && id > 0 ? id : null;
+  });
+  const scopeName = documents.find((document) => document.id === docId)?.name ?? null;
+
+  useEffect(() => {
+    if (libraryLoaded && docId !== null && !documents.some((document) => document.id === docId)) setDocId(null);
+  }, [libraryLoaded, docId, documents]);
   const chatEndRef  = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const newConversationIdRef = useRef<number | null>(null);
@@ -92,6 +103,7 @@ function DashboardInner() {
 
   const handleNewChat = useCallback(() => {
     resetStream();
+    setDocId(null);
     setActiveConvId(null);
     setMessages([]);
     setLoadingConversation(false);
@@ -101,6 +113,7 @@ function DashboardInner() {
   const handleConvSelect = useCallback((id: number) => {
     if (id === activeConvId) return;
     resetStream();
+    setDocId(null);
     setMessages([]);
     setLoadingConversation(true);
     setActiveConvId(id);
@@ -155,20 +168,8 @@ function DashboardInner() {
     setInputValue("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
-    await sendStream(convId, q);
-  }, [activeConvId, inputValue, isStreaming, router, sendStream]);
-
-  const handleAttach = async (files: File[]) => {
-    try {
-      const result = await uploadDocuments(files);
-      if (result.uploadedIds.length) {
-        toast.success(`Added ${result.uploadedIds.length} document${result.uploadedIds.length === 1 ? "" : "s"} to your library`);
-      }
-      if (result.errors.length) toast.error(`${result.errors.length} file${result.errors.length === 1 ? "" : "s"} could not be uploaded`);
-    } catch (err) {
-      toast.error(apiErrorMessage(err, "Could not upload your documents"));
-    }
-  };
+    await sendStream(convId, q, docId);
+  }, [activeConvId, docId, inputValue, isStreaming, router, sendStream]);
 
   const handleSendRef = useRef(handleSend);
   handleSendRef.current = handleSend;
@@ -222,6 +223,8 @@ function DashboardInner() {
               onAttach={handleAttach}
               textareaRef={textareaRef}
               placeholder="Ask a follow-up"
+              scope={scopeName ? `Asking in ${scopeName}` : undefined}
+              onClearScope={scopeName ? () => setDocId(null) : undefined}
             />
             <p className="mt-2.5 text-center text-xs text-muted">Check sources before relying on an answer.</p>
             </div>
@@ -237,6 +240,8 @@ function DashboardInner() {
           onAttach={handleAttach}
           textareaRef={textareaRef}
           documentCount={documentCount}
+          scopeName={scopeName}
+          onClearScope={() => setDocId(null)}
         />
       )}
     </main>

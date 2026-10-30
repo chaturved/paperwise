@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ArrowUp, Plus } from "lucide-react";
+import { ArrowUp, Plus, X } from "lucide-react";
 
 interface Props {
   value: string;
@@ -13,9 +13,10 @@ interface Props {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   placeholder?: string;
   scope?: string;
+  onClearScope?: () => void;
 }
 
-export function InputBox({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, placeholder = "Ask a question about your documents", scope }: Props) {
+export function InputBox({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, placeholder = "Ask a question about your documents", scope, onClearScope }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
@@ -54,7 +55,16 @@ export function InputBox({ value, onChange, onSend, isStreaming, isUploading, on
               if (files.length) onAttach(files);
               event.target.value = "";
             }} />
-          {scope && <span className="inline-flex h-8 min-w-0 items-center truncate rounded border border-line px-3 text-[13px] text-ink/75">{scope}</span>}
+          {scope && (
+            <span className="inline-flex h-8 min-w-0 items-center gap-1.5 rounded border border-line pl-3 pr-2 text-[13px] text-ink/75">
+              <span className="truncate">{scope}</span>
+              {onClearScope && (
+                <button type="button" onClick={onClearScope} aria-label="Ask across all documents" className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink/55 hover:text-ink">
+                  <X size={13} strokeWidth={2} />
+                </button>
+              )}
+            </span>
+          )}
         </div>
         <button type="button" onClick={onSend} disabled={isStreaming || !value.trim()} aria-label="Send question"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-ink text-bg transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/40">

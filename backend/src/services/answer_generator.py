@@ -99,6 +99,11 @@ Example response:
             "Answer the user's actual question using only the excerpts. After each statement that relies on an "
             "excerpt, cite it with its number in square brackets, like [1]; use separate brackets for several "
             "excerpts, like [1][3]. Cite only numbers that appear above and never invent one. "
+            "Read the way a careful reader of a contract would: when an excerpt states an amount, date, deadline, "
+            "notice period, fee, party or obligation, give the exact figure or wording and quote the key phrase in "
+            "quotation marks. If the excerpts answer only part of the question, say which part is missing; if two "
+            "excerpts disagree, say so and cite both. Do not give legal advice or explain what a clause might mean "
+            "beyond its words. Keep the answer short. "
             f"If the excerpts do not contain the answer, reply with exactly: {NOT_FOUND_MESSAGE} and nothing else:"
         )
 

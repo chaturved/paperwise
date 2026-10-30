@@ -77,6 +77,22 @@ class TestStream:
         assert "cite it with its number in square brackets" in prompts[0]
         assert NOT_FOUND_MESSAGE in prompts[0]
 
+    async def test_asks_for_exact_wording_and_no_legal_advice(self):
+        ai = _ai()
+        prompts = []
+
+        async def fake_stream(prompt, *args, **kwargs):
+            prompts.append(prompt)
+            yield "x"
+
+        ai.stream_chat = fake_stream
+
+        _ = [t async for t in _generator(ai).stream([CHUNK_ON_PAGE_3], "q")]
+
+        assert "give the exact figure or wording" in prompts[0]
+        assert "Do not give legal advice" in prompts[0]
+        assert "say which part is missing" in prompts[0]
+
     async def test_says_it_could_not_find_the_answer_without_calling_the_model_when_nothing_was_retrieved(self):
         ai = _ai()
 

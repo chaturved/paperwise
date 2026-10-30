@@ -11,6 +11,7 @@ class LibraryDocResponse(BaseModel):
     created_at: datetime
     status: str
     error_message: str | None = None
+    pages: int | None = None
 
     model_config = {"from_attributes": True}
 

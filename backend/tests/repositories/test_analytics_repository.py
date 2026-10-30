@@ -1,9 +1,11 @@
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from src.models import MessageFeedback
+from src.models import MessageFeedback, QueryUsageLog
 from src.repositories.analytics_repository import AnalyticsRepository
 
 
@@ -130,3 +132,35 @@ class TestAnalyticsRepository:
         result = self.repo.get_user_feedbacks(user_id=1, message_ids=[1, 2])
 
         assert result == {1: "up", 2: "down"}
+
+
+class TestQuestionsAreCountedFromTheAskLog:
+    """Run against a real database, because a mocked session cannot tell which table a query reads."""
+
+    @pytest.fixture
+    def repo(self):
+        engine = create_engine("sqlite://")
+        QueryUsageLog.__table__.create(engine)
+        with Session(engine) as session:
+            now = datetime.now(UTC).replace(tzinfo=None)
+            session.add_all([
+                QueryUsageLog(user_id=1, created_at=now),
+                QueryUsageLog(user_id=1, created_at=now),
+                QueryUsageLog(user_id=1, created_at=now - timedelta(days=40)),
+                QueryUsageLog(user_id=2, created_at=now),
+            ])
+            session.commit()
+            yield AnalyticsRepository(db=session)
+
+    def test_all_time_count_includes_only_that_users_questions(self, repo):
+        assert repo.count_questions(user_id=1) == 3
+        assert repo.count_questions(user_id=2) == 1
+        assert repo.count_questions(user_id=3) == 0
+
+    def test_count_can_be_limited_to_recent_questions(self, repo):
+        assert repo.count_questions(user_id=1, since=datetime.now(UTC) - timedelta(days=30)) == 2
+
+    def test_volume_groups_the_last_days_by_date(self, repo):
+        today = datetime.now(UTC).date().isoformat()
+
+        assert repo.get_query_volume(user_id=1, days=30) == [{"date": today, "count": 2}]

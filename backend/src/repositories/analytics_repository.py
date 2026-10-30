@@ -6,7 +6,7 @@ from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.models import Library, MessageFeedback, RecentQuery
+from src.models import Library, MessageFeedback, QueryUsageLog
 from src.models.library_chunk import LibraryChunk
 
 
@@ -23,7 +23,7 @@ class AnalyticsRepository(AnalyticsRepositoryProtocol):
         self.db = db
 
     def get_overview(self, user_id: int) -> dict:
-        total_queries = self.db.query(func.count(RecentQuery.id)).filter(RecentQuery.user_id == user_id).scalar() or 0
+        total_queries = self.count_questions(user_id)
         total_docs = self.db.query(func.count(Library.id)).filter(Library.user_id == user_id).scalar() or 0
         total_chunks = (
             self.db.query(func.count(LibraryChunk.id))
@@ -44,12 +44,7 @@ class AnalyticsRepository(AnalyticsRepositoryProtocol):
         total_feedback = thumbs_up + thumbs_down
         quality_pct = round(thumbs_up / total_feedback * 100) if total_feedback > 0 else None
 
-        since_30d = datetime.now(UTC) - timedelta(days=30)
-        queries_30d = (
-            self.db.query(func.count(RecentQuery.id))
-            .filter(RecentQuery.user_id == user_id, RecentQuery.created_at >= since_30d)
-            .scalar() or 0
-        )
+        queries_30d = self.count_questions(user_id, since=datetime.now(UTC) - timedelta(days=30))
 
         return {
             "total_queries": total_queries,
@@ -61,13 +56,20 @@ class AnalyticsRepository(AnalyticsRepositoryProtocol):
             "queries_last_30d": queries_30d,
         }
 
+    def count_questions(self, user_id: int, since: datetime | None = None) -> int:
+        """Questions asked in chat. Every ask is logged to QueryUsageLog, which also enforces the daily limit."""
+        conditions = [QueryUsageLog.user_id == user_id]
+        if since is not None:
+            conditions.append(QueryUsageLog.created_at >= since)
+        return self.db.query(func.count(QueryUsageLog.id)).filter(*conditions).scalar() or 0
+
     def get_query_volume(self, user_id: int, days: int = 30) -> list[dict]:
         since = datetime.now(UTC) - timedelta(days=days)
         rows = (
-            self.db.query(func.date(RecentQuery.created_at).label("day"), func.count(RecentQuery.id).label("count"))
-            .filter(RecentQuery.user_id == user_id, RecentQuery.created_at >= since)
-            .group_by(func.date(RecentQuery.created_at))
-            .order_by(func.date(RecentQuery.created_at))
+            self.db.query(func.date(QueryUsageLog.created_at).label("day"), func.count(QueryUsageLog.id).label("count"))
+            .filter(QueryUsageLog.user_id == user_id, QueryUsageLog.created_at >= since)
+            .group_by(func.date(QueryUsageLog.created_at))
+            .order_by(func.date(QueryUsageLog.created_at))
             .all()
         )
         return [{"date": str(row.day), "count": row.count} for row in rows]

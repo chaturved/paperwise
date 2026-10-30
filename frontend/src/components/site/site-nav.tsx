@@ -76,7 +76,7 @@ export function SiteNav({ showLogin = true }: SiteNavProps) {
               </>
             ) : (
               <>
-                {showLogin && <Link href="/login" className="btn-secondary hidden sm:inline-flex !min-h-8 !px-3">Log in</Link>}
+                {showLogin && <Link href="/login" className="hidden px-2 text-[14.5px] font-medium text-ink/75 transition hover:text-ink sm:inline-flex">Log in</Link>}
                 <Link href="/demo" className="btn-secondary hidden xl:inline-flex !min-h-8 !px-3">Request a demo</Link>
                 <Link href="/signup" className="btn-primary !min-h-8 !px-3">Get started</Link>
               </>

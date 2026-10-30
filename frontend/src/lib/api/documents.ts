@@ -1,19 +1,9 @@
 import axios from "axios";
 import apiClient from "@/lib/api-client";
-import type { CreateUploadsResponse, LibraryData, LibraryDoc, MessageResponse, UploadResult, UploadSlot } from "@/types";
+import type { CreateUploadsResponse, LibraryData, LibraryDoc, MessageResponse, UploadSlot } from "@/types";
 
 export const getLibrary = async (): Promise<LibraryData> => {
   const res = await apiClient.get("/v1/library");
-  return res.data;
-};
-
-// Legacy multipart upload through the API. Removed once nothing calls it.
-export const uploadFiles = async (files: File[]): Promise<UploadResult> => {
-  const form = new FormData();
-  files.forEach((f) => form.append("files", f));
-  const res = await apiClient.post("/v1/library/upload", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
   return res.data;
 };
 

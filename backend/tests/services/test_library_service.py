@@ -1,12 +1,10 @@
-import io
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from src.integrations.ai.base import AIProvider
 from src.core.enums import DocumentStatus, Plan
-from src.core.exceptions import BadRequestError, ConflictError, NotFoundError, PlanLimitError, UploadFailedError
+from src.core.exceptions import BadRequestError, ConflictError, NotFoundError, PlanLimitError
 from src.repositories.library_repository import LibraryRepositoryProtocol
 from src.schemas.library import CreateUploadsRequest, UploadFileRequest
 from src.services.library_service import LibraryService
@@ -27,14 +25,6 @@ def _make_lib(id=1, name="doc.pdf", type="pdf", size=1024, path: str | None = "/
     return lib
 
 
-def _make_file(filename: str, content: bytes):
-    file = MagicMock()
-    file.filename = filename
-    file.file = io.BytesIO(content)
-    file.read = AsyncMock(return_value=content)
-    return file
-
-
 class TestLibraryService:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
@@ -42,8 +32,7 @@ class TestLibraryService:
         self.mock_repo.get_by_content_hash.return_value = None
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_storage = MagicMock(spec_set=S3Storage)
-        self.mock_ai = MagicMock(spec_set=AIProvider)
-        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, ai=self.mock_ai)
+        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage)
 
     # ── get_library_data ──────────────────────────────────────────────────────
 
@@ -66,152 +55,6 @@ class TestLibraryService:
         assert result.count == 0
         assert result.total_size_bytes == 0
         assert result.sections == []
-
-    # ── save_files ────────────────────────────────────────────────────────────
-
-    async def test_save_files_calls_tier_check_with_current_count(self):
-        self.mock_repo.get_all.return_value = [_make_lib()] * 3
-
-        saved = _make_lib(id=10, name="new.pdf", type="pdf", size=512)
-        self.mock_repo.add.return_value = saved
-
-        file = _make_file("new.pdf", b"content")
-        self.mock_storage.save_raw_file.return_value = ("/url/new.pdf", b"content")
-
-        with (
-            patch("src.services.library_service.extract_readable_text", AsyncMock(return_value="extracted text")),
-            patch("src.services.library_service.chunk_text", return_value=["chunk"]),
-            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[[0.1]])),
-        ):
-            await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
-
-        self.mock_tier.check_upload.assert_called_once_with(Plan.FREE, [file], 3)
-
-    async def test_save_files_success_records_upload(self):
-        self.mock_repo.get_all.return_value = []
-
-        saved = _make_lib(id=5, name="report.pdf", type="pdf", size=2048)
-        self.mock_repo.add.return_value = saved
-
-        file = _make_file("report.pdf", b"pdf bytes")
-
-        mock_emb = [0.1, 0.2]
-        self.mock_storage.save_raw_file.return_value = ("/url/report.pdf", b"pdf bytes")
-
-        with (
-            patch("src.services.library_service.extract_readable_text", AsyncMock(return_value="text")),
-            patch("src.services.library_service.chunk_text", return_value=["chunk 1"]),
-            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
-        ):
-            result = await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
-
-        assert len(result.uploaded) == 1
-        assert result.errors == []
-        self.mock_repo.add.assert_called_once()
-        self.mock_repo.add_chunks.assert_called_once()
-
-    async def test_save_files_rejects_file_with_no_readable_text(self):
-        self.mock_repo.get_all.return_value = []
-
-        file = _make_file("scan.pdf", b"%PDF-scanned")
-
-        with (
-            patch("src.integrations.documents.reader.extract_text_isolated", AsyncMock(return_value="  \n ")),
-            pytest.raises(UploadFailedError) as exc_info,
-        ):
-            await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
-
-        assert "No readable text found" in exc_info.value.errors[0].error
-        self.mock_storage.save_raw_file.assert_not_called()
-        self.mock_repo.add.assert_not_called()
-
-    async def test_save_files_captures_per_file_error(self):
-        self.mock_repo.get_all.return_value = []
-
-        file = _make_file("bad.pdf", b"content")
-        self.mock_storage.save_raw_file.side_effect = RuntimeError("storage down")
-
-        with (
-            patch("src.services.library_service.extract_readable_text", AsyncMock(return_value="text")),
-            pytest.raises(UploadFailedError) as exc_info,
-        ):
-            await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
-
-        errors = exc_info.value.errors
-        assert len(errors) == 1
-        assert errors[0].file == "bad.pdf"
-        assert "storage down" in errors[0].error
-
-    async def test_save_files_partial_errors_dont_abort_remaining(self):
-        self.mock_repo.get_all.return_value = []
-
-        bad_file = _make_file("bad.pdf", b"")
-        good_file = _make_file("good.pdf", b"content")
-
-        saved = _make_lib(id=1, name="good.pdf")
-        self.mock_repo.add.return_value = saved
-        mock_emb = [0.1]
-
-        async def fake_save(f, user_id):
-            if f.filename == "bad.pdf":
-                raise RuntimeError("bad file")
-            return ("/url/good.pdf", b"content")
-
-        self.mock_storage.save_raw_file.side_effect = fake_save
-        with (
-            patch("src.services.library_service.extract_readable_text", AsyncMock(return_value="text")),
-            patch("src.services.library_service.chunk_text", return_value=["chunk"]),
-            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
-        ):
-            result = await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[bad_file, good_file])
-
-        assert len(result.uploaded) == 1
-        assert len(result.errors) == 1
-
-    async def test_save_files_rejects_duplicate_content_hash_without_touching_storage(self):
-        self.mock_repo.get_all.return_value = []
-        self.mock_repo.get_by_content_hash.return_value = _make_lib(id=1, name="existing.pdf")
-
-        file = _make_file("re-upload.pdf", b"same content")
-
-        with pytest.raises(UploadFailedError) as exc_info:
-            await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
-
-        errors = exc_info.value.errors
-        assert len(errors) == 1
-        assert errors[0].file == "re-upload.pdf"
-        assert "already been uploaded" in errors[0].error
-        self.mock_storage.save_raw_file.assert_not_called()
-        self.mock_repo.add.assert_not_called()
-
-    async def test_save_files_second_file_can_still_succeed_when_first_is_duplicate(self):
-        self.mock_repo.get_all.return_value = []
-
-        def fake_get_by_hash(_user_id, content_hash):
-            import hashlib
-            return _make_lib(id=1) if content_hash == hashlib.sha256(b"dup").hexdigest() else None
-
-        self.mock_repo.get_by_content_hash.side_effect = fake_get_by_hash
-
-        dup_file = _make_file("dup.pdf", b"dup")
-        new_file = _make_file("new.pdf", b"new content")
-
-        saved = _make_lib(id=2, name="new.pdf")
-        self.mock_repo.add.return_value = saved
-        mock_emb = [0.1]
-        self.mock_storage.save_raw_file.return_value = ("/url/new.pdf", b"new content")
-
-        with (
-            patch("src.services.library_service.extract_readable_text", AsyncMock(return_value="text")),
-            patch("src.services.library_service.chunk_text", return_value=["chunk"]),
-            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
-        ):
-            result = await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[dup_file, new_file])
-
-        assert len(result.uploaded) == 1
-        assert result.uploaded[0].name == "new.pdf"
-        assert len(result.errors) == 1
-        assert "already been uploaded" in result.errors[0].error
 
     # ── delete_document ───────────────────────────────────────────────────────
 
@@ -283,9 +126,7 @@ class TestDirectUploads:
         self.mock_storage.public_url.return_value = "https://s/object/library/7/id/contract.pdf"
         self.mock_storage.key_from_path.return_value = "7/id/contract.pdf"
         self.mock_storage.create_upload_url.return_value = "https://signed.example/put"
-        self.svc = LibraryService(
-            repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, ai=MagicMock(spec_set=AIProvider)
-        )
+        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage)
 
     @staticmethod
     def _assign_id(library):

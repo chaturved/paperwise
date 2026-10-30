@@ -21,25 +21,6 @@ class LibraryResponse(BaseModel):
     sections: list[LibraryDocResponse]
 
 
-class UploadItemResponse(BaseModel):
-    id: int
-    name: str
-    type: str
-    size: int
-
-    model_config = {"from_attributes": True}
-
-
-class UploadErrorResponse(BaseModel):
-    file: str
-    error: str
-
-
-class UploadResponse(BaseModel):
-    uploaded: list[UploadItemResponse]
-    errors: list[UploadErrorResponse]
-
-
 class UploadFileRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     size: int = Field(gt=0)

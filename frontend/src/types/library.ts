@@ -21,11 +21,6 @@ export interface UploadError {
   error: string;
 }
 
-export interface UploadResult {
-  uploaded: LibraryDoc[];
-  errors: UploadError[];
-}
-
 export interface UploadSlot {
   id: number;
   name: string;

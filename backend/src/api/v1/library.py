@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends
 
 from src.core.dependencies import get_current_user, get_current_user_id
 from src.core.jobs import process_document_job
@@ -15,15 +15,6 @@ def fetch_library(
     service: LibraryServiceProtocol = Depends(LibraryService),
 ):
     return service.get_library_data(user_id)
-
-
-@router.post("/upload")
-async def upload_library(
-    files: list[UploadFile] = File(...),
-    user: User = Depends(get_current_user),
-    service: LibraryServiceProtocol = Depends(LibraryService),
-):
-    return await service.save_files(user.id, user.plan, files)
 
 
 @router.post("/uploads")

@@ -4,7 +4,6 @@ import uuid
 import boto3
 import botocore.exceptions
 from botocore.client import Config
-from fastapi import UploadFile
 
 from src.config import settings
 from src.core.exceptions import AppError
@@ -65,18 +64,6 @@ class S3Storage:
         if len(data) > max_bytes:
             raise StorageError("Stored file is larger than expected")
         return data
-
-    async def save_raw_file(self, file: UploadFile, user_id: int) -> tuple[str, bytes]:
-        contents = await file.read()
-        key = self.key_for(user_id, file.filename or "")
-
-        try:
-            self.client.put_object(Bucket=settings.S3_LIBRARY_BUCKET, Key=key, Body=contents)
-        except botocore.exceptions.ClientError as e:
-            raise StorageError(f"Storage error: {e.response['Error']['Message']}")
-
-        file.file.seek(0)
-        return self.public_url(key), contents
 
     def delete_file(self, file_path: str) -> None:
         key = self.key_from_path(file_path)

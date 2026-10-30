@@ -44,7 +44,7 @@ flowchart LR
     Tier --> PG
 ```
 
-**Ingestion**: an uploaded file is hashed (sha256) to reject duplicates, its text is extracted (PyMuPDF for PDF, `python-docx` for Word), split into ~500-character overlapping chunks, embedded via the configured AI provider (Gemini or Hugging Face), and only written to Postgres once every step succeeds — a failed embedding call never leaves a broken document row that would still count against the user's plan quota.
+**Ingestion**: the browser uploads each file straight to storage through a signed URL that fixes its exact size and type, then tells the API it arrived. A background job downloads it, hashes it (sha256) to reject duplicates, extracts its text in an isolated worker process (PyMuPDF for PDF, `python-docx` for Word), splits it into ~500-character overlapping chunks, embeds them via the configured AI provider (Gemini or Hugging Face), and saves the text, chunks and `ready` status in one commit. A document moves `uploading → processing → ready` (or `failed`, which the user can retry), so a failed step never leaves a half-indexed document that counts against the plan quota.
 
 **Retrieval + answering**: a question is embedded with the same model, and `pgvector`'s cosine-distance operator finds the top-k nearest chunks directly in SQL. Those chunks are assembled into a prompt with the question, sent to the chat model, and the response is streamed back to the browser token-by-token over Server-Sent Events — the UI renders it incrementally rather than waiting for the full answer.
 
@@ -71,7 +71,7 @@ flowchart LR
 
 A few decisions worth calling out, since they came from real bugs found and fixed during development rather than being designed in up front:
 
-- **Exception architecture** — services raise typed exceptions (`NotFoundError`, `PlanLimitError`, `UploadFailedError`, ...) from `core/exceptions.py`; a small set of centralized FastAPI exception handlers in `core/exception_handlers.py` map them to HTTP status codes and response shapes. Routes stay one-liners with no `try/except` scattered through the API layer.
+- **Exception architecture** — services raise typed exceptions (`NotFoundError`, `PlanLimitError`, ...) from `core/exceptions.py`; a small set of centralized FastAPI exception handlers in `core/exception_handlers.py` map them to HTTP status codes and response shapes. Routes stay one-liners with no `try/except` scattered through the API layer.
 - **SSE streams always terminate.** The `/ask` endpoint sends its final `[DONE]` event from a `finally` block, not the happy path — an unhandled exception mid-stream used to skip it entirely, leaving the frontend's "streaming" state stuck forever with no error shown.
 - **React 18 Strict Mode-safe effects.** A couple of effects with real side effects (creating a conversation, sending a question) are guarded with refs rather than relying on dependency-array identity, since Strict Mode's dev-only double-invoke of effects will otherwise fire a network call twice and produce visibly duplicated/interleaved streamed output.
 - **Prompt-injection-adjacent bug**: documents that are themselves full of questions (e.g. a homework/quiz PDF) could get their embedded "Question: ..." text confused with the user's actual question by the LLM, since both looked identical in a naive prompt. Fixed by explicitly delimiting retrieved context and telling the model never to treat text inside it as the question to answer — verified against the live model with a reproduction before and after.

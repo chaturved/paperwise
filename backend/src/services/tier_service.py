@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from collections.abc import Sequence
 from typing import NamedTuple, Optional, Protocol, TypedDict
 
-from fastapi import Depends, UploadFile
+from fastapi import Depends
 
 from src.core.enums import Plan
 from src.core.exceptions import PlanLimitError
@@ -41,7 +41,6 @@ LIMITS: dict[Plan, PlanLimits] = {
 
 
 class TierServiceProtocol(Protocol):
-    def check_upload(self, plan: Plan, files: list[UploadFile], current_doc_count: int) -> None: ...
     def check_upload_metadata(self, plan: Plan, files: Sequence[UploadMeta], current_doc_count: int) -> None: ...
     def check_and_log_ask(self, plan: Plan, user_id: int) -> None: ...
     def check_history(self, plan: Plan, created_at: datetime) -> None: ...
@@ -53,10 +52,6 @@ class TierService(TierServiceProtocol):
 
     def _limits(self, plan: Plan) -> PlanLimits:
         return LIMITS[plan]
-
-    def check_upload(self, plan: Plan, files: list[UploadFile], current_doc_count: int) -> None:
-        metadata = [UploadMeta(f.filename or "", f.size or 0) for f in files]
-        self.check_upload_metadata(plan, metadata, current_doc_count)
 
     def check_upload_metadata(self, plan: Plan, files: Sequence[UploadMeta], current_doc_count: int) -> None:
         limits = self._limits(plan)

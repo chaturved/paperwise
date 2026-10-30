@@ -1,8 +1,6 @@
-import io
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from fastapi import UploadFile
 from unittest.mock import MagicMock
 
 from src.core.enums import Plan
@@ -16,34 +14,6 @@ class TestTierService:
     def setup(self) -> None:
         self.mock_repo = MagicMock(spec_set=TierRepositoryProtocol)
         self.svc = TierService(repo=self.mock_repo)
-
-    # ── check_upload ──────────────────────────────────────────────────────────
-
-    def test_upload_free_doc_limit(self):
-        files = [UploadFile(filename="a.pdf", file=io.BytesIO(b""), size=1024)]
-        with pytest.raises(PlanLimitError) as exc:
-            self.svc.check_upload(Plan.FREE, files, current_doc_count=5)
-        assert exc.value.limit == "documents"
-
-    def test_upload_free_doc_limit_not_exceeded(self):
-        files = [UploadFile(filename="a.pdf", file=io.BytesIO(b""), size=1024)]
-        self.svc.check_upload(Plan.FREE, files, current_doc_count=4)
-
-    def test_upload_free_file_too_large(self):
-        files = [UploadFile(filename="a.pdf", file=io.BytesIO(b""), size=11 * 1024 * 1024)]
-        with pytest.raises(PlanLimitError) as exc:
-            self.svc.check_upload(Plan.FREE, files, current_doc_count=0)
-        assert exc.value.limit == "file_size"
-
-    def test_upload_free_disallowed_type(self):
-        files = [UploadFile(filename="slides.pptx", file=io.BytesIO(b""), size=1024)]
-        with pytest.raises(PlanLimitError) as exc:
-            self.svc.check_upload(Plan.FREE, files, current_doc_count=0)
-        assert exc.value.limit == "file_type"
-
-    def test_upload_free_allows_docx(self):
-        files = [UploadFile(filename="contract.docx", file=io.BytesIO(b""), size=1024)]
-        self.svc.check_upload(Plan.FREE, files, current_doc_count=0)
 
     # ── check_upload_metadata ─────────────────────────────────────────────────
 
@@ -67,18 +37,15 @@ class TestTierService:
             self.svc.check_upload_metadata(Plan.FREE, [UploadMeta(name, 1)], current_doc_count=0)
         assert exc.value.limit == "file_type"
 
-    def test_upload_pro_no_doc_limit(self):
-        files = [UploadFile(filename="a.pdf", file=io.BytesIO(b""), size=1024)]
-        self.svc.check_upload(Plan.PRO, files, current_doc_count=1000)
+    def test_metadata_pro_has_no_document_limit(self):
+        self.svc.check_upload_metadata(Plan.PRO, [UploadMeta("a.pdf", 1024)], current_doc_count=1000)
 
-    def test_upload_pro_allows_docx(self):
-        files = [UploadFile(filename="report.docx", file=io.BytesIO(b""), size=1024)]
-        self.svc.check_upload(Plan.PRO, files, current_doc_count=0)
+    def test_metadata_pro_allows_docx(self):
+        self.svc.check_upload_metadata(Plan.PRO, [UploadMeta("report.docx", 1024)], current_doc_count=0)
 
-    def test_upload_pro_file_size_limit(self):
-        files = [UploadFile(filename="big.pdf", file=io.BytesIO(b""), size=51 * 1024 * 1024)]
+    def test_metadata_pro_file_size_limit(self):
         with pytest.raises(PlanLimitError) as exc:
-            self.svc.check_upload(Plan.PRO, files, current_doc_count=0)
+            self.svc.check_upload_metadata(Plan.PRO, [UploadMeta("big.pdf", 51 * 1024 * 1024)], current_doc_count=0)
         assert exc.value.limit == "file_size"
 
     # ── check_and_log_ask ─────────────────────────────────────────────────────

@@ -1,39 +1,31 @@
-import hashlib
 import logging
 import os
 from datetime import UTC, datetime
 from typing import Protocol
 
-from fastapi import Depends, UploadFile
+from fastapi import Depends
 
 from src.core.enums import DocumentStatus, Plan
-from src.core.exceptions import BadRequestError, ConflictError, NotFoundError, UploadFailedError
-from src.models import Library, LibraryChunk
+from src.core.exceptions import BadRequestError, ConflictError, NotFoundError
+from src.models import Library
 from src.repositories.library_repository import LibraryRepository, LibraryRepositoryProtocol
 from src.schemas.library import (
     CreateUploadsRequest,
     CreateUploadsResponse,
     LibraryDocResponse,
     LibraryResponse,
-    UploadErrorResponse,
-    UploadItemResponse,
-    UploadResponse,
     UploadSlotResponse,
 )
 from src.schemas.user import MessageResponse
 from src.services.tier_service import TierService, TierServiceProtocol, UploadMeta
-from src.integrations.ai import get_ai_provider
-from src.integrations.ai.base import AIProvider
-from src.integrations.documents import content_type_for, extract_readable_text
+from src.integrations.documents import content_type_for
 from src.integrations.storage import S3Storage
-from src.utils.text_utils import chunk_text
 
 _log = logging.getLogger(__name__)
 
 
 class LibraryServiceProtocol(Protocol):
     def get_library_data(self, user_id: int) -> LibraryResponse: ...
-    async def save_files(self, user_id: int, plan: Plan, files: list[UploadFile]) -> UploadResponse: ...
     def create_uploads(self, user_id: int, plan: Plan, request: CreateUploadsRequest) -> CreateUploadsResponse: ...
     def complete_upload(self, user_id: int, doc_id: int) -> tuple[LibraryDocResponse, bool]: ...
     def retry_processing(self, user_id: int, plan: Plan, doc_id: int) -> tuple[LibraryDocResponse, bool]: ...
@@ -47,12 +39,10 @@ class LibraryService(LibraryServiceProtocol):
         repo: LibraryRepositoryProtocol = Depends(LibraryRepository),
         tier: TierServiceProtocol = Depends(TierService),
         storage: S3Storage = Depends(S3Storage),
-        ai: AIProvider = Depends(get_ai_provider),
     ) -> None:
         self.repo = repo
         self.tier = tier
         self.storage = storage
-        self.ai = ai
 
     def get_library_data(self, user_id: int) -> LibraryResponse:
         rows = self.repo.get_all(user_id)
@@ -61,64 +51,6 @@ class LibraryService(LibraryServiceProtocol):
             total_size_bytes=sum(r.size for r in rows),
             sections=[LibraryDocResponse.model_validate(r) for r in rows],
         )
-
-    async def save_files(self, user_id: int, plan: Plan, files: list[UploadFile]) -> UploadResponse:
-        current_count = len(self.repo.get_all(user_id))
-        self.tier.check_upload(plan, files, current_count)
-
-        uploaded: list[UploadItemResponse] = []
-        errors: list[UploadErrorResponse] = []
-
-        for f in files:
-            try:
-                uploaded.append(await self._ingest(user_id, f))
-            except Exception as e:
-                _log.exception("Failed to process upload %s", f.filename)
-                errors.append(UploadErrorResponse(file=f.filename or "", error=str(e)))
-
-        if not uploaded and errors:
-            raise UploadFailedError(errors=errors)
-
-        return UploadResponse(uploaded=uploaded, errors=errors)
-
-    async def _ingest(self, user_id: int, f: UploadFile) -> UploadItemResponse:
-        """Read one uploaded file, extract and embed its text, then store the file and its chunks."""
-        raw = await f.read()
-        content_hash = self._reject_duplicate(user_id, raw)
-        f.file.seek(0)
-
-        ext = (f.filename or "").split(".")[-1].lower()
-        text = await extract_readable_text(raw, ext)
-
-        file_url, contents = await self.storage.save_raw_file(f, user_id)
-        chunks = chunk_text(text)
-        embeddings = await self.ai.get_embeddings(chunks)
-
-        library = self.repo.add(
-            Library(
-                user_id=user_id,
-                name=f.filename,
-                type=ext,
-                size=len(contents),
-                path=file_url,
-                extracted_text=text,
-                content_hash=content_hash,
-            )
-        )
-        self.repo.add_chunks(
-            [
-                LibraryChunk(library_id=library.id, chunk_index=i, chunk_text=chunk, embedding=embedding)
-                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
-            ]
-        )
-        f.file.seek(0)
-        return UploadItemResponse.model_validate(library)
-
-    def _reject_duplicate(self, user_id: int, raw: bytes) -> str:
-        content_hash = hashlib.sha256(raw).hexdigest()
-        if self.repo.get_by_content_hash(user_id, content_hash):
-            raise ConflictError("This file has already been uploaded")
-        return content_hash
 
     def create_uploads(self, user_id: int, plan: Plan, request: CreateUploadsRequest) -> CreateUploadsResponse:
         """Reserve a library entry for each file and hand back a signed URL the browser uploads it to."""

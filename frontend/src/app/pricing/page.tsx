@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { AuthActionLink } from "@/components/site/auth-action-link";
+import { PaintedCtaButtons } from "@/components/site/cta-buttons";
 import { PageHero, PaintedCta, SectionHead } from "@/components/site/page-sections";
 import { PricingWaitlistForm } from "@/components/site/pricing-waitlist-form";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -88,7 +89,7 @@ export default function PricingPage() {
 
         <div className="pt-24">
           <PaintedCta title="Ready to see what your files know?">
-            <AuthActionLink signedOutLabel="Get started" signedInLabel="Open your workspace" arrow="right" className="btn-light" />
+            <PaintedCtaButtons startLabel="Get started" />
           </PaintedCta>
         </div>
       </main>

@@ -76,3 +76,53 @@ export function ProductPreview() {
     </StageWindow>
   );
 }
+
+const ILLUSTRATIVE = <p className="mt-3 text-[11px] text-ink/40">Illustrative example</p>;
+
+/** An answer with numbered citations and the sources they point to. */
+export function AnswerPreview() {
+  const chip = "mx-px inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-[3px] bg-accent/15 px-1 font-mono text-[9px] font-bold text-accent";
+  return (
+    <div className="mx-auto max-w-[560px] rounded-[10px] border border-line bg-surface p-5">
+      <p className="mb-3 text-[12.5px] italic text-ink/50">Payment terms</p>
+      <p className="text-[14.5px] leading-[1.7]">
+        Payment is due within 30 days of the invoice date <span className={chip}>1</span>. A late fee of 2% per month applies after that <span className={chip}>2</span>.
+      </p>
+      <div className="mt-4 space-y-2 border-t border-line pt-3.5 text-[12px] text-ink/60">
+        <p><span className="mr-1.5 font-mono text-[9px] font-bold text-accent">[1]</span>client-agreement.pdf <span className="ml-1 font-mono text-[11px] text-ink/45">p. 4</span></p>
+        <p><span className="mr-1.5 font-mono text-[9px] font-bold text-accent">[2]</span>client-agreement.pdf <span className="ml-1 font-mono text-[11px] text-ink/45">p. 5</span></p>
+      </div>
+      {ILLUSTRATIVE}
+    </div>
+  );
+}
+
+/** A PDF page with the cited sentence highlighted, as the source viewer shows it. */
+export function PdfPagePreview() {
+  return (
+    <div className="mx-auto max-w-[560px] overflow-hidden rounded-[10px] border border-line bg-surface">
+      <div className="flex items-center justify-between border-b border-line px-4 py-2.5 text-[12.5px] text-ink/60">
+        <b className="font-medium text-ink">client-agreement.pdf</b>
+        <span className="font-mono">Page 4 of 11</span>
+      </div>
+      <div className="space-y-3 bg-white px-8 py-7 text-[13px] leading-6 text-neutral-800">
+        <p className="text-[15px] font-medium">4. Payment</p>
+        <p>Invoices are issued at the end of each calendar month.</p>
+        <p><mark className="rounded-[2px] bg-accent/30 px-0.5 text-inherit">Payment is due within 30 days of the invoice date.</mark></p>
+        <p>All amounts are stated in US dollars.</p>
+      </div>
+      <div className="px-4 pb-3 pt-1">{ILLUSTRATIVE}</div>
+    </div>
+  );
+}
+
+/** What Paperwise says when the answer is not in the documents. */
+export function NotFoundPreview() {
+  return (
+    <div className="mx-auto max-w-[560px] space-y-3 rounded-[10px] border border-line bg-surface p-5">
+      <p className="ml-auto w-fit max-w-[85%] rounded-lg bg-ink/[0.07] px-3.5 py-2 text-[14px]">What is the notice period for the office lease?</p>
+      <p className="text-[14.5px] leading-[1.7]">I couldn&apos;t find that in your documents.</p>
+      {ILLUSTRATIVE}
+    </div>
+  );
+}

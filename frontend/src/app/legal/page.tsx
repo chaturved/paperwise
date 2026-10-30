@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { PageHero } from "@/components/site/page-sections";
+import { LinkRows, PageHero } from "@/components/site/page-sections";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 
@@ -35,19 +34,7 @@ export default function LegalPage() {
         {groups.map((group) => (
           <section key={group.title} className="border-t border-line py-8 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
             <h2 className="mb-5 font-display text-[28px] font-normal tracking-[-0.0125em] lg:mb-0">{group.title}</h2>
-            <ul className="divide-y divide-line border-y border-line">
-              {group.items.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="group flex items-start justify-between gap-6 py-5">
-                    <span>
-                      <span className="block text-lg font-medium">{item.label}</span>
-                      <span className="mt-1 block max-w-[48ch] text-[15px] leading-relaxed text-ink/65">{item.text}</span>
-                    </span>
-                    <span aria-hidden className="mt-0.5 text-ink/40 transition group-hover:translate-x-0.5 group-hover:text-ink">→</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <LinkRows items={group.items} />
           </section>
         ))}
       </div>

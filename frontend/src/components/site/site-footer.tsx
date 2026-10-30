@@ -5,7 +5,7 @@ import { footerColumns } from "@/components/site/nav-data";
 export function SiteFooter() {
   return (
     <footer className="bg-[#0f0e0d] px-5 pb-10 pt-16 text-white md:px-8">
-      <div className="mx-auto grid max-w-[1280px] gap-10 lg:grid-cols-[1.1fr_repeat(5,1fr)]">
+      <div className="mx-auto grid max-w-[1280px] gap-10 lg:grid-cols-[1.1fr_repeat(6,1fr)]">
         <div className="text-[15px] leading-snug text-white/50 lg:self-end">
           <Link href="/" className="mb-10 block font-display text-[28px] leading-none tracking-[-0.02em] text-white">Paperwise</Link>
           Copyright © {new Date().getFullYear()}<br />Paperwise.<br />All rights reserved.

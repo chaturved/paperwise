@@ -77,6 +77,7 @@ export function SiteNav({ showLogin = true }: SiteNavProps) {
             ) : (
               <>
                 {showLogin && <Link href="/login" className="btn-secondary hidden sm:inline-flex !min-h-8 !px-3">Log in</Link>}
+                <Link href="/demo" className="btn-secondary hidden xl:inline-flex !min-h-8 !px-3">Request a demo</Link>
                 <Link href="/signup" className="btn-primary !min-h-8 !px-3">Get started</Link>
               </>
             )}
@@ -103,9 +104,10 @@ export function SiteNav({ showLogin = true }: SiteNavProps) {
 
         {mobileOpen && (
           <div className="border-t border-line bg-bg px-5 pb-4 lg:hidden">
-            {[...megaMenus.flatMap((menu) => menu.columns.flat().slice(0, 2)), ...navLinks.map((link) => ({ label: link.label, href: link.href }))].map((item) => (
+            {[...megaMenus.flatMap((menu) => menu.columns.flat()), ...navLinks.map((link) => ({ label: link.label, href: link.href }))].map((item) => (
               <Link key={item.href + item.label} href={item.href} onClick={() => setMobileOpen(false)} className="block border-b border-line py-3 text-[15px] font-medium">{item.label}</Link>
             ))}
+            <Link href="/demo" onClick={() => setMobileOpen(false)} className="block border-b border-line py-3 text-[15px] font-medium">Request a demo</Link>
             {!loading && !user && showLogin && <Link href="/login" onClick={() => setMobileOpen(false)} className="block border-b border-line py-3 text-[15px] font-medium">Log in</Link>}
           </div>
         )}

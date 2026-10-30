@@ -140,3 +140,37 @@ export function PaintedSplit({ tone = "paint", card, rows }: { tone?: "paint" | 
     </div>
   );
 }
+
+/** Numbered steps laid out in columns. */
+export function StepColumns({ steps }: { steps: { title: string; text: string }[] }) {
+  return (
+    <ol className="mt-12 grid gap-10 md:grid-cols-3">
+      {steps.map((step, index) => (
+        <li key={step.title} className="border-t border-line pt-5">
+          <span className="font-mono text-sm text-accent">{String(index + 1).padStart(2, "0")}</span>
+          <h3 className="mb-2 mt-3 font-display text-[28px] font-normal tracking-[-0.0125em]">{step.title}</h3>
+          <p className="max-w-[34ch] text-[16px] leading-[1.45] text-ink/65">{step.text}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** A hairline list of links, each with a one-line description. */
+export function LinkRows({ items }: { items: { label: string; text: string; href: string }[] }) {
+  return (
+    <ul className="divide-y divide-line border-y border-line">
+      {items.map((item) => (
+        <li key={item.href}>
+          <Link href={item.href} className="group flex items-start justify-between gap-6 py-5">
+            <span>
+              <span className="block text-lg font-medium">{item.label}</span>
+              <span className="mt-1 block max-w-[48ch] text-[15px] leading-relaxed text-ink/65">{item.text}</span>
+            </span>
+            <span aria-hidden className="mt-0.5 text-ink/40 transition group-hover:translate-x-0.5 group-hover:text-ink">→</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}

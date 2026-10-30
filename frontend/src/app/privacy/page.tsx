@@ -13,6 +13,7 @@ export default function PrivacyPage() {
           ["Account details", "your email address and name when you sign up, or the same details from Google if you sign in with Google."],
           ["Your documents", "the files you upload, and the text we read from them."],
           ["Your conversations", "the questions you ask and the answers you receive."],
+          ["Demo requests", "the name, email, company and message you give us if you ask for a demo."],
           ["Usage counts", "how many documents you have and how many questions you ask, so we can apply the limits of your plan."],
           ["Sign-in cookies", "small cookies that keep you signed in (see Cookies below)."],
         ]} />
@@ -50,6 +51,7 @@ export default function PrivacyPage() {
         <Bullets items={[
           ["Documents", "stay until you delete them or delete your account. Deleting a document removes the file from storage and the text we read from it, straight away."],
           ["Conversations", "Free accounts can open the last 7 days of history, and older conversations stay stored until you delete them. Pro accounts can open their full history."],
+          ["Demo requests", "stay until you ask us to delete them. Email us and we will."],
           ["Your account", "when you delete your account we remove your documents, stored files, conversations and account details. Copies in provider backups are gone within 30 days."],
         ]} />
       </Section>

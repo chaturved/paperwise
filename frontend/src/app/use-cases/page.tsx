@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AuthActionLink } from "@/components/site/auth-action-link";
+import { HeroCtas, PaintedCtaButtons } from "@/components/site/cta-buttons";
 import { PageHero, PaintedCta, PaintedSplit, SectionHead } from "@/components/site/page-sections";
 import { CitedRows } from "@/components/site/product-preview";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -56,7 +56,7 @@ export default function UseCasesPage() {
       <main>
         <PageHero crumbs={[{ label: "Product", href: "/product" }, { label: "Use cases" }]} title="Questions worth asking your files">
           <p>Examples of what people ask their contracts, reports, notes and study material.</p>
-          <AuthActionLink signedOutLabel="Upload a file" signedInLabel="Open your workspace" arrow="right" className="btn-primary btn-lg" />
+          <HeroCtas />
         </PageHero>
 
         <div className="mx-auto max-w-[1280px] space-y-20 px-5 pb-24 pt-10 md:px-8">
@@ -73,7 +73,7 @@ export default function UseCasesPage() {
         </div>
 
         <PaintedCta title="Start with a document you already have">
-          <AuthActionLink signedOutLabel="Upload a file" signedInLabel="Open your workspace" arrow="right" className="btn-light" />
+          <PaintedCtaButtons />
         </PaintedCta>
       </main>
       <div className="h-24" />

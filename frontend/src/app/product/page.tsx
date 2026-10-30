@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AuthActionLink } from "@/components/site/auth-action-link";
+import { HeroCtas, PaintedCtaButtons } from "@/components/site/cta-buttons";
 import { MetricRows, PageHero, PaintedCta, PaintedSplit, SectionHead, Statement } from "@/components/site/page-sections";
 import { ChipRow, CitedRows, ComposerCard, StageWindow, UploadCard } from "@/components/site/product-preview";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -17,7 +17,7 @@ export default function ProductPage() {
       <main>
         <PageHero crumbs={[{ label: "Product", href: "/product" }, { label: "Chat with documents" }]} title="The fastest way to check a document">
           <p>Upload a file, ask a question, and see the passages behind the answer.</p>
-          <AuthActionLink signedOutLabel="Upload a file" signedInLabel="Open your workspace" arrow="right" className="btn-primary btn-lg" />
+          <HeroCtas />
         </PageHero>
 
         <div className="mx-auto max-w-[1280px] px-5 md:px-8">
@@ -59,7 +59,7 @@ export default function ProductPage() {
         </div>
 
         <PaintedCta title="Ask your first document a question">
-          <AuthActionLink signedOutLabel="Upload a file" signedInLabel="Open your workspace" arrow="right" className="btn-light" />
+          <PaintedCtaButtons />
         </PaintedCta>
       </main>
       <div className="h-24" />

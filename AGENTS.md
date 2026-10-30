@@ -136,7 +136,9 @@ backend/src/
 
 **`config.py`** — Pydantic `BaseSettings` class. Every environment variable is declared here with a type and accessed via the `settings` singleton. Nothing in the app reads `os.environ` directly.
 
-**`core/dependencies.py`** — All `Depends()` functions live here: `get_db`, `get_current_user_id`. Route handlers import from here and never manage sessions inline.
+**`core/dependencies.py`** — Request-level `Depends()` functions live here: `get_db`, `get_current_user_id`, `get_current_user`. Route handlers import from here and never manage sessions inline.
+
+**Injecting services and integrations** — Wire a dependency with `Depends(TheClass)`: routes use `Depends(AuthService)`, services use `Depends(LibraryRepository)`, `Depends(S3Storage)`, and so on. Do not add alias functions like `get_auth_service = AuthService`. A real `get_*` function is only for a dependency chosen by config, such as `get_ai_provider` in `integrations/ai/`. Services never import from `core/dependencies.py` (it imports them, so that would be circular).
 
 **`core/exceptions.py`** — Typed exceptions (`NotFoundError`, `UnauthorizedError`, `ConflictError`, `BadRequestError`, `ForbiddenError`). All inherit from `AppError`. The global handler in `main.py` maps them to consistent JSON: `{ "error": "message", "code": "ERROR_CODE" }`. Services raise these — never `HTTPException`.
 

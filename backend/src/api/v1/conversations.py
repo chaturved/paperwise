@@ -4,10 +4,10 @@ import logging
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
-from src.core.dependencies import get_conversation_service, get_current_user, get_current_user_id
+from src.core.dependencies import get_current_user, get_current_user_id
 from src.models.user import User
 from src.schemas.conversation import AskRequest, ConversationCreate, ConversationRename, ConversationSearchResult
-from src.services.conversation_service import ConversationServiceProtocol
+from src.services.conversation_service import ConversationService, ConversationServiceProtocol
 
 _log = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/conversations", tags=["Conversations"])
 @router.get("")
 def get_conversations(
     user_id: int = Depends(get_current_user_id),
-    service: ConversationServiceProtocol = Depends(get_conversation_service),
+    service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     return service.list_conversations(user_id)
 
@@ -26,7 +26,7 @@ def get_conversations(
 def create_conversation(
     body: ConversationCreate,
     user_id: int = Depends(get_current_user_id),
-    service: ConversationServiceProtocol = Depends(get_conversation_service),
+    service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     return service.new_conversation(user_id, body.title)
 
@@ -35,7 +35,7 @@ def create_conversation(
 def search_conversations(
     q: str = Query(min_length=2, max_length=100),
     user_id: int = Depends(get_current_user_id),
-    service: ConversationServiceProtocol = Depends(get_conversation_service),
+    service: ConversationServiceProtocol = Depends(ConversationService),
 ) -> list[ConversationSearchResult]:
     return service.search_conversations(user_id, q.strip())
 
@@ -45,7 +45,7 @@ def rename(
     conv_id: int,
     body: ConversationRename,
     user_id: int = Depends(get_current_user_id),
-    service: ConversationServiceProtocol = Depends(get_conversation_service),
+    service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     return service.rename_conversation(conv_id, user_id, body.title)
 
@@ -54,7 +54,7 @@ def rename(
 def delete(
     conv_id: int,
     user_id: int = Depends(get_current_user_id),
-    service: ConversationServiceProtocol = Depends(get_conversation_service),
+    service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     return service.remove_conversation(conv_id, user_id)
 
@@ -63,7 +63,7 @@ def delete(
 def messages(
     conv_id: int,
     user: User = Depends(get_current_user),
-    service: ConversationServiceProtocol = Depends(get_conversation_service),
+    service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     return service.list_messages(conv_id, user.id, user.plan)
 
@@ -73,7 +73,7 @@ async def ask_question(
     conv_id: int,
     body: AskRequest,
     user: User = Depends(get_current_user),
-    service: ConversationServiceProtocol = Depends(get_conversation_service),
+    service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     async def streamer():
         try:

@@ -6,13 +6,6 @@ from src.config import settings
 from src.core.exceptions import UnauthorizedError
 from src.database.db import get_db  # noqa: F401 — re-exported for routers
 from src.models.user import User
-from src.services.auth_service import AuthService
-from src.services.analytics_service import AnalyticsService
-from src.services.conversation_service import ConversationService
-from src.services.library_service import LibraryService
-from src.services.user_service import UserService
-from src.services.tier_service import TierService
-from src.services.waitlist_service import WaitlistService
 from src.services.token_service import validate_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
@@ -34,12 +27,3 @@ def get_current_user(
         raise UnauthorizedError()
     return user
 
-
-# FastAPI resolves the full dependency chain from each service's __init__
-get_auth_service = AuthService
-get_user_service = UserService
-get_conversation_service = ConversationService
-get_library_service = LibraryService
-get_analytics_service = AnalyticsService
-get_waitlist_service = WaitlistService
-get_tier_service = TierService

@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends
 
-from src.core.dependencies import get_analytics_service, get_current_user_id
-from src.services.analytics_service import AnalyticsServiceProtocol
+from src.core.dependencies import get_current_user_id
+from src.services.analytics_service import AnalyticsService, AnalyticsServiceProtocol
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -14,7 +14,7 @@ class FeedbackBody(BaseModel):
 @router.get("/overview")
 def overview(
     user_id: int = Depends(get_current_user_id),
-    service: AnalyticsServiceProtocol = Depends(get_analytics_service),
+    service: AnalyticsServiceProtocol = Depends(AnalyticsService),
 ):
     return service.get_overview(user_id)
 
@@ -23,7 +23,7 @@ def overview(
 def query_volume(
     days: int = 30,
     user_id: int = Depends(get_current_user_id),
-    service: AnalyticsServiceProtocol = Depends(get_analytics_service),
+    service: AnalyticsServiceProtocol = Depends(AnalyticsService),
 ):
     return service.get_query_volume(user_id, days)
 
@@ -31,7 +31,7 @@ def query_volume(
 @router.get("/citations")
 def top_citations(
     user_id: int = Depends(get_current_user_id),
-    service: AnalyticsServiceProtocol = Depends(get_analytics_service),
+    service: AnalyticsServiceProtocol = Depends(AnalyticsService),
 ):
     return service.get_top_cited_docs(user_id)
 
@@ -41,7 +41,7 @@ def set_feedback(
     message_id: int,
     body: FeedbackBody,
     user_id: int = Depends(get_current_user_id),
-    service: AnalyticsServiceProtocol = Depends(get_analytics_service),
+    service: AnalyticsServiceProtocol = Depends(AnalyticsService),
 ):
     return service.set_feedback(message_id, user_id, body.value)
 
@@ -50,7 +50,7 @@ def set_feedback(
 def get_feedbacks(
     message_ids: str,
     user_id: int = Depends(get_current_user_id),
-    service: AnalyticsServiceProtocol = Depends(get_analytics_service),
+    service: AnalyticsServiceProtocol = Depends(AnalyticsService),
 ):
     ids = [int(i) for i in message_ids.split(",") if i.strip().isdigit()]
     return service.get_feedbacks(user_id, ids)

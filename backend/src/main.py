@@ -1,3 +1,7 @@
+import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -5,8 +9,19 @@ from starlette.middleware.sessions import SessionMiddleware
 from .api import router
 from .config import settings
 from .core.exception_handlers import register_exception_handlers
+from .core.jobs import recover_interrupted_documents
 
-app = FastAPI(title="Paperwise API")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    try:
+        recover_interrupted_documents()
+    except Exception:  # a failed cleanup must never stop the API from starting
+        logging.getLogger(__name__).exception("Could not recover interrupted documents")
+    yield
+
+
+app = FastAPI(title="Paperwise API", lifespan=lifespan)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
 

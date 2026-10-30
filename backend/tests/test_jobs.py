@@ -1,0 +1,63 @@
+import asyncio
+from unittest.mock import MagicMock, patch
+
+from src.config import settings
+from src.core import jobs
+
+
+def _session():
+    session = MagicMock()
+    session.__enter__.return_value = session
+    return session
+
+
+async def test_process_document_job_runs_the_service_with_its_own_session():
+    session = _session()
+    service = MagicMock()
+    service.process = MagicMock(side_effect=lambda doc_id: asyncio.sleep(0))
+
+    with (
+        patch.object(jobs, "SessionLocal", return_value=session),
+        patch.object(jobs, "_ingestion_service", return_value=service) as build,
+    ):
+        await jobs.process_document_job(5)
+
+    build.assert_called_once_with(session)
+    service.process.assert_called_once_with(5)
+    session.__exit__.assert_called_once()
+
+
+async def test_only_a_few_documents_are_processed_at_once(monkeypatch):
+    monkeypatch.setattr(settings, "INGEST_MAX_CONCURRENCY", 2)
+    state = {"running": 0, "peak": 0}
+
+    async def slow_process(_doc_id):
+        state["running"] += 1
+        state["peak"] = max(state["peak"], state["running"])
+        await asyncio.sleep(0.05)
+        state["running"] -= 1
+
+    service = MagicMock()
+    service.process = slow_process
+
+    with (
+        patch.object(jobs, "SessionLocal", side_effect=_session),
+        patch.object(jobs, "_ingestion_service", return_value=service),
+    ):
+        await asyncio.gather(*(jobs.process_document_job(i) for i in range(6)))
+
+    assert state["peak"] == 2
+
+
+def test_recover_interrupted_documents_uses_its_own_session():
+    session = _session()
+    service = MagicMock()
+
+    with (
+        patch.object(jobs, "SessionLocal", return_value=session),
+        patch.object(jobs, "_ingestion_service", return_value=service),
+    ):
+        jobs.recover_interrupted_documents()
+
+    service.recover_interrupted.assert_called_once_with()
+    session.__exit__.assert_called_once()

@@ -3,13 +3,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.integrations.ai.base import AIProvider
 from src.core.enums import Plan
 from src.core.exceptions import NotFoundError
+from src.integrations.ai.base import AIProvider
 from src.repositories.conversation_repository import ConversationRepositoryProtocol
 from src.repositories.library_repository import LibraryRepositoryProtocol
+from src.services.answer_generator import AnswerGeneratorProtocol
 from src.services.conversation_service import ConversationService
 from src.services.tier_service import TierServiceProtocol
+from src.utils.chunk_formatter import ChunkFormatter
 
 
 def _make_conv(id=1, title="New conversation", days_old=0):
@@ -27,11 +29,14 @@ class TestConversationService:
         self.mock_lib_repo = MagicMock(spec_set=LibraryRepositoryProtocol)
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_ai = MagicMock(spec_set=AIProvider)
+        self.mock_answers = MagicMock(spec_set=AnswerGeneratorProtocol)
         self.svc = ConversationService(
             conv_repo=self.mock_conv_repo,
             lib_repo=self.mock_lib_repo,
             tier=self.mock_tier,
             ai=self.mock_ai,
+            answers=self.mock_answers,
+            formatter=ChunkFormatter(),
         )
 
     # ── list_conversations ────────────────────────────────────────────────────
@@ -169,18 +174,14 @@ class TestConversationService:
         mock_vector = [0.1, 0.2]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ai, ctx, question):
+        async def fake_stream(ctx, question):
             yield "hello"
             yield " world"
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch("src.services.conversation_service.get_library_chunks", return_value=[]),
-            patch("src.services.conversation_service.build_context_text", return_value="ctx"),
-            patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("desc", ["b1"]))),
-            patch("src.services.conversation_service.generate_snippets", return_value=[]),
-            patch("src.services.conversation_service.generate_sources", return_value=[]),
-            patch("src.services.conversation_service.stream_answer", fake_stream),
+            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("desc", ["b1"]))),
+            patch.object(self.mock_answers, "stream", fake_stream),
         ):
             events = []
             async for event in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
@@ -196,17 +197,13 @@ class TestConversationService:
         mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ai, ctx, question):
+        async def fake_stream(ctx, question):
             yield "answer"
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch("src.services.conversation_service.get_library_chunks", return_value=[]),
-            patch("src.services.conversation_service.build_context_text", return_value=""),
-            patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("", []))),
-            patch("src.services.conversation_service.generate_snippets", return_value=[]),
-            patch("src.services.conversation_service.generate_sources", return_value=[]),
-            patch("src.services.conversation_service.stream_answer", fake_stream),
+            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
+            patch.object(self.mock_answers, "stream", fake_stream),
         ):
             async for _ in self.svc.ask(1, 1, "A long question here?", None, 5, Plan.FREE):
                 pass
@@ -219,17 +216,13 @@ class TestConversationService:
         mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ai, ctx, question):
+        async def fake_stream(ctx, question):
             yield "answer"
 
         with (
             patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch("src.services.conversation_service.get_library_chunks", return_value=[]),
-            patch("src.services.conversation_service.build_context_text", return_value=""),
-            patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("", []))),
-            patch("src.services.conversation_service.generate_snippets", return_value=[]),
-            patch("src.services.conversation_service.generate_sources", return_value=[]),
-            patch("src.services.conversation_service.stream_answer", fake_stream),
+            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
+            patch.object(self.mock_answers, "stream", fake_stream),
         ):
             async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
                 pass

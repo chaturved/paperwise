@@ -5,21 +5,27 @@ from fastapi import Depends
 
 from src.core.enums import Plan
 from src.core.exceptions import NotFoundError
-from src.repositories.conversation_repository import ConversationRepository, ConversationRepositoryProtocol
-from src.repositories.library_repository import LibraryRepositoryProtocol, LibraryRepository
-from src.schemas.conversation import AskFilters, ConversationOut, ConversationSearchResult, DEFAULT_CONVERSATION_TITLE, MessageOut
-from src.schemas.user import MessageResponse
-from src.services.tier_service import TierServiceProtocol, TierService
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
-from src.utils.query_utils import (
-    build_context_text,
-    generate_description_and_badges,
-    generate_snippets,
-    generate_sources,
-    get_library_chunks,
-    stream_answer,
+from src.repositories.conversation_repository import (
+    ConversationRepository,
+    ConversationRepositoryProtocol,
 )
+from src.repositories.library_repository import (
+    LibraryRepository,
+    LibraryRepositoryProtocol,
+)
+from src.schemas.conversation import (
+    DEFAULT_CONVERSATION_TITLE,
+    AskFilters,
+    ConversationOut,
+    ConversationSearchResult,
+    MessageOut,
+)
+from src.schemas.user import MessageResponse
+from src.services.answer_generator import AnswerGenerator, AnswerGeneratorProtocol
+from src.services.tier_service import TierService, TierServiceProtocol
+from src.utils.chunk_formatter import ChunkFormatter
 
 
 class ConversationServiceProtocol(Protocol):
@@ -47,11 +53,15 @@ class ConversationService(ConversationServiceProtocol):
         lib_repo: LibraryRepositoryProtocol = Depends(LibraryRepository),
         tier: TierServiceProtocol = Depends(TierService),
         ai: AIProvider = Depends(get_ai_provider),
+        answers: AnswerGeneratorProtocol = Depends(AnswerGenerator),
+        formatter: ChunkFormatter = Depends(ChunkFormatter),
     ):
         self.conv_repo = conv_repo
         self.lib_repo = lib_repo
         self.tier = tier
         self.ai = ai
+        self.answers = answers
+        self.formatter = formatter
 
     def list_conversations(self, user_id: int) -> list[ConversationOut]:
         return [ConversationOut.model_validate(c) for c in self.conv_repo.get_all(user_id)]
@@ -118,21 +128,21 @@ class ConversationService(ConversationServiceProtocol):
         query_vector = await self.ai.get_embedding(question)
         doc_id = filters.doc_id if filters else None
         results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
-        chunks = get_library_chunks(results)
-        context_text = build_context_text(chunks)
+        chunks = self.formatter.from_results(results)
+        context_text = self.formatter.context_text(chunks)
 
-        description, badges = await generate_description_and_badges(self.ai, chunks, question)
+        description, badges = await self.answers.describe(chunks, question)
         meta = {
             "description": description,
             "badges": badges,
-            "snippets": generate_snippets(chunks),
-            "sources": generate_sources(chunks),
+            "snippets": self.formatter.snippets(chunks),
+            "sources": self.formatter.sources(chunks),
         }
 
         yield "meta", meta
 
         full_answer = ""
-        async for token in stream_answer(self.ai, context_text, question):
+        async for token in self.answers.stream(context_text, question):
             full_answer += token
             yield "token", token
 

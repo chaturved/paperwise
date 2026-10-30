@@ -9,7 +9,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AuthBackground } from "@/components/auth/auth-background";
 
-
 function MagicLinkSentContent() {
   const params = useSearchParams();
   const email = params.get("email") || "";

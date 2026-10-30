@@ -10,7 +10,6 @@ interface LegalPageProps {
   children: ReactNode;
 }
 
-/** The frame every legal document shares: breadcrumb, title, last-updated date and a narrow reading column. */
 export function LegalPage({ title, summary, updated, children }: LegalPageProps) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-bg text-ink">
@@ -40,7 +39,6 @@ export function LegalP({ children }: { children: ReactNode }) {
   return <p className="text-[15px] leading-8 text-ink/75">{children}</p>;
 }
 
-/** A list of points. An item is plain text, or a [label, description] pair that puts the label in bold. */
 export function LegalBullets({ items }: { items: (ReactNode | [string, ReactNode])[] }) {
   return (
     <ul className="space-y-3">

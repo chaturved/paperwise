@@ -104,7 +104,7 @@ class DocxParser(FileParser):
 
 class PlainTextParser(FileParser):
     def parse(self, contents: bytes) -> list[Page]:
-        if len(contents) > settings.MAX_EXTRACTED_CHARS:  # decoded text is never longer than its bytes
+        if len(contents) > settings.MAX_EXTRACTED_CHARS:
             raise BadRequestError(TOO_LARGE_MESSAGE)
         return [Page(None, contents.decode("utf-8", errors="ignore"))]
 

@@ -8,7 +8,6 @@ export interface FaqGroup {
   footer?: ReactNode;
 }
 
-/** Questions that open in place. Plain details elements, so it works without any script. */
 export function FaqList({ groups }: { groups: FaqGroup[] }) {
   return (
     <div className="space-y-16">

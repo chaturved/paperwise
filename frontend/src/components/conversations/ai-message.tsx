@@ -15,8 +15,6 @@ import type { Badge, Meta } from "@/types";
 import { CitationChip } from "./citation-chip";
 import { SourcesPanel, sourceElementId } from "./sources-panel";
 
-// ─── Private helpers ──────────────────────────────────────────────────────────
-
 const BADGE_ICONS: Record<string, React.ReactNode> = {
   bot:       <Bot size={10} />,
   shield:    <Shield size={10} />,
@@ -38,8 +36,6 @@ function BadgeChip({ badge }: { badge: Badge }) {
     </span>
   );
 }
-
-// ─── AIMessage ────────────────────────────────────────────────────────────────
 
 interface Props {
   messageId?: number;

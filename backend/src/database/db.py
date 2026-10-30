@@ -7,10 +7,8 @@ engine = create_engine(settings.DATABASE_URL)
 metadata = MetaData()
 Base = declarative_base()
 
-# Create session local class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Dependency
 def get_db():
     db = SessionLocal()
     try:

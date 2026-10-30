@@ -7,7 +7,6 @@ interface State {
   error: string | null;
 }
 
-/** A short-lived link to a stored document, fetched when `docId` is set. */
 export function useDocumentFileUrl(docId: number | null) {
   const [state, setState] = useState<State & { forDocId: number | null }>({ url: null, error: null, forDocId: null });
 

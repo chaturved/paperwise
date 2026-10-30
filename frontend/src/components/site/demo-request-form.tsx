@@ -21,7 +21,7 @@ const schema = z.object({
   company: z.string().trim().max(160).optional(),
   team_size: z.enum(["", "solo", "2-10", "11-50", "51+"]),
   message: z.string().trim().max(2000, "Keep it under 2,000 characters").optional(),
-  website: z.string().max(0), // the hidden trap field must stay empty
+  website: z.string().max(0),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -93,7 +93,6 @@ export function DemoRequestForm() {
       <Field id="demo-message" label="What would you like to see? (optional)" error={errors.message?.message}>
         <textarea id="demo-message" rows={4} placeholder="For example: checking payment terms in client contracts" {...register("message")} className={`${FIELD} resize-y py-3`} />
       </Field>
-      {/* Hidden from people and screen readers; automated form fillers fill it in and give themselves away. */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="demo-website">Leave this empty</label>
         <input id="demo-website" tabIndex={-1} autoComplete="off" {...register("website")} />

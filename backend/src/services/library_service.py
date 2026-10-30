@@ -91,7 +91,7 @@ class LibraryService(LibraryServiceProtocol):
     def complete_upload(self, user_id: int, doc_id: int) -> tuple[LibraryDocResponse, bool]:
         """Confirm the browser finished uploading. Returns the document and whether processing should start."""
         lib = self._get_owned(user_id, doc_id)
-        if lib.status != DocumentStatus.UPLOADING:  # a repeated call: nothing more to schedule
+        if lib.status != DocumentStatus.UPLOADING:
             return LibraryDocResponse.model_validate(lib), False
 
         stored_size = self.storage.object_size(self.storage.key_from_path(lib.path or ""))

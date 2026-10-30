@@ -3,7 +3,6 @@ import { ArrowUpRight, FileQuestion } from "lucide-react";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 
-
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-bg text-ink">

@@ -9,7 +9,7 @@ from src.integrations.ai.base import AIProvider
 
 SYSTEM_PROMPT = "You are a helpful assistant."
 TIMEOUT = httpx.Timeout(60.0)
-EMBED_BATCH_SIZE = 100  # API limit per batchEmbedContents call
+EMBED_BATCH_SIZE = 100
 
 
 class GeminiProvider(AIProvider):

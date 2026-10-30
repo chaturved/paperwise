@@ -81,7 +81,6 @@ class ConversationRepository(ConversationRepositoryProtocol):
         self.db.delete(conv)
         self.db.commit()
 
-    # ─── Messages ─────────────────────────────────────────────────────────────
 
     def add_message(self, conversation_id: int, role: str, content: str, meta: dict | None = None) -> Message:
         msg = Message(conversation_id=conversation_id, role=role, content=content, meta=meta)

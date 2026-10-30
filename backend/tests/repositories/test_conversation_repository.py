@@ -14,7 +14,6 @@ class TestConversationRepository:
         self.db = MagicMock(spec_set=Session)
         self.repo = ConversationRepository(db=self.db)
 
-    # ── create ────────────────────────────────────────────────────────────────
 
     def test_create_adds_commits_and_returns(self):
         self.repo.create(user_id=1, title="My convo")
@@ -33,7 +32,6 @@ class TestConversationRepository:
         added_obj = self.db.add.call_args[0][0]
         assert added_obj.title == "New conversation"
 
-    # ── get_all ───────────────────────────────────────────────────────────────
 
     def test_get_all_returns_ordered_conversations(self):
         expected = [MagicMock(spec=Conversation), MagicMock(spec=Conversation)]
@@ -57,7 +55,6 @@ class TestConversationRepository:
         assert user_filter.right.value == 7
         query.filter.return_value.filter.return_value.order_by.return_value.limit.assert_called_once_with(25)
 
-    # ── get_by_id ─────────────────────────────────────────────────────────────
 
     def test_get_by_id_returns_matching(self):
         expected = MagicMock(spec=Conversation)
@@ -74,7 +71,6 @@ class TestConversationRepository:
 
         assert result is None
 
-    # ── update_title ──────────────────────────────────────────────────────────
 
     def test_update_title_sets_title_and_returns(self):
         conv = MagicMock(spec=Conversation)
@@ -87,7 +83,6 @@ class TestConversationRepository:
         self.db.refresh.assert_called_once_with(conv)
         assert result == conv
 
-    # ── touch ─────────────────────────────────────────────────────────────────
 
     def test_touch_sets_updated_at_and_commits(self):
         conv = MagicMock(spec=Conversation)
@@ -96,7 +91,6 @@ class TestConversationRepository:
 
         self.db.commit.assert_called_once()
 
-    # ── delete ────────────────────────────────────────────────────────────────
 
     def test_delete_removes_and_commits(self):
         conv = MagicMock(spec=Conversation)
@@ -106,7 +100,6 @@ class TestConversationRepository:
         self.db.delete.assert_called_once_with(conv)
         self.db.commit.assert_called_once()
 
-    # ── add_message ───────────────────────────────────────────────────────────
 
     def test_add_message_creates_persists_and_returns(self):
         self.repo.add_message(conversation_id=1, role="user", content="hello")
@@ -128,7 +121,6 @@ class TestConversationRepository:
         added = self.db.add.call_args[0][0]
         assert added.meta == meta
 
-    # ── get_messages ──────────────────────────────────────────────────────────
 
     def test_get_messages_returns_ordered_asc(self):
         msgs = [MagicMock(spec=Message), MagicMock(spec=Message)]
@@ -138,11 +130,9 @@ class TestConversationRepository:
 
         assert result == msgs
 
-    # ── get_recent_messages ───────────────────────────────────────────────────
 
     def test_get_recent_messages_returns_chronological_order(self):
         msg1, msg2 = MagicMock(spec=Message), MagicMock(spec=Message)
-        # DB returns newest-first [msg2, msg1]; repo reverses to chronological
         (
             self.db.query.return_value
             .filter.return_value

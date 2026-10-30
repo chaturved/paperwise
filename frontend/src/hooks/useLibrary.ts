@@ -4,7 +4,6 @@ import type { LibraryDoc } from "@/types";
 
 const POLL_MS = 2000;
 
-/** The user's documents. Polls while any of them is still uploading or being processed. */
 export function useLibrary() {
   const [documents, setDocuments] = useState<LibraryDoc[]>([]);
   const [loaded, setLoaded] = useState(false);

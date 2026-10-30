@@ -18,7 +18,6 @@ export interface AudienceContent {
 
 export const audienceMetadata = (title: string, description: string): Metadata => ({ title: `${title} — Paperwise`, description });
 
-/** One page for one kind of customer: what they read, what they would ask, and what the Free plan covers. */
 export function AudiencePage({ content }: { content: AudienceContent }) {
   return (
     <div className="min-h-screen bg-bg text-ink">

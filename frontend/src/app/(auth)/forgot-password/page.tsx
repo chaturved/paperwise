@@ -11,7 +11,6 @@ import { rateLimitMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import { AuthBackground } from "@/components/auth/auth-background";
 
-
 const schema = z.object({ email: z.string().email("Enter a valid email address") });
 type FormData = z.infer<typeof schema>;
 

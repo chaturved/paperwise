@@ -18,7 +18,6 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # Fix libraries.size from String to Integer (store bytes)
     op.alter_column("libraries", "size", type_=sa.Integer(), postgresql_using="0")
     op.add_column("users", sa.Column("avatar_initials", sa.String(4), nullable=True))
     op.add_column("users", sa.Column("plan", sa.String(20), nullable=False, server_default="free"))

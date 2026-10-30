@@ -105,7 +105,6 @@ class AuthService(AuthServiceProtocol):
             raise NotFoundError("User not found")
         return UserResponse.model_validate(user)
 
-    # ─── Google OAuth ─────────────────────────────────────────────────────────
 
     async def google_redirect(self, request: Request):
         return await self.google.authorize_redirect(request)
@@ -136,7 +135,6 @@ class AuthService(AuthServiceProtocol):
             _log.exception("Unexpected error in google_callback")
             return RedirectResponse(settings.APP_URL + "/login?error=oauth_failed")
 
-    # ─── Magic link ───────────────────────────────────────────────────────────
 
     def send_magic_link(self, email: str) -> MessageResponse:
         raw_token = secrets.token_urlsafe(32)
@@ -162,7 +160,6 @@ class AuthService(AuthServiceProtocol):
         self._set_auth_cookies(response, user.id)
         return RedirectResponse(settings.APP_URL + "/dashboard")
 
-    # ─── Password reset ───────────────────────────────────────────────────────
 
     def forgot_password(self, email: str) -> MessageResponse:
         user = self.repo.get_by_email(email)

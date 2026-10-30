@@ -10,7 +10,7 @@ export interface DemoRequestPayload {
   company?: string;
   team_size?: "solo" | "2-10" | "11-50" | "51+";
   message?: string;
-  website: string; // hidden field: real visitors leave it empty
+  website: string;
 }
 
 export const requestDemo = async (payload: DemoRequestPayload): Promise<void> => {

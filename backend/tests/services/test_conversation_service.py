@@ -42,7 +42,6 @@ class TestConversationService:
             citations=CitationExtractor(),
         )
 
-    # ── list_conversations ────────────────────────────────────────────────────
 
     def test_list_conversations_returns_validated_list(self):
         conv = _make_conv()
@@ -77,7 +76,6 @@ class TestConversationService:
         assert self.svc.search_conversations(user_id=7, query=" ") == []
         self.mock_conv_repo.search.assert_not_called()
 
-    # ── new_conversation ──────────────────────────────────────────────────────
 
     def test_new_conversation_creates_and_returns(self):
         conv = _make_conv(title="Custom title")
@@ -89,7 +87,6 @@ class TestConversationService:
         self.mock_conv_repo.create.assert_called_once_with(1, "Custom title")
         assert result.title == "Custom title"
 
-    # ── rename_conversation ───────────────────────────────────────────────────
 
     def test_rename_conversation_raises_when_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -111,7 +108,6 @@ class TestConversationService:
         self.mock_conv_repo.update_title.assert_called_once_with(conv, "New")
         assert result.title == "New"
 
-    # ── remove_conversation ───────────────────────────────────────────────────
 
     def test_remove_conversation_raises_when_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -128,7 +124,6 @@ class TestConversationService:
         self.mock_conv_repo.delete.assert_called_once_with(conv)
         assert result.message == "Conversation deleted"
 
-    # ── list_messages ─────────────────────────────────────────────────────────
 
     def test_list_messages_raises_when_conv_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -161,7 +156,6 @@ class TestConversationService:
 
         assert len(result) == 1
 
-    # ── ask ───────────────────────────────────────────────────────────────────
 
     async def test_ask_raises_when_conv_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None

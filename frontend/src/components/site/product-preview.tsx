@@ -49,7 +49,6 @@ export function UploadCard() {
   );
 }
 
-/** A window on a painted backdrop, with the grey bezel ring and the bottom edge cropped. */
 export function StageWindow({ title, meta, children, label }: { title: string; meta: string; children: React.ReactNode; label: string }) {
   return (
     <div aria-label={label} className="paint rounded-lg px-3 pt-6 sm:px-10 sm:pt-12 lg:px-24 lg:pt-16">
@@ -63,7 +62,6 @@ export function StageWindow({ title, meta, children, label }: { title: string; m
   );
 }
 
-/** Home-page hero stage: composer, chips and a sourced answer. */
 export function ProductPreview() {
   return (
     <StageWindow label="Illustrative Paperwise document chat preview" title="Q3 research report" meta="PDF">
@@ -79,7 +77,6 @@ export function ProductPreview() {
 
 const ILLUSTRATIVE = <p className="mt-3 text-[11px] text-ink/40">Illustrative example</p>;
 
-/** An answer with numbered citations and the sources they point to. */
 export function AnswerPreview() {
   const chip = "mx-px inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-[3px] bg-accent/15 px-1 font-mono text-[9px] font-bold text-accent";
   return (
@@ -97,7 +94,6 @@ export function AnswerPreview() {
   );
 }
 
-/** A PDF page with the cited sentence highlighted, as the source viewer shows it. */
 export function PdfPagePreview() {
   return (
     <div className="mx-auto max-w-[560px] overflow-hidden rounded-[10px] border border-line bg-surface">
@@ -116,7 +112,6 @@ export function PdfPagePreview() {
   );
 }
 
-/** What Paperwise says when the answer is not in the documents. */
 export function NotFoundPreview() {
   return (
     <div className="mx-auto max-w-[560px] space-y-3 rounded-[10px] border border-line bg-surface p-5">

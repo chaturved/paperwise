@@ -1,4 +1,3 @@
-# backend/alembic/versions/0005_query_usage_log.py
 """add query_usage_log table
 
 Revision ID: 0005

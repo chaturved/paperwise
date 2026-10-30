@@ -52,7 +52,6 @@ class TestAuthService:
         self.response = MagicMock()
         self.request = MagicMock()
 
-    # ── signup ────────────────────────────────────────────────────────────────
 
     def test_signup_raises_when_email_already_exists(self):
         self.mock_repo.get_by_email.return_value = _make_user()
@@ -98,7 +97,6 @@ class TestAuthService:
 
         assert result.user.email == "user@example.com"
 
-    # ── login ─────────────────────────────────────────────────────────────────
 
     def test_login_raises_when_user_not_found(self):
         self.mock_repo.get_by_email.return_value = None
@@ -129,7 +127,6 @@ class TestAuthService:
         self.response.set_cookie.assert_called()
         assert result.user.id == 1
 
-    # ── authorize_token ───────────────────────────────────────────────────────
 
     def test_authorize_token_raises_when_credentials_wrong(self):
         self.mock_repo.get_by_email.return_value = None
@@ -148,7 +145,6 @@ class TestAuthService:
 
         assert result.access_token == "tok123"
 
-    # ── refresh ───────────────────────────────────────────────────────────────
 
     def test_refresh_raises_when_cookie_missing(self):
         self.request.cookies.get.return_value = None
@@ -168,7 +164,6 @@ class TestAuthService:
         self.response.set_cookie.assert_called_once()
         assert result.message == "Token refreshed"
 
-    # ── logout ────────────────────────────────────────────────────────────────
 
     def test_logout_clears_both_cookies(self):
         result = self.svc.logout(self.response)
@@ -176,7 +171,6 @@ class TestAuthService:
         assert self.response.delete_cookie.call_count == 2
         assert result.message == "Logged out"
 
-    # ── get_me ────────────────────────────────────────────────────────────────
 
     def test_get_me_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -191,7 +185,6 @@ class TestAuthService:
 
         assert result.email == "user@example.com"
 
-    # ── send_magic_link ───────────────────────────────────────────────────────
 
     def test_send_magic_link_invalidates_old_and_creates_new(self):
         result = self.svc.send_magic_link("user@example.com")
@@ -207,7 +200,6 @@ class TestAuthService:
 
         assert result.message is not None
 
-    # ── verify_magic_link ─────────────────────────────────────────────────────
 
     def test_verify_magic_link_redirects_when_token_not_found(self):
         self.mock_repo.get_magic_token.return_value = None
@@ -256,7 +248,6 @@ class TestAuthService:
         self.mock_repo.mark_magic_token_used.assert_called_once_with(mt)
         assert "dashboard" in result.headers["location"]
 
-    # ── forgot_password ───────────────────────────────────────────────────────
 
     def test_forgot_password_returns_generic_message_when_no_account(self):
         self.mock_repo.get_by_email.return_value = None
@@ -276,7 +267,6 @@ class TestAuthService:
         self.mock_repo.create_reset_token.assert_called_once()
         assert result.message is not None
 
-    # ── reset_password ────────────────────────────────────────────────────────
 
     def test_reset_password_raises_when_token_not_found(self):
         self.mock_repo.get_reset_token.return_value = None

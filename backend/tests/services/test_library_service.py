@@ -41,7 +41,6 @@ class TestLibraryService:
         self.mock_storage = MagicMock(spec_set=S3Storage)
         self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes())
 
-    # ── get_library_data ──────────────────────────────────────────────────────
 
     def test_get_library_data_aggregates_size_and_count(self):
         lib1 = _make_lib(id=1, size=100)
@@ -63,7 +62,6 @@ class TestLibraryService:
         assert result.total_size_bytes == 0
         assert result.sections == []
 
-    # ── delete_document ───────────────────────────────────────────────────────
 
     def test_delete_document_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -90,7 +88,6 @@ class TestLibraryService:
         self.mock_storage.delete_file.assert_not_called()
         self.mock_repo.delete.assert_called_once_with(lib)
 
-    # ── clear_all ─────────────────────────────────────────────────────────────
 
     def test_clear_all_deletes_all_files_and_clears_repo(self):
         libs = [_make_lib(id=1, path="/tmp/a.pdf"), _make_lib(id=2, path="/tmp/b.pdf")]
@@ -146,7 +143,6 @@ class TestDirectUploads:
         lib.status = status
         return lib
 
-    # ── create_uploads ────────────────────────────────────────────────────────
 
     def test_create_uploads_checks_plan_limits_against_active_documents(self):
         request = CreateUploadsRequest(files=[UploadFileRequest(name="contract.pdf", size=500)])
@@ -213,7 +209,6 @@ class TestDirectUploads:
         self.mock_repo.add.assert_not_called()
         self.mock_storage.create_upload_url.assert_not_called()
 
-    # ── complete_upload ───────────────────────────────────────────────────────
 
     def test_complete_upload_starts_processing_once_the_file_is_stored(self):
         self.mock_repo.get_by_id.return_value = self._doc("uploading")
@@ -272,7 +267,6 @@ class TestDirectUploads:
 
         self.mock_repo.get_by_id.assert_called_once_with(99, 7)
 
-    # ── retry_processing ──────────────────────────────────────────────────────
 
     def test_retry_restarts_a_failed_document_whose_file_is_still_stored(self):
         self.mock_repo.get_by_id.return_value = self._doc("failed")
@@ -310,7 +304,6 @@ class TestDirectUploads:
         with pytest.raises(BadRequestError, match="upload it again"):
             self.svc.retry_processing(7, Plan.FREE, 11)
 
-    # ── get_file_url ──────────────────────────────────────────────────────────
 
     def test_file_url_is_a_signed_link_for_a_ready_document(self):
         self.mock_repo.get_by_id.return_value = self._doc("ready")

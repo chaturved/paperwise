@@ -11,7 +11,6 @@ import { useLibrary } from "@/hooks/useLibrary";
 import { apiErrorMessage } from "@/lib/api-error";
 import { AuthBackground } from "@/components/auth/auth-background";
 
-
 const SUGGESTIONS = [
   "What is this document about?",
   "Summarize the key points",
@@ -28,7 +27,6 @@ export default function OnboardingPage() {
   const [question, setQuestion] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Someone who already has a ready document skips straight to asking.
   const skippedAhead = useRef(false);
   useEffect(() => {
     if (!loaded || skippedAhead.current) return;
@@ -74,10 +72,8 @@ export default function OnboardingPage() {
     <div className="auth-page relative">
       <AuthBackground />
       <div className="auth-panel !max-w-[520px]">
-        {/* Logo */}
         <span className="mb-10 block font-display text-[28px] leading-none tracking-[-0.02em]">Paperwise</span>
 
-        {/* Progress */}
         <div className="flex items-center gap-2 mb-3">
           {steps.map((s) => (
             <div key={s.n} className="flex-1 h-[3px] rounded-full overflow-hidden bg-ink/[0.06]">
@@ -88,7 +84,6 @@ export default function OnboardingPage() {
         </div>
         <p className="text-xs text-faint mb-8">Step {step} of 3</p>
 
-        {/* Step 1 — Welcome */}
         {step === 1 && (
           <div className="animate-fu">
             <h2 className="mb-2 font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">
@@ -110,7 +105,6 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 2 — Upload */}
         {step === 2 && (
           <div className="animate-fu">
             <h2 className="mb-2 font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">Upload your first document</h2>
@@ -165,7 +159,6 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 3 — Ask */}
         {step === 3 && (
           <div className="animate-fu">
             <h2 className="mb-2 font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">Now ask something about it!</h2>

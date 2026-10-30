@@ -12,7 +12,6 @@ import { resetPassword } from "@/lib/api/auth";
 import { rateLimitMessage } from "@/lib/api-error";
 import { AuthBackground } from "@/components/auth/auth-background";
 
-
 const schema = z.object({
   new_password: z.string().min(8, "Password must be at least 8 characters"),
   confirm: z.string(),

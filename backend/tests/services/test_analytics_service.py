@@ -13,7 +13,6 @@ class TestAnalyticsService:
         self.mock_repo = MagicMock(spec_set=AnalyticsRepositoryProtocol)
         self.svc = AnalyticsService(repo=self.mock_repo)
 
-    # ── get_overview ──────────────────────────────────────────────────────────
 
     def test_get_overview_delegates_to_repo(self):
         expected = {"total_queries": 10, "total_docs": 3}
@@ -24,7 +23,6 @@ class TestAnalyticsService:
         self.mock_repo.get_overview.assert_called_once_with(1)
         assert result == expected
 
-    # ── get_query_volume ──────────────────────────────────────────────────────
 
     def test_get_query_volume_delegates_to_repo(self):
         expected = [{"date": "2024-01-01", "count": 5}]
@@ -35,7 +33,6 @@ class TestAnalyticsService:
         self.mock_repo.get_query_volume.assert_called_once_with(1, 30)
         assert result == expected
 
-    # ── get_top_cited_docs ────────────────────────────────────────────────────
 
     def test_get_top_cited_docs_delegates_to_repo(self):
         expected = [{"name": "doc.pdf", "citations": 10}]
@@ -46,7 +43,6 @@ class TestAnalyticsService:
         self.mock_repo.get_top_cited_docs.assert_called_once_with(1)
         assert result == expected
 
-    # ── set_feedback ──────────────────────────────────────────────────────────
 
     def test_set_feedback_raises_on_invalid_value(self):
         with pytest.raises(BadRequestError):
@@ -62,7 +58,6 @@ class TestAnalyticsService:
 
         self.mock_repo.upsert_feedback.assert_called_once_with(1, 1, "down")
 
-    # ── get_feedbacks ─────────────────────────────────────────────────────────
 
     def test_get_feedbacks_delegates_to_repo(self):
         expected = {1: "up", 2: "down"}

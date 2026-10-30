@@ -15,7 +15,6 @@ class TestTierService:
         self.mock_repo = MagicMock(spec_set=TierRepositoryProtocol)
         self.svc = TierService(repo=self.mock_repo)
 
-    # ── check_upload_metadata ─────────────────────────────────────────────────
 
     def test_metadata_accepts_files_within_the_free_limits(self):
         files = [UploadMeta("contract.docx", 2 * 1024 * 1024), UploadMeta("notes.md", 10)]
@@ -48,7 +47,6 @@ class TestTierService:
             self.svc.check_upload_metadata(Plan.PRO, [UploadMeta("big.pdf", 51 * 1024 * 1024)], current_doc_count=0)
         assert exc.value.limit == "file_size"
 
-    # ── check_and_log_ask ─────────────────────────────────────────────────────
 
     def test_ask_free_at_limit(self):
         self.mock_repo.count_queries_24h.return_value = 20
@@ -66,7 +64,6 @@ class TestTierService:
         self.svc.check_and_log_ask(Plan.PRO, user_id=1)
         self.mock_repo.log_query.assert_called_once_with(1)
 
-    # ── check_history ─────────────────────────────────────────────────────────
 
     def test_history_free_too_old(self):
         old = datetime.now(UTC) - timedelta(days=8)

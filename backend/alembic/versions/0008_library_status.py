@@ -1,4 +1,3 @@
-# backend/alembic/versions/0008_library_status.py
 """add processing status to libraries
 
 Revision ID: 0008

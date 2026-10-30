@@ -129,7 +129,6 @@ export function PaintedCta({ title, children }: { title: string; children: React
   );
 }
 
-/** A painted block holding a cropped card, beside hairline feature rows. */
 export function PaintedSplit({ tone = "paint", card, rows }: { tone?: "paint" | "warm"; card: React.ReactNode; rows: { title: string; text: string }[] }) {
   return (
     <div className="mt-14 grid items-end gap-7 md:grid-cols-2">
@@ -141,7 +140,6 @@ export function PaintedSplit({ tone = "paint", card, rows }: { tone?: "paint" | 
   );
 }
 
-/** Numbered steps laid out in columns. */
 export function StepColumns({ steps }: { steps: { title: string; text: string }[] }) {
   return (
     <ol className="mt-12 grid gap-10 md:grid-cols-3">
@@ -156,7 +154,6 @@ export function StepColumns({ steps }: { steps: { title: string; text: string }[
   );
 }
 
-/** A hairline list of links, each with a one-line description. */
 export function LinkRows({ items }: { items: { label: string; text: string; href: string }[] }) {
   return (
     <ul className="divide-y divide-line border-y border-line">

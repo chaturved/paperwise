@@ -30,7 +30,6 @@ class TestUserService:
         self.mock_library = MagicMock(spec_set=LibraryServiceProtocol)
         self.svc = UserService(repo=self.mock_repo, hasher=self.mock_hasher, library=self.mock_library)
 
-    # ── create_user ───────────────────────────────────────────────────────────
 
     def test_create_user_hashes_password(self):
         user_in = UserCreate(email="a@b.com", password="secret123", full_name="John Doe")
@@ -44,7 +43,6 @@ class TestUserService:
         added = self.mock_repo.add.call_args[0][0]
         assert added.hashed_password == "hashed"
 
-    # ── create_user_oauth ─────────────────────────────────────────────────────
 
     def test_create_user_oauth_sets_no_password(self):
         self.mock_repo.add.return_value = _make_user()
@@ -54,7 +52,6 @@ class TestUserService:
         added = self.mock_repo.add.call_args[0][0]
         assert added.hashed_password is None
 
-    # ── update_profile ────────────────────────────────────────────────────────
 
     def test_update_profile_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -72,7 +69,6 @@ class TestUserService:
         assert user.full_name == "Jane Smith"
         self.mock_repo.update.assert_called_once_with(user)
 
-    # ── change_password ───────────────────────────────────────────────────────
 
     def test_change_password_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -114,7 +110,6 @@ class TestUserService:
         self.mock_repo.update.assert_called_once_with(user)
         assert result.message == "Password updated"
 
-    # ── set_password ──────────────────────────────────────────────────────────
 
     def test_set_password_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -138,7 +133,6 @@ class TestUserService:
         assert user.hashed_password == "hashed_new"
         assert result.message == "Password set"
 
-    # ── remove_account ────────────────────────────────────────────────────────
 
     def test_remove_account_raises_on_wrong_confirmation(self):
         with pytest.raises(BadRequestError):
@@ -177,7 +171,6 @@ class TestUserService:
 
         self.mock_library.clear_all.assert_not_called()
 
-    # ── complete_onboarding ───────────────────────────────────────────────────
 
     def test_complete_onboarding_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -196,7 +189,6 @@ class TestUserService:
         self.mock_repo.update.assert_called_once_with(user)
         assert result.message == "Onboarding complete"
 
-    # ── get_usage ─────────────────────────────────────────────────────────────
 
     def test_get_usage_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -214,11 +206,11 @@ class TestUserService:
         result = self.svc.get_usage(user_id=1)
 
         assert result.documents.used == 2
-        assert result.documents.limit == 5  # FREE max_docs
+        assert result.documents.limit == 5
         assert result.queries_today.used == 5
-        assert result.queries_today.limit == 20  # FREE max_queries_day
+        assert result.queries_today.limit == 20
         assert result.storage_bytes.used == 1024
-        assert result.storage_bytes.limit == 10 * 1024 * 1024  # 10MB
+        assert result.storage_bytes.limit == 10 * 1024 * 1024
 
     def test_get_usage_pro_plan_has_no_doc_limit(self):
         user = _make_user(plan=Plan.PRO)

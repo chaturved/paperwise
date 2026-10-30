@@ -9,7 +9,7 @@ class DemoRequestCreate(BaseModel):
     company: str | None = Field(default=None, max_length=160)
     team_size: Literal["solo", "2-10", "11-50", "51+"] | None = None
     message: str | None = Field(default=None, max_length=2000)
-    website: str = ""  # hidden field that people never fill in; bots do
+    website: str = ""
 
     @field_validator("name", "company")
     @classmethod

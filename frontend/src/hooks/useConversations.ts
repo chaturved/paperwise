@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { deleteConversation, getConversations, renameConversation } from "@/lib/api/conversations";
 import type { Conversation } from "@/types";
 
-/** The user's conversations. `onChange` hears about every fresh list, so other parts of the screen can follow along. */
 export function useConversations(onChange?: (conversations: Conversation[]) => void) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
 

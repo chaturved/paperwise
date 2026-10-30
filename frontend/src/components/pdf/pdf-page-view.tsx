@@ -9,7 +9,6 @@ import { loadPdfjs } from "@/lib/pdfjs";
 interface Props {
   url: string;
   pageNumber: number;
-  /** The cited passage; the text on the page that matches it is highlighted. */
   passage: string;
   onLoad?: (pageCount: number) => void;
 }

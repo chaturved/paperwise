@@ -13,7 +13,6 @@ class TestAnalyticsRepository:
         self.db = MagicMock(spec_set=Session)
         self.repo = AnalyticsRepository(db=self.db)
 
-    # ── get_overview ──────────────────────────────────────────────────────────
 
     def test_get_overview_returns_expected_keys(self):
         self.db.query.return_value.filter.return_value.scalar.return_value = 5
@@ -44,7 +43,6 @@ class TestAnalyticsRepository:
     def test_get_overview_computes_quality_pct_from_feedback(self):
         self.db.query.return_value.filter.return_value.scalar.return_value = 0
         self.db.query.return_value.join.return_value.filter.return_value.scalar.return_value = 0
-        # Simulate 3 thumbs_up, 1 thumbs_down rows
         up_row = MagicMock()
         up_row.__getitem__ = lambda self, i: "up" if i == 0 else 3
         down_row = MagicMock()
@@ -59,7 +57,6 @@ class TestAnalyticsRepository:
         assert result["thumbs_down"] == 1
         assert result["quality_pct"] == 75
 
-    # ── get_query_volume ──────────────────────────────────────────────────────
 
     def test_get_query_volume_returns_list_of_dicts(self):
         row = MagicMock()
@@ -90,7 +87,6 @@ class TestAnalyticsRepository:
 
         assert result == []
 
-    # ── upsert_feedback ───────────────────────────────────────────────────────
 
     def test_upsert_feedback_updates_existing(self):
         existing = MagicMock(spec=MessageFeedback)
@@ -116,7 +112,6 @@ class TestAnalyticsRepository:
         assert added.message_id == 1
         assert added.value == "up"
 
-    # ── get_user_feedbacks ────────────────────────────────────────────────────
 
     def test_get_user_feedbacks_returns_empty_dict_for_no_ids(self):
         result = self.repo.get_user_feedbacks(user_id=1, message_ids=[])

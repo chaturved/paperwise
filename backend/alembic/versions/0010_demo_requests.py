@@ -1,4 +1,3 @@
-# backend/alembic/versions/0010_demo_requests.py
 """add demo requests
 
 Revision ID: 0010

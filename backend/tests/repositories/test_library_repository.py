@@ -15,7 +15,6 @@ class TestLibraryRepository:
         self.db = MagicMock(spec_set=Session)
         self.repo = LibraryRepository(db=self.db)
 
-    # ── get_all ───────────────────────────────────────────────────────────────
 
     def test_get_all_returns_user_libraries(self):
         expected = [MagicMock(spec=Library), MagicMock(spec=Library)]
@@ -26,7 +25,6 @@ class TestLibraryRepository:
         assert result == expected
         self.db.query.assert_called_once_with(Library)
 
-    # ── get_by_id ─────────────────────────────────────────────────────────────
 
     def test_get_by_id_returns_matching_library(self):
         expected = MagicMock(spec=Library)
@@ -43,7 +41,6 @@ class TestLibraryRepository:
 
         assert result is None
 
-    # ── add ───────────────────────────────────────────────────────────────────
 
     def test_add_persists_and_returns_library(self):
         lib = MagicMock(spec=Library)
@@ -55,7 +52,6 @@ class TestLibraryRepository:
         self.db.refresh.assert_called_once_with(lib)
         assert result == lib
 
-    # ── add_chunks ────────────────────────────────────────────────────────────
 
     def test_add_chunks_bulk_saves_and_commits(self):
         chunks: list[LibraryChunk] = [MagicMock(spec=LibraryChunk), MagicMock(spec=LibraryChunk)]
@@ -71,7 +67,6 @@ class TestLibraryRepository:
         self.db.add_all.assert_called_once_with([])
         self.db.commit.assert_called_once()
 
-    # ── delete ────────────────────────────────────────────────────────────────
 
     def test_delete_removes_and_commits(self):
         lib = MagicMock(spec=Library)
@@ -81,7 +76,6 @@ class TestLibraryRepository:
         self.db.delete.assert_called_once_with(lib)
         self.db.commit.assert_called_once()
 
-    # ── clear_user_library ────────────────────────────────────────────────────
 
     def test_clear_user_library_commits(self):
         lib1, lib2 = MagicMock(), MagicMock()
@@ -92,7 +86,6 @@ class TestLibraryRepository:
 
         self.db.commit.assert_called_once()
 
-    # ── get_top_k_chunks ──────────────────────────────────────────────────────
 
     def test_get_top_k_chunks_returns_results(self):
         expected = [MagicMock(), MagicMock()]

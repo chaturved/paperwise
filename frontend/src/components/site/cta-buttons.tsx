@@ -5,7 +5,6 @@ interface Props {
   startLabel?: string;
 }
 
-/** The two actions every marketing page ends on, for a light background. */
 export function HeroCtas({ startLabel = "Upload a file" }: Props) {
   return (
     <div className="flex flex-wrap gap-3">
@@ -15,7 +14,6 @@ export function HeroCtas({ startLabel = "Upload a file" }: Props) {
   );
 }
 
-/** The same two actions for the painted call-to-action block. */
 export function PaintedCtaButtons({ startLabel = "Upload a file" }: Props) {
   return (
     <>

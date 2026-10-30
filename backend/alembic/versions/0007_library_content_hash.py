@@ -1,4 +1,3 @@
-# backend/alembic/versions/0007_library_content_hash.py
 """add content_hash to libraries for dedup
 
 Revision ID: 0007

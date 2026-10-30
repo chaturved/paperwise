@@ -18,7 +18,7 @@ class ResourceLimits:
     def apply(self) -> None:
         try:
             import resource
-        except ImportError:  # not a POSIX platform
+        except ImportError:
             return
 
         limits = (
@@ -28,7 +28,7 @@ class ResourceLimits:
         for kind, value in limits:
             try:
                 resource.setrlimit(kind, (value, value))
-            except (ValueError, OSError):  # the platform refuses this limit (for example macOS and RLIMIT_AS)
+            except (ValueError, OSError):
                 pass
 
 

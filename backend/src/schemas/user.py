@@ -1,6 +1,5 @@
 from pydantic import BaseModel, EmailStr, computed_field
 
-# ─── Request schemas ──────────────────────────────────────────────────────────
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -41,8 +40,6 @@ class ResetPasswordRequest(BaseModel):
 class WaitlistRequest(BaseModel):
     email: EmailStr
 
-
-# ─── Response schemas ─────────────────────────────────────────────────────────
 
 def _initials(full_name: str) -> str:
     parts = full_name.strip().split()

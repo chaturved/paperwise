@@ -46,7 +46,6 @@ export function ProfileForm() {
     <div>
       <h1 className="mb-8 font-display text-[40px] font-normal tracking-[-0.0125em] text-ink">Profile</h1>
 
-      {/* Avatar */}
       <div className="mb-8">
         <p className="text-[12px] font-medium text-ink/40 mb-3">Avatar</p>
         <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-ink text-xl font-semibold text-bg">
@@ -54,7 +53,6 @@ export function ProfileForm() {
         </div>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
           <label className="block text-[12px] font-medium text-ink/40 mb-2">Full name</label>
@@ -86,7 +84,6 @@ export function ProfileForm() {
         </button>
       </form>
 
-      {/* Danger Zone */}
       <div className="mt-10 pt-8 border-t-system">
         <h2 className="mb-2 text-[16px] font-semibold text-red-500">Delete account</h2>
         <p className="mb-5 text-[13px] leading-relaxed text-ink/55">

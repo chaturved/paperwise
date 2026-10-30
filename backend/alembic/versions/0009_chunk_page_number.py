@@ -1,4 +1,3 @@
-# backend/alembic/versions/0009_chunk_page_number.py
 """add the source page number to library chunks
 
 Revision ID: 0009

@@ -12,14 +12,11 @@ from src.models import *
 
 DATABASE_URL = settings.DATABASE_URL
 
-# Alembic Config object
 config = context.config
 
-# Logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Target metadata
 target_metadata = Base.metadata
 
 

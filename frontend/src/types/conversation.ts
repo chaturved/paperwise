@@ -10,7 +10,7 @@ export interface ConversationSearchResult extends Conversation {
 }
 
 export interface Source {
-  n?: number; // missing on answers saved before sources were numbered
+  n?: number;
   doc_id?: number;
   name: string;
   page?: number | null;

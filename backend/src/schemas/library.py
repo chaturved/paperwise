@@ -28,7 +28,7 @@ class UploadFileRequest(BaseModel):
 
 class DocumentFileResponse(BaseModel):
     url: str
-    expires_in: int  # seconds
+    expires_in: int
 
 
 class CreateUploadsRequest(BaseModel):

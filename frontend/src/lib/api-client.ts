@@ -2,8 +2,6 @@ import axios from "axios";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
 import { isProtectedRoute } from "@/lib/auth-routes";
 
-// ─── Axios base client ────────────────────────────────────────────────────────
-
 const apiClient = axios.create({
   baseURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}`,
   withCredentials: true,
@@ -59,8 +57,6 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-
-// ─── SSE client ───────────────────────────────────────────────────────────────
 
 type FetchEventSourceFn = typeof fetchEventSource;
 

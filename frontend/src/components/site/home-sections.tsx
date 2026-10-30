@@ -26,7 +26,6 @@ const AUDIENCES = [
   },
 ] as const;
 
-/** One painted tile per audience, each showing the kind of document they bring. */
 export function AudienceTiles() {
   return (
     <div className="mt-12 grid gap-4 md:grid-cols-3">
@@ -68,7 +67,6 @@ function Points({ items, light }: { items: string[]; light?: boolean }) {
   );
 }
 
-/** Free and Pro side by side, without numbers: those live on the pricing page. */
 export function PlansTeaser() {
   return (
     <div className="mt-12">

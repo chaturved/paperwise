@@ -106,7 +106,7 @@ class IngestionService:
     def _fail(self, doc_id: int, message: str, remove_file: bool) -> None:
         self.repo.rollback()
         lib = self.repo.get(doc_id)
-        if lib is None:  # the user deleted it while it was processing
+        if lib is None:
             return
         if remove_file:
             self._remove_file(lib)

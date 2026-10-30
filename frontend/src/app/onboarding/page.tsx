@@ -21,7 +21,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [step, setStep] = useState(1);
-  const { documents, loaded, refresh, retry } = useLibrary();
+  const { documents, loaded, refresh, remove, retry } = useLibrary();
   const { upload, uploading } = useDocumentUpload(refresh);
   const uploadedDoc = documents[0] ?? null;
   const [question, setQuestion] = useState("");
@@ -124,8 +124,12 @@ export default function OnboardingPage() {
                   </p>
                 </div>
                 {uploadedDoc.status === "failed" && (
-                  <button onClick={() => retry(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Retry failed")))}
-                    className="text-xs font-medium text-ink underline underline-offset-2">Try again</button>
+                  <div className="flex flex-shrink-0 flex-col items-end gap-1">
+                    <button onClick={() => retry(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Retry failed")))}
+                      className="text-xs font-medium text-ink underline underline-offset-2">Try again</button>
+                    <button onClick={() => remove(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Couldn't remove the file")))}
+                      className="text-xs font-medium text-ink underline underline-offset-2">Use a different file</button>
+                  </div>
                 )}
               </div>
             ) : (

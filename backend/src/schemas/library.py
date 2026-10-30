@@ -43,7 +43,6 @@ class UploadResponse(BaseModel):
 class UploadFileRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     size: int = Field(gt=0)
-    content_type: str | None = Field(default=None, max_length=100)
 
 
 class CreateUploadsRequest(BaseModel):

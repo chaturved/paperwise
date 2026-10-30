@@ -52,10 +52,10 @@ def complete_upload(
 def retry_processing(
     doc_id: int,
     background: BackgroundTasks,
-    user_id: int = Depends(get_current_user_id),
+    user: User = Depends(get_current_user),
     service: LibraryServiceProtocol = Depends(LibraryService),
 ) -> LibraryDocResponse:
-    doc, started = service.retry_processing(user_id, doc_id)
+    doc, started = service.retry_processing(user.id, user.plan, doc_id)
     if started:
         background.add_task(process_document_job, doc_id)
     return doc

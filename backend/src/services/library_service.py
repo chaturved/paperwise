@@ -1,6 +1,5 @@
 import hashlib
 import logging
-import mimetypes
 import os
 from datetime import UTC, datetime
 from typing import Protocol
@@ -25,7 +24,7 @@ from src.schemas.user import MessageResponse
 from src.services.tier_service import TierService, TierServiceProtocol, UploadMeta
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
-from src.integrations.documents import extract_readable_text
+from src.integrations.documents import content_type_for, extract_readable_text
 from src.integrations.storage import S3Storage
 from src.utils.text_utils import chunk_text
 
@@ -37,7 +36,7 @@ class LibraryServiceProtocol(Protocol):
     async def save_files(self, user_id: int, plan: Plan, files: list[UploadFile]) -> UploadResponse: ...
     def create_uploads(self, user_id: int, plan: Plan, request: CreateUploadsRequest) -> CreateUploadsResponse: ...
     def complete_upload(self, user_id: int, doc_id: int) -> tuple[LibraryDocResponse, bool]: ...
-    def retry_processing(self, user_id: int, doc_id: int) -> tuple[LibraryDocResponse, bool]: ...
+    def retry_processing(self, user_id: int, plan: Plan, doc_id: int) -> tuple[LibraryDocResponse, bool]: ...
     def delete_document(self, doc_id: int, user_id: int) -> MessageResponse: ...
     def clear_all(self, user_id: int) -> MessageResponse: ...
 
@@ -129,13 +128,14 @@ class LibraryService(LibraryServiceProtocol):
         slots: list[UploadSlotResponse] = []
         for f in request.files:
             name = os.path.basename(f.name)
+            ext = name.rsplit(".", 1)[-1].lower()
             key = self.storage.key_for(user_id, name)
-            content_type = f.content_type or mimetypes.guess_type(name)[0] or "application/octet-stream"
+            content_type = content_type_for(ext)
             library = self.repo.add(
                 Library(
                     user_id=user_id,
                     name=name,
-                    type=name.rsplit(".", 1)[-1].lower(),
+                    type=ext,
                     size=f.size,
                     path=self.storage.public_url(key),
                     status=DocumentStatus.UPLOADING,
@@ -164,10 +164,12 @@ class LibraryService(LibraryServiceProtocol):
         started = self.repo.transition_status(lib.id, DocumentStatus.UPLOADING, DocumentStatus.PROCESSING)
         return LibraryDocResponse.model_validate(lib), started
 
-    def retry_processing(self, user_id: int, doc_id: int) -> tuple[LibraryDocResponse, bool]:
+    def retry_processing(self, user_id: int, plan: Plan, doc_id: int) -> tuple[LibraryDocResponse, bool]:
         lib = self._get_owned(user_id, doc_id)
         if lib.status != DocumentStatus.FAILED:
             raise ConflictError("Only documents that failed can be retried")
+        # Failed documents don't use up the plan limit, so retrying one has to pass the same check as a new upload.
+        self.tier.check_upload_metadata(plan, [UploadMeta(lib.name, lib.size)], self.repo.count_active(user_id))
         if self.storage.object_size(self.storage.key_from_path(lib.path or "")) is None:
             raise BadRequestError("The original file is no longer available. Please upload it again.")
 

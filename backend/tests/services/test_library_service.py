@@ -322,19 +322,30 @@ class TestDirectUploads:
         slot = result.uploads[0]
         assert (slot.id, slot.upload_url, slot.headers) == (11, "https://signed.example/put", {"Content-Type": "application/pdf"})
 
-    def test_create_uploads_uses_the_browsers_content_type_when_given(self):
-        request = CreateUploadsRequest(files=[UploadFileRequest(name="notes.md", size=5, content_type="text/markdown")])
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("a.pdf", "application/pdf"),
+            ("a.DOCX", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+            ("a.txt", "text/plain"),
+            ("a.md", "text/plain"),
+        ],
+    )
+    def test_create_uploads_labels_files_by_their_extension(self, name, expected):
+        request = CreateUploadsRequest(files=[UploadFileRequest(name=name, size=5)])
 
         result = self.svc.create_uploads(7, Plan.FREE, request)
 
-        assert result.uploads[0].headers == {"Content-Type": "text/markdown"}
+        assert result.uploads[0].headers == {"Content-Type": expected}
 
-    def test_create_uploads_falls_back_to_a_generic_type_for_unknown_extensions(self):
-        request = CreateUploadsRequest(files=[UploadFileRequest(name="mystery.zzz", size=5)])
+    def test_create_uploads_ignores_a_content_type_chosen_by_the_browser(self):
+        # A file labelled text/html would be served as a web page. The type is never taken from the request.
+        request = CreateUploadsRequest.model_validate({"files": [{"name": "a.pdf", "size": 5, "content_type": "text/html"}]})
 
         result = self.svc.create_uploads(7, Plan.FREE, request)
 
-        assert result.uploads[0].headers == {"Content-Type": "application/octet-stream"}
+        assert result.uploads[0].headers == {"Content-Type": "application/pdf"}
+        self.mock_storage.create_upload_url.assert_called_once_with("7/id/contract.pdf", 5, "application/pdf")
 
     def test_create_uploads_strips_directories_from_the_file_name(self):
         request = CreateUploadsRequest(files=[UploadFileRequest(name="../../etc/evil.pdf", size=5)])
@@ -420,7 +431,7 @@ class TestDirectUploads:
         self.mock_storage.object_size.return_value = 500
         self.mock_repo.transition_status.return_value = True
 
-        _doc, started = self.svc.retry_processing(7, 11)
+        _doc, started = self.svc.retry_processing(7, Plan.FREE, 11)
 
         assert started is True
         self.mock_repo.transition_status.assert_called_once_with(11, DocumentStatus.FAILED, DocumentStatus.PROCESSING)
@@ -430,11 +441,23 @@ class TestDirectUploads:
         self.mock_repo.get_by_id.return_value = self._doc(status)
 
         with pytest.raises(ConflictError):
-            self.svc.retry_processing(7, 11)
+            self.svc.retry_processing(7, Plan.FREE, 11)
+
+    def test_retry_is_checked_against_the_plan_limit_like_a_new_upload(self):
+        self.mock_repo.get_by_id.return_value = self._doc("failed")
+        self.mock_repo.count_active.return_value = 5
+        self.mock_tier.check_upload_metadata.side_effect = PlanLimitError("documents")
+
+        with pytest.raises(PlanLimitError):
+            self.svc.retry_processing(7, Plan.FREE, 11)
+
+        plan, metadata, count = self.mock_tier.check_upload_metadata.call_args.args
+        assert plan == Plan.FREE and count == 5 and [(m.name, m.size) for m in metadata] == [("contract.pdf", 500)]
+        self.mock_repo.transition_status.assert_not_called()
 
     def test_retry_asks_for_a_new_upload_when_the_file_is_gone(self):
         self.mock_repo.get_by_id.return_value = self._doc("failed")
         self.mock_storage.object_size.return_value = None
 
         with pytest.raises(BadRequestError, match="upload it again"):
-            self.svc.retry_processing(7, 11)
+            self.svc.retry_processing(7, Plan.FREE, 11)

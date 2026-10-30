@@ -3,7 +3,6 @@ services:
     build: ./backend
     env_file: ./backend/.env
     environment:
-      # nginx is the only way in, so its X-Forwarded-For header carries the real client address
       TRUST_FORWARDED_FOR: "true"
     expose:
       - "8000"

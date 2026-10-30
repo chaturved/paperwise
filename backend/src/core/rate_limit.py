@@ -17,11 +17,6 @@ class ClientAddress:
 
 
 class RateLimit:
-    """A route dependency that allows a client a fixed number of calls in a time window.
-
-    Counts live in memory and are shared by every `RateLimit`, so they are per server process.
-    """
-
     _storage = MemoryStorage()
     _strategy = MovingWindowRateLimiter(_storage)
     _addresses = ClientAddress()
@@ -43,7 +38,5 @@ class RateLimit:
 
 
 class UserRateLimit(RateLimit):
-    """Like `RateLimit`, but counts per signed-in user, so switching address does not reset the allowance."""
-
     def __call__(self, request: Request, user_id: int = Depends(get_current_user_id)) -> None:
         self._count(f"user:{user_id}")

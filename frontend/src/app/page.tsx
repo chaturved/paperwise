@@ -1,4 +1,4 @@
-import { Gauge, KeyRound, ShieldCheck } from "lucide-react";
+import { KeyRound, Lock, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { AuthActionLink } from "@/components/site/auth-action-link";
 import { DetailRows, MetricRows, PageHero, PaintedCard, PaintedCta, Statement } from "@/components/site/page-sections";
@@ -7,9 +7,9 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 
 const securityRows = [
-  { icon: ShieldCheck, label: "Cookie-based sessions", detail: "Your sign-in token lives in an httpOnly cookie that scripts in the browser cannot read." },
-  { icon: KeyRound, label: "Secrets stay on the server", detail: "AI requests and third-party keys are handled by the backend. The browser only holds your session." },
-  { icon: Gauge, label: "Rate limiting", detail: "The API limits how often a client can call it, which helps protect accounts and keeps the service responsive." },
+  { icon: Lock, label: "Private to your account", detail: "Your documents and conversations are visible only to you, and your files are stored privately." },
+  { icon: Trash2, label: "Delete whenever you like", detail: "Remove a single document, or your whole account and everything in it, from your settings." },
+  { icon: KeyRound, label: "Sign in your way", detail: "Use a password, Google, or a one-time link sent to your email." },
 ];
 
 export default function LandingPage() {

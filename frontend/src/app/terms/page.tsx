@@ -1,48 +1,12 @@
-import { PageHero } from "@/components/site/page-sections";
-import { SiteNav } from "@/components/site/site-nav";
-import { SiteFooter } from "@/components/site/site-footer";
-
-function Section({ title, children, first }: { title: string; children: React.ReactNode; first?: boolean }) {
-  return (
-    <div className={`py-9 ${!first ? "border-t border-line" : ""}`}>
-      <h2 className="mb-4 flex items-center gap-3 font-display text-[21px] font-normal tracking-[-0.02em] text-ink">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-        {title}
-      </h2>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-[15px] leading-8 text-ink/75">{children}</p>;
-}
-
-function Bullets({ items }: { items: string[] }) {
-  return (
-    <ul className="space-y-2">
-      {items.map((item) => (
-        <li key={item} className="flex gap-2 text-[15px] leading-8 text-ink/75">
-          <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
+import { LegalBullets as Bullets, LegalP as P, LegalPage, LegalSection as Section } from "@/components/site/legal";
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-bg text-ink">
-      <SiteNav />
-
-      <PageHero crumbs={[{ label: "Legal" }, { label: "Terms of Service" }]} title="Terms of Service">
-        <p>These terms govern your access to and use of Paperwise. Please read them carefully.</p>
-        <p className="!mt-0 !text-sm !text-ink/50">Last updated: May 2026</p>
-      </PageHero>
-
-      <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8"><div className="max-w-[760px]">
-
+    <LegalPage
+      title="Terms of Service"
+      summary="These terms govern your access to and use of Paperwise. Please read them carefully."
+      updated="May 2026"
+    >
         <Section title="Acceptance of terms" first>
           <P>By creating a Paperwise account or using the Paperwise service, you agree to these Terms of Service. If you do not agree, do not use the service.</P>
           <P>These terms may be updated from time to time. Continued use after changes means you accept the new terms. We&apos;ll notify you of material changes by email or by displaying a notice in the app.</P>
@@ -108,9 +72,6 @@ export default function TermsPage() {
           <P>Questions about these terms? Email <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 hover:opacity-70 transition">hello@paperwise.ai</a> — we aim to respond within 2 business days.</P>
         </Section>
 
-      </div></div>
-
-      <SiteFooter />
-    </div>
+    </LegalPage>
   );
 }

@@ -1,0 +1,60 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { PageHero } from "@/components/site/page-sections";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteNav } from "@/components/site/site-nav";
+
+export const metadata: Metadata = {
+  title: "Legal — Paperwise",
+  description: "The terms, privacy policy and AI policy that apply to Paperwise.",
+};
+
+const groups = [
+  {
+    title: "Terms",
+    items: [{ label: "Terms of Service", text: "The rules for using Paperwise, including plans and limits.", href: "/terms" }],
+  },
+  {
+    title: "Privacy",
+    items: [
+      { label: "Privacy Policy", text: "What we collect, who we share it with, how long we keep it and how to delete it.", href: "/privacy" },
+      { label: "AI and your documents", text: "What is sent to the AI service when you upload a file or ask a question.", href: "/legal/ai" },
+    ],
+  },
+  {
+    title: "Security",
+    items: [{ label: "Security overview", text: "How your account and files are protected, in plain language.", href: "/security" }],
+  },
+];
+
+export default function LegalPage() {
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-bg text-ink">
+      <SiteNav />
+      <PageHero crumbs={[{ label: "Legal" }]} title="Legal">
+        <p>The documents that explain how Paperwise works with your files and what we expect of each other. We update them as the product changes.</p>
+      </PageHero>
+      <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8">
+        {groups.map((group) => (
+          <section key={group.title} className="border-t border-line py-8 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
+            <h2 className="mb-5 font-display text-[28px] font-normal tracking-[-0.0125em] lg:mb-0">{group.title}</h2>
+            <ul className="divide-y divide-line border-y border-line">
+              {group.items.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="group flex items-start justify-between gap-6 py-5">
+                    <span>
+                      <span className="block text-lg font-medium">{item.label}</span>
+                      <span className="mt-1 block max-w-[48ch] text-[15px] leading-relaxed text-ink/65">{item.text}</span>
+                    </span>
+                    <span aria-hidden className="mt-0.5 text-ink/40 transition group-hover:translate-x-0.5 group-hover:text-ink">→</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+      <SiteFooter />
+    </div>
+  );
+}

@@ -1,122 +1,85 @@
-import { PageHero } from "@/components/site/page-sections";
-import { SiteNav } from "@/components/site/site-nav";
-import { SiteFooter } from "@/components/site/site-footer";
-
-function Section({ title, children, first }: { title: string; children: React.ReactNode; first?: boolean }) {
-  return (
-    <div className={`py-9 ${!first ? "border-t border-line" : ""}`}>
-      <h2 className="mb-4 flex items-center gap-3 font-display text-[21px] font-normal tracking-[-0.02em] text-ink">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-        {title}
-      </h2>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-[15px] leading-8 text-ink/75">{children}</p>;
-}
-
-function Bullets({ items }: { items: [string, string][] }) {
-  return (
-    <ul className="space-y-2">
-      {items.map(([label, desc]) => (
-        <li key={label} className="flex gap-2 text-[15px] leading-8 text-ink/75">
-          <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
-          <span><span className="font-medium text-ink">{label}</span> — {desc}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
+import Link from "next/link";
+import { LegalBullets as Bullets, LegalMail, LegalP as P, LegalPage, LegalSection as Section } from "@/components/site/legal";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-bg text-ink">
-      <SiteNav />
+    <LegalPage
+      title="Privacy Policy"
+      summary="Your documents are yours. We collect only what we need to run Paperwise, and we do not sell it."
+      updated="October 2026"
+    >
+      <Section title="What we collect" first>
+        <Bullets items={[
+          ["Account details", "your email address and name when you sign up, or the same details from Google if you sign in with Google."],
+          ["Your documents", "the files you upload, and the text we read from them."],
+          ["Your conversations", "the questions you ask and the answers you receive."],
+          ["Usage counts", "how many documents you have and how many questions you ask, so we can apply the limits of your plan."],
+          ["Sign-in cookies", "small cookies that keep you signed in (see Cookies below)."],
+        ]} />
+        <P>We do not collect payment details. When Pro billing arrives, card details will be handled by Stripe, not by us.</P>
+      </Section>
 
-      <PageHero crumbs={[{ label: "Legal" }, { label: "Privacy Policy" }]} title="Privacy Policy">
-        <p>Your documents are yours. We collect only what we need and never share it.</p>
-        <p className="!mt-0 !text-sm !text-ink/50">Last updated: May 2026</p>
-      </PageHero>
+      <Section title="How we use it">
+        <P>We use your information to run Paperwise for you: to store your files, find the passages that match a question, write an answer, and keep your history.</P>
+        <P>We do not sell your data, and we do not share it with advertisers or use it for advertising or analytics. Your documents are only ever searched when you ask a question in your own account.</P>
+        <P>
+          To read your files and answer questions we send text to an AI service. What is sent, and when, is explained in{" "}
+          <Link href="/legal/ai" className="underline underline-offset-4 transition hover:opacity-70">AI and your documents</Link>.
+          We do not train or fine-tune our own models on your documents.
+        </P>
+      </Section>
 
-      <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8"><div className="max-w-[760px]">
+      <Section title="Who we share it with">
+        <P>We use a small number of service providers to run Paperwise. Each one receives only what it needs for its job:</P>
+        <Bullets items={[
+          ["Storage and database", "Supabase stores your uploaded files, your account details and your conversations."],
+          ["AI service", "an AI provider receives the text of your documents, your questions and the matching passages, so that documents can be searched and questions answered."],
+          ["Email", "an email delivery service sends welcome messages, sign-in links and password resets to your address."],
+          ["Google", "if you choose Google sign-in, Google tells us your name and email address."],
+          ["Hosting", "our hosting provider runs the servers that Paperwise runs on."],
+        ]} />
+        <P>We may also disclose information if the law requires it.</P>
+      </Section>
 
-        <Section title="What data we collect" first>
-          <P>We collect only what&apos;s necessary to run Paperwise:</P>
-          <Bullets items={[
-            ["Account data", "your email address and display name when you sign up."],
-            ["Documents", "the files you upload. These are stored in your account and never shared."],
-            ["Queries", "the questions you ask and the AI responses, stored as conversation history."],
-            ["Usage data", "aggregate counts (documents uploaded, queries made) for enforcing tier limits."],
-            ["Authentication tokens", "short-lived JWT cookies to keep you signed in."],
-          ]} />
-          <P>We do not collect payment information (Pro billing will use Stripe, which handles card data on their servers).</P>
-        </Section>
+      <Section title="How we protect it">
+        <P>Your files are kept in private storage. They are not available at a public address, and the link that opens a file expires after a few minutes.</P>
+        <P>Connections to Paperwise use HTTPS, and passwords are stored in a scrambled (hashed) form that we cannot read back. Our storage and database provider encrypts stored data. See <Link href="/security" className="underline underline-offset-4 transition hover:opacity-70">Security</Link> for the details.</P>
+      </Section>
 
-        <Section title="How your data is stored">
-          <P>Documents are stored in Supabase Storage (S3-compatible object storage hosted in the US). Account data, conversations, and metadata are stored in a PostgreSQL database hosted on Supabase.</P>
-          <P>All data is encrypted at rest and in transit (TLS 1.2+). We use environment-level secrets for all storage credentials — no credentials are ever logged or exposed to clients.</P>
-        </Section>
+      <Section title="How long we keep it">
+        <Bullets items={[
+          ["Documents", "stay until you delete them or delete your account. Deleting a document removes the file from storage and the text we read from it, straight away."],
+          ["Conversations", "Free accounts can open the last 7 days of history, and older conversations stay stored until you delete them. Pro accounts can open their full history."],
+          ["Your account", "when you delete your account we remove your documents, stored files, conversations and account details. Copies in provider backups are gone within 30 days."],
+        ]} />
+      </Section>
 
-        <Section title="How your data is used">
-          <P>Your data is used exclusively to power your own queries:</P>
-          <ul className="space-y-2">
-            {[
-              "Documents are chunked and embedded into a vector index so we can retrieve relevant passages when you ask a question.",
-              "Conversation history is used to give the AI multi-turn context within your sessions.",
-            ].map((item) => (
-              <li key={item} className="flex gap-2 text-[15px] leading-8 text-ink/75">
-                <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <P><span className="font-medium text-ink">Your data is never used to train AI models.</span> Paperwise uses retrieval-augmented generation over your own documents. Your files are not sent to any AI provider for training.</P>
-          <P>We do not sell, rent, or share your data with third parties for advertising or analytics.</P>
-        </Section>
+      <Section title="Your rights">
+        <Bullets items={[
+          ["See it", "everything you have uploaded and asked is in your workspace."],
+          ["Delete it", "delete any document or conversation at any time, or your whole account from Settings → Profile → Danger Zone."],
+          ["Correct it", "update your name and email from Settings → Profile."],
+          ["Export it", <>email <LegalMail /> and we will send you a copy of your data.</>],
+        ]} />
+        <P>If you are in the EU or UK you also have the rights set out in data protection law, including erasure and data portability. Email us to use them.</P>
+      </Section>
 
-        <Section title="Data retention">
-          <P><span className="font-medium text-ink">Free accounts:</span> conversation history is retained for 7 days after the last message. Documents remain until you delete them or your account.</P>
-          <P><span className="font-medium text-ink">Pro accounts:</span> conversation history is retained indefinitely until you delete it.</P>
-          <P>Deleted documents are removed from storage within 24 hours. When you delete your account, all your data (documents, conversations, account info) is permanently deleted within 30 days.</P>
-        </Section>
+      <Section title="Cookies">
+        <P>We use two cookies, both only to keep you signed in:</P>
+        <Bullets items={[
+          [<code key="a" className="rounded bg-ink/[0.07] px-1.5 py-0.5 text-xs text-ink">paperwise_access_token</code>, "lasts about an hour and proves who you are on each request."],
+          [<code key="r" className="rounded bg-ink/[0.07] px-1.5 py-0.5 text-xs text-ink">paperwise_refresh_token</code>, "lasts up to 7 days and signs you back in without asking again."],
+        ]} />
+        <P>Page scripts cannot read these cookies. We do not use cookies for advertising or tracking.</P>
+      </Section>
 
-        <Section title="Your rights">
-          <P>You have full control over your data:</P>
-          <Bullets items={[
-            ["Access", "view all your documents and conversation history in the dashboard."],
-            ["Delete", "delete any document or conversation at any time. Delete your account (and all data) from Settings → Profile → Danger Zone."],
-            ["Export", "contact us at hello@paperwise.ai to request an export of your data."],
-            ["Correction", "update your name and email from Settings → Profile."],
-          ]} />
-          <P>If you&apos;re in the EU, you also have rights under GDPR including the right to erasure and data portability. Contact us to exercise these rights.</P>
-        </Section>
+      <Section title="Changes to this policy">
+        <P>If we change this policy in a way that matters, we will email you or show a notice in the app before the change takes effect. The date at the top shows when it was last updated.</P>
+      </Section>
 
-        <Section title="Cookies">
-          <P>We use two HttpOnly cookies for authentication:</P>
-          <ul className="space-y-2">
-            {([
-              ["paperwise_access_token", "short-lived JWT (15 minutes) used to authenticate API requests."],
-              ["paperwise_refresh_token", "longer-lived token (7 days) used to issue new access tokens without requiring you to log in again."],
-            ] as [string, string][]).map(([label, desc]) => (
-              <li key={label} className="flex gap-2 text-[15px] leading-8 text-ink/75">
-                <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
-                <span><code className="rounded bg-ink/[0.07] px-1.5 py-0.5 text-xs text-ink">{label}</code> — {desc}</span>
-              </li>
-            ))}
-          </ul>
-          <P>We do not use cookies for advertising or third-party tracking.</P>
-        </Section>
-
-        <Section title="Contact">
-          <P>Questions about this policy? Email <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 hover:opacity-70 transition">hello@paperwise.ai</a> — we aim to respond within 2 business days.</P>
-        </Section>
-
-      </div></div>
-
-      <SiteFooter />
-    </div>
+      <Section title="Contact">
+        <P>Questions about this policy? Email <LegalMail />. We aim to reply within 2 business days.</P>
+      </Section>
+    </LegalPage>
   );
 }

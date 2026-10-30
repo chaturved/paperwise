@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     EXTRACT_QUEUE_TIMEOUT_SECONDS: int = 60  # how long an upload may wait for a free worker before it is refused
     # Uploads go straight from the browser to storage, then are processed in the background.
     UPLOAD_URL_EXPIRY_SECONDS: int = 600
+    DOWNLOAD_URL_EXPIRY_SECONDS: int = 600  # how long a link for viewing a stored file stays valid
     INGEST_MAX_CONCURRENCY: int = 3  # documents processed at once per server process
     STALE_UPLOAD_HOURS: int = 1  # an upload that never completes is removed after this long
     STALE_PROCESSING_MINUTES: int = 15  # a document stuck processing after a restart is marked failed

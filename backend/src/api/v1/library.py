@@ -6,6 +6,7 @@ from src.models.user import User
 from src.schemas.library import (
     CreateUploadsRequest,
     CreateUploadsResponse,
+    DocumentFileResponse,
     LibraryDocResponse,
 )
 from src.services.library_service import LibraryService, LibraryServiceProtocol
@@ -56,6 +57,15 @@ def retry_processing(
     if started:
         background.add_task(jobs.process, doc_id)
     return doc
+
+
+@router.get("/{doc_id}/file")
+def document_file(
+    doc_id: int,
+    user_id: int = Depends(get_current_user_id),
+    service: LibraryServiceProtocol = Depends(LibraryService),
+) -> DocumentFileResponse:
+    return service.get_file_url(user_id, doc_id)
 
 
 @router.delete("/clear")

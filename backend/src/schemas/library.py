@@ -26,6 +26,11 @@ class UploadFileRequest(BaseModel):
     size: int = Field(gt=0)
 
 
+class DocumentFileResponse(BaseModel):
+    url: str
+    expires_in: int  # seconds
+
+
 class CreateUploadsRequest(BaseModel):
     files: list[UploadFileRequest] = Field(min_length=1, max_length=20)
 

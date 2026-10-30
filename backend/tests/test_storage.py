@@ -102,3 +102,18 @@ def test_download_wraps_client_errors() -> None:
 
     with pytest.raises(StorageError, match="storage down"):
         storage.download("k", max_bytes=10)
+
+
+def test_create_download_url_signs_a_get_for_the_key() -> None:
+    client = MagicMock()
+    client.generate_presigned_url.return_value = "https://signed.example/get"
+
+    with patch("src.integrations.storage.boto3.client", return_value=client):
+        url = S3Storage().create_download_url("7/id/lease.pdf")
+
+    assert url == "https://signed.example/get"
+    client.generate_presigned_url.assert_called_once_with(
+        "get_object",
+        Params={"Bucket": settings.S3_LIBRARY_BUCKET, "Key": "7/id/lease.pdf"},
+        ExpiresIn=settings.DOWNLOAD_URL_EXPIRY_SECONDS,
+    )

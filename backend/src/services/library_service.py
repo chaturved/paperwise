@@ -5,6 +5,7 @@ from typing import Protocol
 
 from fastapi import Depends
 
+from src.config import settings
 from src.core.enums import DocumentStatus, Plan
 from src.core.exceptions import BadRequestError, ConflictError, NotFoundError
 from src.integrations.documents import ContentTypes
@@ -17,6 +18,7 @@ from src.repositories.library_repository import (
 from src.schemas.library import (
     CreateUploadsRequest,
     CreateUploadsResponse,
+    DocumentFileResponse,
     LibraryDocResponse,
     LibraryResponse,
     UploadSlotResponse,
@@ -32,6 +34,7 @@ class LibraryServiceProtocol(Protocol):
     def create_uploads(self, user_id: int, plan: Plan, request: CreateUploadsRequest) -> CreateUploadsResponse: ...
     def complete_upload(self, user_id: int, doc_id: int) -> tuple[LibraryDocResponse, bool]: ...
     def retry_processing(self, user_id: int, plan: Plan, doc_id: int) -> tuple[LibraryDocResponse, bool]: ...
+    def get_file_url(self, user_id: int, doc_id: int) -> DocumentFileResponse: ...
     def delete_document(self, doc_id: int, user_id: int) -> MessageResponse: ...
     def clear_all(self, user_id: int) -> MessageResponse: ...
 
@@ -112,6 +115,14 @@ class LibraryService(LibraryServiceProtocol):
 
         started = self.repo.transition_status(lib.id, DocumentStatus.FAILED, DocumentStatus.PROCESSING)
         return LibraryDocResponse.model_validate(lib), started
+
+    def get_file_url(self, user_id: int, doc_id: int) -> DocumentFileResponse:
+        """A short-lived link to the stored file, for showing the page an answer cited."""
+        lib = self._get_owned(user_id, doc_id)
+        if lib.status != DocumentStatus.READY or not lib.path:
+            raise BadRequestError("This document isn't ready to view yet.")
+        url = self.storage.create_download_url(self.storage.key_from_path(lib.path))
+        return DocumentFileResponse(url=url, expires_in=settings.DOWNLOAD_URL_EXPIRY_SECONDS)
 
     def _get_owned(self, user_id: int, doc_id: int) -> Library:
         lib = self.repo.get_by_id(doc_id, user_id)

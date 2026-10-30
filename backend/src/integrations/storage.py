@@ -46,6 +46,14 @@ class S3Storage:
             ExpiresIn=settings.UPLOAD_URL_EXPIRY_SECONDS,
         )
 
+    def create_download_url(self, key: str) -> str:
+        """A short-lived URL the browser can GET one stored file from, so it never passes through the API."""
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.S3_LIBRARY_BUCKET, "Key": key},
+            ExpiresIn=settings.DOWNLOAD_URL_EXPIRY_SECONDS,
+        )
+
     def object_size(self, key: str) -> int | None:
         """The stored size in bytes, or None if nothing was uploaded under this key."""
         try:

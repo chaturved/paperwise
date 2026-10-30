@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.config import settings
 from src.core.enums import DocumentStatus, Plan
 from src.core.exceptions import (
     BadRequestError,
@@ -308,3 +309,30 @@ class TestDirectUploads:
 
         with pytest.raises(BadRequestError, match="upload it again"):
             self.svc.retry_processing(7, Plan.FREE, 11)
+
+    # ── get_file_url ──────────────────────────────────────────────────────────
+
+    def test_file_url_is_a_signed_link_for_a_ready_document(self):
+        self.mock_repo.get_by_id.return_value = self._doc("ready")
+        self.mock_storage.create_download_url.return_value = "https://signed.example/get"
+
+        result = self.svc.get_file_url(7, 11)
+
+        self.mock_storage.create_download_url.assert_called_once_with("7/id/contract.pdf")
+        assert result.url == "https://signed.example/get"
+        assert result.expires_in == settings.DOWNLOAD_URL_EXPIRY_SECONDS
+
+    @pytest.mark.parametrize("status", ["uploading", "processing", "failed"])
+    def test_file_url_is_refused_until_the_document_is_ready(self, status):
+        self.mock_repo.get_by_id.return_value = self._doc(status)
+
+        with pytest.raises(BadRequestError):
+            self.svc.get_file_url(7, 11)
+
+        self.mock_storage.create_download_url.assert_not_called()
+
+    def test_file_url_is_not_given_for_someone_elses_document(self):
+        self.mock_repo.get_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            self.svc.get_file_url(7, 11)

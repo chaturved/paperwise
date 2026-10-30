@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Copy, ThumbsUp, ThumbsDown,
   Bot, Shield, Waves, Sparkles, Star, Zap, BookOpen, Link2,
   Check, AlertTriangle,
 } from "lucide-react";
@@ -30,8 +29,8 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
 
 function BadgeChip({ badge }: { badge: Badge }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded text-[10px] font-medium bg-ink/[0.12] text-ink/75 whitespace-nowrap">
-      <span className="opacity-50">{BADGE_ICONS[badge.icon] ?? <Sparkles size={10} />}</span>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded border border-line px-2 py-[2px] text-[11px] font-medium text-ink/70">
+      <span className="opacity-60">{BADGE_ICONS[badge.icon] ?? <Sparkles size={10} />}</span>
       {badge.label}
     </span>
   );
@@ -74,16 +73,16 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
   return (
     <div className="msg-in group">
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2.5">
-          <span className="text-[12px] font-semibold text-ink/75">Paperwise</span>
+        <div className="mb-2.5 flex items-center gap-2.5">
+          <span className="font-mono text-xs text-muted">Paperwise</span>
           {streaming ? (
             <div className="flex items-center gap-[3px]">
               {[0, 150, 300].map((d) => (
-                <span key={d} className="h-[4px] w-[4px] rounded-full bg-ink/25 shimmer-dot" style={{ animationDelay: `${d}ms` }} />
+                <span key={d} className="h-[4px] w-[4px] rounded-full bg-ink/30 shimmer-dot" style={{ animationDelay: `${d}ms` }} />
               ))}
             </div>
           ) : (
-            <span className="text-[10px] text-ink/30 tabular-nums">
+            <span className="font-mono text-xs tabular-nums text-ink/45">
               {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
@@ -91,7 +90,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
 
         {hasMeta && (
           <div className="mb-3 space-y-1.5">
-            {meta?.description && <p className="text-[12.5px] leading-relaxed text-ink/55 italic">{meta.description}</p>}
+            {meta?.description && <p className="text-sm leading-relaxed text-muted">{meta.description}</p>}
             {meta?.badges && meta.badges.length > 0 && (
               <div className="flex flex-wrap gap-1">{meta.badges.map((b, i) => <BadgeChip key={i} badge={b} />)}</div>
             )}
@@ -105,7 +104,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
             ))}
           </div>
         ) : (
-          <div className="text-[14px] leading-[1.78] prose prose-invert prose-sm max-w-none text-ink/90">
+          <div className="prose max-w-none text-base leading-[1.7] text-ink/90">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -120,7 +119,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
               {linkCitations(content, sources)}
             </ReactMarkdown>
             {streaming && (
-              <span className="cursor-blink inline-block w-[2px] h-[13px] rounded-sm align-text-bottom ml-0.5 bg-ink/50" />
+              <span className="cursor-blink ml-0.5 inline-block h-[15px] w-[2px] rounded-sm bg-ink/60 align-text-bottom" />
             )}
           </div>
         )}
@@ -128,19 +127,10 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
         {!streaming && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} />}
 
         {!streaming && (
-          <div className="flex items-center gap-0.5 mt-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1 rounded-[5px] px-1.5 py-1 text-[11px] text-ink/50 hover:text-ink/80 hover:bg-ink/[0.07] transition-all"
-            >
-              <Copy size={11} /> Copy
-            </button>
-            <button onClick={() => handleFeedback("up")} className={`p-1 rounded-[5px] transition-all ${feedback === "up" ? "text-emerald-400" : "text-ink/50 hover:text-emerald-400"}`}>
-              <ThumbsUp size={11} />
-            </button>
-            <button onClick={() => handleFeedback("down")} className={`p-1 rounded-[5px] transition-all ${feedback === "down" ? "text-red-400" : "text-ink/50 hover:text-red-400"}`}>
-              <ThumbsDown size={11} />
-            </button>
+          <div className="mt-4 flex items-center gap-4 text-[13px] text-muted">
+            <button type="button" onClick={handleCopy} className="link-underline hover:text-ink">Copy</button>
+            <button type="button" onClick={() => handleFeedback("up")} aria-pressed={feedback === "up"} className={`link-underline hover:text-ink ${feedback === "up" ? "font-medium text-ink" : ""}`}>Helpful</button>
+            <button type="button" onClick={() => handleFeedback("down")} aria-pressed={feedback === "down"} className={`link-underline hover:text-ink ${feedback === "down" ? "font-medium text-ink" : ""}`}>Not helpful</button>
           </div>
         )}
       </div>

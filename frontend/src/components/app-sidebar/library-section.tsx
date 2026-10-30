@@ -15,10 +15,10 @@ interface Props {
 function DocumentStatusBadge({ document, percent }: { document: LibraryDoc; percent?: number }) {
   if (document.status === "ready") return null;
   if (document.status === "failed") {
-    return <span className="shrink-0 text-[11px] text-red-500" title={document.error_message ?? undefined}>Failed</span>;
+    return <span className="shrink-0 text-[11px] text-danger" title={document.error_message ?? undefined}>Failed</span>;
   }
   const label = document.status === "uploading" && percent !== undefined ? `${percent}%` : document.status === "uploading" ? "Uploading" : "Processing";
-  return <span className="shrink-0 text-[11px] tabular-nums text-ink/50">{label}</span>;
+  return <span className="shrink-0 text-[11px] tabular-nums text-ink/55">{label}</span>;
 }
 
 export function LibrarySection({ refreshKey }: Props) {
@@ -61,27 +61,24 @@ export function LibrarySection({ refreshKey }: Props) {
   };
 
   return (
-    <section aria-label="Your documents" className="shrink-0 px-4 pb-1 pt-3">
-      <div className="mb-2 flex items-center justify-between px-2 text-[12px] font-medium text-ink/50">
-        <span>Your files</span>
-        <span>{documents.length}</span>
-      </div>
+    <section aria-label="Your documents" className="shrink-0 px-3 pb-1 pt-3">
+      <div className="mb-2 px-3 text-xs font-medium text-muted">Your files</div>
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
-        className="flex h-9 w-full items-center gap-2 rounded-md px-2 text-[13px] font-medium text-accent transition hover:bg-accent/10 disabled:opacity-50"
+        className="flex h-9 w-full items-center gap-2 rounded px-3 text-[13px] font-medium text-ink transition hover:bg-ink/[0.06] disabled:opacity-50"
       >
-        {uploading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent/25 border-t-accent" /> : <Upload size={15} />}
+        {uploading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-ink" /> : <Upload size={15} />}
         {uploading ? "Uploading…" : "Upload a document"}
       </button>
       <input ref={fileInputRef} type="file" multiple accept=".pdf,.txt,.md,.docx" className="hidden" onChange={handleUpload} />
       <div className="thin-scroll max-h-32 overflow-y-auto">
         {documents.length === 0 ? (
-          <p className="px-2 py-2 text-xs text-ink/45">No files yet</p>
+          <p className="px-3 py-2 text-xs text-muted">No files yet</p>
         ) : (
           documents.map((document) => (
-            <div key={document.id} className="group flex h-9 items-center gap-2 rounded-md px-2 hover:bg-ink/[0.05]">
+            <div key={document.id} className="group flex h-9 items-center gap-2 rounded px-3 hover:bg-ink/[0.05]">
               <FileText size={14} className="shrink-0 text-ink/45" />
               <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink/75" title={document.name}>{document.name}</span>
               <DocumentStatusBadge document={document} percent={progress[document.id]} />
@@ -94,7 +91,7 @@ export function LibrarySection({ refreshKey }: Props) {
                 type="button"
                 onClick={() => handleDelete(document.id)}
                 aria-label={`Delete ${document.name}`}
-                className="rounded p-1 text-ink/40 hover:text-red-500 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                className="rounded p-1 text-ink/45 hover:text-danger focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
               >
                 <Trash2 size={13} />
               </button>

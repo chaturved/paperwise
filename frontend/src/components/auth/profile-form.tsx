@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { deleteAccount, updateProfile } from "@/lib/api/users";
-import { useRouter } from "next/navigation";
+import { Field } from "@/components/ui/field";
+import { AppearanceSetting } from "@/components/settings/appearance-setting";
+import { SettingsHeading, SettingsSection } from "@/components/settings/settings-section";
 
-const schema = z.object({ full_name: z.string().min(2, "Name must be at least 2 characters") });
+const schema = z.object({ full_name: z.string().trim().min(2, "Name must be at least 2 characters") });
 type FormData = z.infer<typeof schema>;
 
 export function ProfileForm() {
@@ -19,7 +23,7 @@ export function ProfileForm() {
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { full_name: user?.full_name || "" },
   });
@@ -28,8 +32,11 @@ export function ProfileForm() {
     try {
       await updateProfile(data.full_name);
       await refetchUser();
+      reset({ full_name: data.full_name });
       toast.success("Profile updated");
-    } catch { toast.error("Failed to update profile"); }
+    } catch {
+      toast.error("Failed to update profile");
+    }
   };
 
   const handleDelete = async () => {
@@ -39,90 +46,60 @@ export function ProfileForm() {
       await deleteAccount();
       await refetchUser();
       router.push("/login");
-    } catch { toast.error("Failed to delete account"); setDeleting(false); }
+    } catch {
+      toast.error("Failed to delete account");
+      setDeleting(false);
+    }
   };
 
   return (
     <div>
-      <h1 className="mb-8 font-display text-[40px] font-normal tracking-[-0.0125em] text-ink">Profile</h1>
+      <SettingsHeading title="Profile">How you appear in Paperwise, and the email we use to reach you.</SettingsHeading>
 
-      <div className="mb-8">
-        <p className="text-[12px] font-medium text-ink/40 mb-3">Avatar</p>
-        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-ink text-xl font-semibold text-bg">
-          {user?.avatar_initials || "??"}
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div>
-          <label className="block text-[12px] font-medium text-ink/40 mb-2">Full name</label>
-          <input
-            {...register("full_name")}
-            className="input-base w-full px-4 py-3 text-[14px]"
-          />
-          {errors.full_name && <p className="mt-1.5 text-xs text-red-400">{errors.full_name.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-[12px] font-medium text-ink/40 mb-2">Email</label>
-          <div className="flex items-center gap-3">
-            <input
-              value={user?.email || ""}
-              readOnly
-              className="min-w-0 flex-1 cursor-not-allowed rounded-btn-md border border-ink/[0.08] bg-ink/[0.03] px-4 py-3 text-[14px] text-ink/50 outline-none"
-            />
-            <span className="badge-verified">Verified</span>
+      <SettingsSection title="Name" description="Shown in the sidebar and in emails from us.">
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex items-start gap-3">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-bg" aria-hidden="true">
+            {user?.avatar_initials || "??"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <label htmlFor="full_name" className="sr-only">Full name</label>
+            <input id="full_name" aria-invalid={Boolean(errors.full_name)} {...register("full_name")} className="field" />
+            {errors.full_name && <p role="alert" className="field-error">{errors.full_name.message}</p>}
           </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="btn-primary btn-lg disabled:opacity-50"
-        >
-          {isSubmitting ? "Saving…" : "Save changes"}
-        </button>
-      </form>
-
-      <div className="mt-10 pt-8 border-t-system">
-        <h2 className="mb-2 text-[16px] font-semibold text-red-500">Delete account</h2>
-        <p className="mb-5 text-[13px] leading-relaxed text-ink/55">
-          Deleting your account permanently removes all your documents, conversations, and data.
-        </p>
-
-        {!showDelete ? (
-          <button onClick={() => setShowDelete(true)} className="btn-danger">
-            Delete my account
+          <button type="submit" disabled={isSubmitting || !isDirty} className="btn-primary btn-lg disabled:opacity-40">
+            {isSubmitting ? "Saving…" : "Save"}
           </button>
+        </form>
+      </SettingsSection>
+
+      <SettingsSection title="Email" description="Used to sign in. To change it, contact support.">
+        <Field id="email" label="Email address">
+          <input id="email" value={user?.email || ""} readOnly className="field" />
+        </Field>
+        <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted"><Check size={14} strokeWidth={2.2} className="text-ink" /> Verified</p>
+      </SettingsSection>
+
+      <SettingsSection title="Appearance" description="Choose how Paperwise looks on this device.">
+        <AppearanceSetting />
+      </SettingsSection>
+
+      <SettingsSection title="Delete account" description="Removes your documents, conversations and data. This cannot be undone.">
+        {!showDelete ? (
+          <button type="button" onClick={() => setShowDelete(true)} className="btn-danger">Delete my account</button>
         ) : (
-          <div className="space-y-3 max-w-sm">
-            <p className="text-xs text-ink/40">
-              Type <span className="font-mono text-ink">DELETE</span> to confirm.
-            </p>
-            <input
-              value={deleteInput}
-              onChange={(e) => setDeleteInput(e.target.value)}
-              placeholder="DELETE"
-              className="input-base h-10 w-full border-red-500/25 px-4 text-sm"
-            />
+          <div className="max-w-sm space-y-3">
+            <Field id="delete-confirm" label="Type DELETE to confirm">
+              <input id="delete-confirm" value={deleteInput} onChange={(event) => setDeleteInput(event.target.value)} placeholder="DELETE" autoComplete="off" className="field" />
+            </Field>
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowDelete(false)}
-                className="h-9 px-4 rounded-lg text-sm text-ink/50 hover:text-ink transition bg-ink/[0.04] border-system"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteInput !== "DELETE" || deleting}
-                className="h-9 rounded-md bg-red-600 px-4 text-sm text-white transition disabled:opacity-40"
-              >
-                {deleting ? "Deleting…" : "Confirm delete"}
+              <button type="button" onClick={() => { setShowDelete(false); setDeleteInput(""); }} className="btn-secondary">Cancel</button>
+              <button type="button" onClick={handleDelete} disabled={deleteInput !== "DELETE" || deleting} className="btn-danger-solid disabled:opacity-40">
+                {deleting ? "Deleting…" : "Delete my account"}
               </button>
             </div>
           </div>
         )}
-      </div>
+      </SettingsSection>
     </div>
   );
 }

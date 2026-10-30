@@ -1,23 +1,9 @@
 "use client";
 
-interface Props {
-  content: string;
-  timestamp: string;
-}
-
-export function UserMessage({ content, timestamp }: Props) {
+export function UserMessage({ content }: { content: string }) {
   return (
     <div className="msg-in flex justify-end">
-      <div className="max-w-[72%]">
-        <div className="rounded-[20px] rounded-br-[6px] px-4 py-3 bg-ink/[0.07] border border-ink/[0.08]">
-          <p className="text-[14px] leading-relaxed text-ink">{content}</p>
-        </div>
-        <div className="flex justify-end mt-1">
-          <span className="text-[10px] text-ink/30 tabular-nums">
-            {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </span>
-        </div>
-      </div>
+      <p className="max-w-[min(520px,85%)] whitespace-pre-wrap rounded-lg bg-card px-4 py-3 text-base leading-relaxed text-ink">{content}</p>
     </div>
   );
 }

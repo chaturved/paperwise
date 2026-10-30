@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAppLayout } from "@/context/AppLayoutContext";
 import { useSSEStream } from "@/hooks/useSSEStream";
+import { useAccountUsage } from "@/hooks/useAccountUsage";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
 import { apiErrorMessage } from "@/lib/api-error";
 import { createConversation, getMessages } from "@/lib/api/conversations";
 import type { Message } from "@/types";
+import { AddDocumentButton } from "./add-document-button";
 import { AIMessage } from "./ai-message";
 import { InputBox } from "./input-box";
 import { DashboardWelcome } from "./dashboard-welcome";
@@ -17,7 +19,7 @@ import { UserMessage } from "./user-message";
 function DashboardInner() {
   const params = useSearchParams();
   const router = useRouter();
-  const { setSidebarCallbacks } = useAppLayout();
+  const { setSidebarCallbacks, conversations } = useAppLayout();
 
   const [activeConvId, setActiveConvId] = useState<number | null>(() => {
     const id = Number(params.get("conv"));
@@ -28,6 +30,7 @@ function DashboardInner() {
   const [inputValue, setInputValue]     = useState("");
   const [sidebarRefresh, setSidebarRefresh] = useState(0);
   const { upload: uploadDocuments, uploading: isUploading } = useDocumentUpload(() => setSidebarRefresh((value) => value + 1));
+  const usage = useAccountUsage(sidebarRefresh);
   const chatEndRef  = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const newConversationIdRef = useRef<number | null>(null);
@@ -173,20 +176,23 @@ function DashboardInner() {
   }, [initialQuestion, router]);
 
   const inChat = messages.length > 0 || activeConvId !== null;
+  const documentCount = usage?.documents.used ?? null;
+  const title = inChat ? conversations.find((conversation) => conversation.id === activeConvId)?.title ?? "Conversation" : "New chat";
 
   return (
     <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-workspace text-ink">
-      <div className="flex h-16 shrink-0 items-center px-5 sm:px-8">
-        <span className="text-[14px] font-medium text-ink/70">Chat</span>
+      <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-5 sm:px-10">
+        <h1 className={`min-w-0 truncate text-[15px] ${inChat ? "font-medium" : "text-muted"}`}>{title}</h1>
+        <AddDocumentButton onAttach={handleAttach} uploading={isUploading} />
       </div>
 
       {inChat ? (
         <>
-          <div className="thin-scroll relative z-10 flex-1 overflow-y-auto px-4 py-8 sm:px-8 sm:py-10">
-            <div className="mx-auto w-full max-w-[780px] space-y-8">
-            {loadingConversation ? <p className="text-sm text-ink/50">Loading conversation…</p> : messages.map((msg) =>
+          <div className="thin-scroll relative z-10 flex-1 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
+            <div className="mx-auto w-full max-w-[700px] space-y-9">
+            {loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg) =>
               msg.role === "user"
-                ? <UserMessage key={msg.id} content={msg.content} timestamp={msg.created_at} />
+                ? <UserMessage key={msg.id} content={msg.content} />
                 : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} />
             )}
             {isStreaming && (
@@ -196,8 +202,8 @@ function DashboardInner() {
             </div>
           </div>
 
-          <div className="relative z-10 w-full flex-shrink-0 bg-workspace px-4 pb-4 pt-3 sm:px-8 sm:pb-6">
-            <div className="mx-auto max-w-[780px]">
+          <div className="relative z-10 w-full flex-shrink-0 bg-workspace px-5 pb-5 pt-3 sm:px-10 sm:pb-6">
+            <div className="mx-auto max-w-[700px]">
             <InputBox
               value={inputValue}
               onChange={setInputValue}
@@ -206,8 +212,9 @@ function DashboardInner() {
               isUploading={isUploading}
               onAttach={handleAttach}
               textareaRef={textareaRef}
+              placeholder="Ask a follow-up"
             />
-            <p className="mt-2 text-center text-[11px] text-ink/40">Check sources before relying on an answer.</p>
+            <p className="mt-2.5 text-center text-xs text-muted">Check sources before relying on an answer.</p>
             </div>
           </div>
         </>
@@ -220,6 +227,7 @@ function DashboardInner() {
           isUploading={isUploading}
           onAttach={handleAttach}
           textareaRef={textareaRef}
+          documentCount={documentCount}
         />
       )}
     </main>

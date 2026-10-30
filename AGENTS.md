@@ -316,7 +316,9 @@ Design system (Harvey-inspired, editorial):
 - **Painted surfaces:** product UI sits on grainy dark backdrops (`paint`, `paint-warm`, `bezel` in `globals.css`). Do not use blurred glow blobs.
 - **Borders:** hairline `border-line`. Inputs use `border-field`.
 - **Radius:** `rounded` (4px) for buttons and inputs on marketing pages, `rounded-lg` (8px) for cards and auth/app inputs.
-- **Buttons:** use `btn-primary`, `btn-secondary`, `btn-light` and `btn-outline-light`; add `btn-lg` for 48px.
+- **Buttons:** use `btn-primary`, `btn-secondary`, `btn-quiet`, `btn-light` and `btn-outline-light`; add `btn-lg` for 48px. `btn-danger` and `btn-danger-solid` are for destructive actions only.
+- **Forms:** inputs use the `field` class (48px, 4px radius, no leading icons) inside the `Field` component from `components/ui/field.tsx`, which supplies the label, error and hint. Errors and destructive text use `text-danger`, never raw red. Passwords use `PasswordInput` and `PasswordStrength` from `components/auth/`.
+- **Pages:** auth pages sit in `AuthShell` (`components/auth/auth-shell.tsx`), settings pages use `SettingsHeading` and `SettingsSection`, and error and 404 pages use `StatusPage`. A new page of those kinds reuses them instead of building its own layout.
 
 When a design reference is provided, match it exactly — layout, spacing, color, font size, proportions. Do not approximate. Do not simplify unless explicitly asked.
 

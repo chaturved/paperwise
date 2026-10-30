@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { groupByRecency } from "@/lib/conversation-groups";
 import type { Conversation } from "@/types";
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 export function ConversationList({ conversations, activeId, onSelect, onRename, onDelete }: Props) {
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const groups = useMemo(() => groupByRecency(conversations), [conversations]);
 
   const submitRename = (id: number) => {
     const title = renameValue.trim();
@@ -23,19 +25,15 @@ export function ConversationList({ conversations, activeId, onSelect, onRename, 
   };
 
   return (
-    <section aria-label="Recent conversations" className="flex min-h-0 flex-1 flex-col px-2 pt-8">
-      <div className="mb-2 flex items-center justify-between px-4 text-[12px] font-medium text-ink/50">
-        <span>Recents</span>
-        <span className="tabular-nums">{conversations.length}</span>
-      </div>
-      <div className="thin-scroll min-h-0 flex-1 overflow-y-auto pb-4">
-        {conversations.length === 0 ? (
-          <p className="px-4 py-2 text-[13px] text-ink/45">No conversations yet</p>
-        ) : (
-          conversations.map((conversation) => (
+    <section aria-label="Recent conversations" className="thin-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-4">
+      {conversations.length === 0 && <p className="px-3 pt-6 text-[13px] text-muted">No conversations yet</p>}
+      {groups.map((group) => (
+        <div key={group.label}>
+          <h2 className="mb-1.5 mt-5 px-3 text-xs font-medium text-muted">{group.label}</h2>
+          {group.items.map((conversation) => (
             <div
               key={conversation.id}
-              className={`group flex min-h-10 items-center gap-1 rounded-md pl-4 pr-2 transition-colors ${activeId === conversation.id ? "bg-ink/[0.08]" : "hover:bg-ink/[0.06]"}`}
+              className={`group flex min-h-9 items-center gap-1 rounded pl-3 pr-1.5 transition-colors ${activeId === conversation.id ? "bg-ink/[0.08]" : "hover:bg-ink/[0.05]"}`}
             >
               {renamingId === conversation.id ? (
                 <input
@@ -48,14 +46,15 @@ export function ConversationList({ conversations, activeId, onSelect, onRename, 
                     if (event.key === "Escape") setRenamingId(null);
                   }}
                   aria-label="Rename conversation"
-                  className="min-w-0 flex-1 border-b border-accent bg-transparent py-1 text-[13px] outline-none"
+                  className="min-w-0 flex-1 border-b border-ink bg-transparent py-1 text-sm outline-none"
                 />
               ) : (
                 <button
                   type="button"
                   onClick={() => onSelect(conversation.id)}
                   title={conversation.title}
-                  className="min-w-0 flex-1 truncate py-2 text-left text-[13px] text-ink/75 focus-visible:outline-2 focus-visible:outline-accent"
+                  aria-current={activeId === conversation.id ? "true" : undefined}
+                  className={`min-w-0 flex-1 truncate py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-ink ${activeId === conversation.id ? "font-medium text-ink" : "text-ink/75"}`}
                 >
                   {conversation.title}
                 </button>
@@ -69,7 +68,7 @@ export function ConversationList({ conversations, activeId, onSelect, onRename, 
                       setRenameValue(conversation.title);
                     }}
                     aria-label={`Rename ${conversation.title}`}
-                    className="rounded p-1 text-ink/45 hover:text-ink"
+                    className="rounded p-1.5 text-ink/50 hover:text-ink"
                   >
                     <Pencil size={13} />
                   </button>
@@ -77,16 +76,16 @@ export function ConversationList({ conversations, activeId, onSelect, onRename, 
                     type="button"
                     onClick={() => onDelete(conversation.id)}
                     aria-label={`Delete ${conversation.title}`}
-                    className="rounded p-1 text-ink/45 hover:text-red-500"
+                    className="rounded p-1.5 text-ink/50 hover:text-danger"
                   >
                     <Trash2 size={13} />
                   </button>
                 </div>
               )}
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      ))}
     </section>
   );
 }

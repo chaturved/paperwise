@@ -57,7 +57,7 @@ export function ConversationSearchDialog({ open, onOpenChange, recentConversatio
           <div className="thin-scroll min-h-24 overflow-y-auto p-2">
             <p className="px-3 pb-2 pt-2 text-xs font-medium text-ink/45">{searching ? "Search results" : "Recent chats"}</p>
             {loading && <p className="px-3 py-5 text-sm text-ink/50">Searching…</p>}
-            {error && <p className="px-3 py-5 text-sm text-red-500">Search is unavailable right now.</p>}
+            {error && <p className="px-3 py-5 text-sm text-danger">Search is unavailable right now.</p>}
             {!loading && !error && items.length === 0 && <p className="px-3 py-5 text-sm text-ink/50">{searching ? "No matching chats" : "No chats yet"}</p>}
             {!loading && !error && items.map((conversation) => (
               <button key={conversation.id} type="button" onClick={() => handleSelect(conversation.id)}

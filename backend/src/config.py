@@ -12,8 +12,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = ""
 
-    AI_PROVIDER: str = "gemini"  # "gemini" or "huggingface"
-    EMBEDDING_DIMENSIONS: int = 384  # size of the pgvector column — changing it needs an Alembic migration + re-embed
+    AI_PROVIDER: str = "gemini"
+    EMBEDDING_DIMENSIONS: int = 384
 
     GEMINI_API_BASE: str = "https://generativelanguage.googleapis.com/v1beta"
     GEMINI_API_KEY: str = ""
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = "noreply@paperwise.ai"
 
     APP_URL: str = "http://localhost:3000"
-    DEMO_REQUEST_NOTIFY_EMAIL: str = ""  # where new demo requests are emailed; empty means they are only stored
+    DEMO_REQUEST_NOTIFY_EMAIL: str = ""
 
     JWT_SECRET_KEY: str
     SESSION_SECRET_KEY: str
@@ -52,22 +52,19 @@ class Settings(BaseSettings):
 
     TEXT_CHUNK_SIZE: int = 500
     TEXT_CHUNK_OVERLAP: int = 50
-    # Upload safety: a small file can unpack to something huge, so cap what we are willing to parse.
     MAX_DOCX_UNZIPPED_MB: int = 50
     MAX_DOCX_ENTRIES: int = 2000
     MAX_PDF_PAGES: int = 1000
     MAX_EXTRACTED_CHARS: int = 3_000_000
-    # Parsing runs in a separate worker process so a hostile file can only hurt its own worker.
     EXTRACT_TIMEOUT_SECONDS: int = 30
-    EXTRACT_MAX_MEMORY_MB: int = 2048  # enforced on Linux (the Docker image); macOS ignores address-space limits
-    EXTRACT_MAX_CONCURRENCY: int = 2  # workers allowed at once per server process; extra uploads wait their turn
-    EXTRACT_QUEUE_TIMEOUT_SECONDS: int = 60  # how long an upload may wait for a free worker before it is refused
-    # Uploads go straight from the browser to storage, then are processed in the background.
+    EXTRACT_MAX_MEMORY_MB: int = 2048
+    EXTRACT_MAX_CONCURRENCY: int = 2
+    EXTRACT_QUEUE_TIMEOUT_SECONDS: int = 60
     UPLOAD_URL_EXPIRY_SECONDS: int = 600
-    DOWNLOAD_URL_EXPIRY_SECONDS: int = 600  # how long a link for viewing a stored file stays valid
-    INGEST_MAX_CONCURRENCY: int = 3  # documents processed at once per server process
-    STALE_UPLOAD_HOURS: int = 1  # an upload that never completes is removed after this long
-    STALE_PROCESSING_MINUTES: int = 15  # a document stuck processing after a restart is marked failed
+    DOWNLOAD_URL_EXPIRY_SECONDS: int = 600
+    INGEST_MAX_CONCURRENCY: int = 3
+    STALE_UPLOAD_HOURS: int = 1
+    STALE_PROCESSING_MINUTES: int = 15
 
     TRUST_FORWARDED_FOR: bool = False
 

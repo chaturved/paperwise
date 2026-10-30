@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     STALE_PROCESSING_MINUTES: int = 15
 
     TRUST_FORWARDED_FOR: bool = False
+    DOCS_ENABLED: bool = True
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 

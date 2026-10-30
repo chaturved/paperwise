@@ -21,18 +21,27 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     yield
 
 
-app = FastAPI(title="Paperwise API", lifespan=lifespan)
+def create_app() -> FastAPI:
+    docs = settings.DOCS_ENABLED
+    application = FastAPI(
+        title="Paperwise API",
+        lifespan=lifespan,
+        docs_url="/docs" if docs else None,
+        redoc_url="/redoc" if docs else None,
+        openapi_url="/openapi.json" if docs else None,
+    )
 
-app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
+    application.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.ALLOWED_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    application.include_router(router)
+    register_exception_handlers(application)
+    return application
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-app.include_router(router)
-
-register_exception_handlers(app)
+app = create_app()

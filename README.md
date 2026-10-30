@@ -103,7 +103,7 @@ backend/
 
 frontend/
   src/
-    app/                Next.js routes: (auth), (app)/dashboard, (app)/settings (including usage), onboarding, pricing, privacy, terms
+    app/                Next.js routes: (auth), (workspace)/dashboard, (workspace)/settings (including usage), onboarding, pricing, privacy, terms
     components/          UI components (conversations, sidebar, settings, etc.)
     hooks/                useSSEStream, useLibrary, etc.
     lib/api/              typed API client functions

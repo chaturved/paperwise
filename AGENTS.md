@@ -199,7 +199,7 @@ frontend/src/
       signup/page.tsx
       forgot-password/page.tsx
       reset-password/page.tsx
-    (app)/                    ← Route group — authenticated pages, shared layout
+    (workspace)/                    ← Route group — authenticated pages, shared layout
       layout.tsx              ← AppShell (sidebar, header)
       dashboard/page.tsx
       settings/
@@ -315,7 +315,7 @@ Place `"use client"` as deep in the component tree as possible — not at the pa
 
 ```tsx
 // ✅ Correct — page is a Server Component, interactive widget is a Client Component
-// app/(app)/dashboard/page.tsx
+// app/(workspace)/dashboard/page.tsx
 import DashboardContent from "@/components/conversations/DashboardContent"; // "use client" inside
 
 export default function DashboardPage() {

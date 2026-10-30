@@ -44,7 +44,7 @@ flowchart LR
     Tier --> PG
 ```
 
-**Ingestion**: an uploaded file is hashed (sha256) to reject duplicates, its text is extracted (PyMuPDF for PDF, `python-docx` for Word), split into ~500-character overlapping chunks, embedded via Hugging Face's Inference API, and only written to Postgres once every step succeeds — a failed embedding call never leaves a broken document row that would still count against the user's plan quota.
+**Ingestion**: an uploaded file is hashed (sha256) to reject duplicates, its text is extracted (PyMuPDF for PDF, `python-docx` for Word), split into ~500-character overlapping chunks, embedded via the configured AI provider (Gemini or Hugging Face), and only written to Postgres once every step succeeds — a failed embedding call never leaves a broken document row that would still count against the user's plan quota.
 
 **Retrieval + answering**: a question is embedded with the same model, and `pgvector`'s cosine-distance operator finds the top-k nearest chunks directly in SQL. Those chunks are assembled into a prompt with the question, sent to the chat model, and the response is streamed back to the browser token-by-token over Server-Sent Events — the UI renders it incrementally rather than waiting for the full answer.
 
@@ -82,7 +82,7 @@ A few decisions worth calling out, since they came from real bugs found and fixe
 
 **Frontend** — Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, axios, `@microsoft/fetch-event-source` for SSE streaming.
 
-**Backend** — FastAPI, SQLAlchemy + Alembic, PostgreSQL with `pgvector` for embedding search, Authlib for Google OAuth, `boto3` for S3-compatible object storage, Hugging Face Inference API for embeddings and chat completion.
+**Backend** — FastAPI, SQLAlchemy + Alembic, PostgreSQL with `pgvector` for embedding search, Authlib for Google OAuth, `boto3` for S3-compatible object storage, a pluggable AI provider adapter (`AI_PROVIDER`: Gemini or Hugging Face) for embeddings and chat completion.
 
 **Infra** — Postgres + S3-compatible storage via Supabase; Docker + nginx for containerized deployment.
 
@@ -121,7 +121,7 @@ docker-compose.yml
 - Python 3.11+
 - A PostgreSQL database with the `pgvector` extension (e.g. [Supabase](https://supabase.com))
 - An S3-compatible bucket (e.g. Supabase Storage)
-- A Hugging Face API key with Inference Providers access
+- A Gemini API key (Google AI Studio) or a Hugging Face API key with Inference Providers access
 - (Optional) Google OAuth credentials, SMTP credentials for magic links/password reset
 
 ### 1. Backend
@@ -130,12 +130,14 @@ docker-compose.yml
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # fill in DATABASE_URL, JWT/SESSION secrets, HF_API_KEY, S3_*, etc.
+cp .env.example .env   # fill in DATABASE_URL, JWT/SESSION secrets, GEMINI_API_KEY / HF_API_KEY, S3_*, etc.
 alembic upgrade head
 uvicorn src.main:app --reload --port 8000
 ```
 
 The API is served at `http://localhost:8000/api`, with interactive docs at `http://localhost:8000/docs`.
+
+**Switching AI provider:** set `AI_PROVIDER` (`gemini` or `huggingface`) in `backend/.env`. Embeddings from different providers can't be compared, so after switching run `python -m src.scripts.reembed_chunks` from `backend/` to re-embed existing documents.
 
 ### 2. Frontend
 

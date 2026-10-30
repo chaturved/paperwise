@@ -41,7 +41,7 @@ This is a resume-quality production project. It must feel like a real product an
 - SQLAlchemy + Alembic (PostgreSQL + pgvector)
 - Pydantic Settings (env config)
 - PyMuPDF + python-docx
-- HuggingFace Inference
+- AI provider adapter (`integrations/ai/`): Gemini (httpx) + HuggingFace Inference
 - python-jose + passlib (JWT)
 - authlib + httpx (Google OAuth)
 - boto3 (Supabase Storage / S3)
@@ -121,11 +121,11 @@ backend/src/
     user.py
     conversation.py
     query.py
-  integrations/         ← Adapters for external services
+  integrations/         ← Adapters for external services (one package per concern)
+    ai/                 ← AI provider adapter (base, factory, gemini, huggingface)
     storage.py          ← S3 / Supabase Storage
     mailer.py           ← SMTP email
-  utils/                ← Shared helpers (file parsing, embeddings, query building)
-    hugging_face.py
+  utils/                ← Pure shared helpers (JWT, hashing, text parsing, query building)
     jwt.py
     query_utils.py
     security.py

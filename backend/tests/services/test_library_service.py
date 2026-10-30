@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from src.integrations.ai.base import AIProvider
 from src.core.enums import Plan
 from src.core.exceptions import NotFoundError, UploadFailedError
 from src.repositories.library_repository import LibraryRepositoryProtocol
@@ -38,7 +39,8 @@ class TestLibraryService:
         self.mock_repo.get_by_content_hash.return_value = None
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_storage = MagicMock(spec_set=S3Storage)
-        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage)
+        self.mock_ai = MagicMock(spec_set=AIProvider)
+        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, ai=self.mock_ai)
 
     # ── get_library_data ──────────────────────────────────────────────────────
 
@@ -76,7 +78,7 @@ class TestLibraryService:
         with (
             patch("src.services.library_service.extract_text_from_bytes", return_value="extracted text"),
             patch("src.services.library_service.chunk_text", return_value=["chunk"]),
-            patch("src.services.library_service.get_embeddings", AsyncMock(return_value=[MagicMock(tolist=MagicMock(return_value=[0.1]))])),
+            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[[0.1]])),
         ):
             await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
 
@@ -90,14 +92,13 @@ class TestLibraryService:
 
         file = _make_file("report.pdf", b"pdf bytes")
 
-        mock_emb = MagicMock()
-        mock_emb.tolist.return_value = [0.1, 0.2]
+        mock_emb = [0.1, 0.2]
         self.mock_storage.save_raw_file.return_value = ("/url/report.pdf", b"pdf bytes")
 
         with (
             patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
             patch("src.services.library_service.chunk_text", return_value=["chunk 1"]),
-            patch("src.services.library_service.get_embeddings", AsyncMock(return_value=[mock_emb])),
+            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
         ):
             result = await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[file])
 
@@ -128,8 +129,7 @@ class TestLibraryService:
 
         saved = _make_lib(id=1, name="good.pdf")
         self.mock_repo.add.return_value = saved
-        mock_emb = MagicMock()
-        mock_emb.tolist.return_value = [0.1]
+        mock_emb = [0.1]
 
         async def fake_save(f, user_id):
             if f.filename == "bad.pdf":
@@ -140,7 +140,7 @@ class TestLibraryService:
         with (
             patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
             patch("src.services.library_service.chunk_text", return_value=["chunk"]),
-            patch("src.services.library_service.get_embeddings", AsyncMock(return_value=[mock_emb])),
+            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
         ):
             result = await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[bad_file, good_file])
 
@@ -177,14 +177,13 @@ class TestLibraryService:
 
         saved = _make_lib(id=2, name="new.pdf")
         self.mock_repo.add.return_value = saved
-        mock_emb = MagicMock()
-        mock_emb.tolist.return_value = [0.1]
+        mock_emb = [0.1]
         self.mock_storage.save_raw_file.return_value = ("/url/new.pdf", b"new content")
 
         with (
             patch("src.services.library_service.extract_text_from_bytes", return_value="text"),
             patch("src.services.library_service.chunk_text", return_value=["chunk"]),
-            patch("src.services.library_service.get_embeddings", AsyncMock(return_value=[mock_emb])),
+            patch.object(self.mock_ai, "get_embeddings", AsyncMock(return_value=[mock_emb])),
         ):
             result = await self.svc.save_files(user_id=1, plan=Plan.FREE, files=[dup_file, new_file])
 

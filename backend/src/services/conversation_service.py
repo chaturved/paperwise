@@ -10,7 +10,8 @@ from src.repositories.library_repository import LibraryRepositoryProtocol, Libra
 from src.schemas.conversation import AskFilters, ConversationOut, ConversationSearchResult, DEFAULT_CONVERSATION_TITLE, MessageOut
 from src.schemas.user import MessageResponse
 from src.services.tier_service import TierServiceProtocol, TierService
-from src.utils.hugging_face import get_embedding
+from src.integrations.ai import get_ai_provider
+from src.integrations.ai.base import AIProvider
 from src.utils.query_utils import (
     build_context_text,
     generate_description_and_badges,
@@ -45,10 +46,12 @@ class ConversationService(ConversationServiceProtocol):
         conv_repo: ConversationRepositoryProtocol = Depends(ConversationRepository),
         lib_repo: LibraryRepositoryProtocol = Depends(LibraryRepository),
         tier: TierServiceProtocol = Depends(TierService),
+        ai: AIProvider = Depends(get_ai_provider),
     ):
         self.conv_repo = conv_repo
         self.lib_repo = lib_repo
         self.tier = tier
+        self.ai = ai
 
     def list_conversations(self, user_id: int) -> list[ConversationOut]:
         return [ConversationOut.model_validate(c) for c in self.conv_repo.get_all(user_id)]
@@ -112,14 +115,13 @@ class ConversationService(ConversationServiceProtocol):
 
         self.conv_repo.add_message(conv_id, "user", question)
 
-        raw_vector = await get_embedding(question)
-        query_vector = raw_vector.tolist() if hasattr(raw_vector, "tolist") else list(raw_vector)
+        query_vector = await self.ai.get_embedding(question)
         doc_id = filters.doc_id if filters else None
         results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
         chunks = get_library_chunks(results)
         context_text = build_context_text(chunks)
 
-        description, badges = await generate_description_and_badges(chunks, question)
+        description, badges = await generate_description_and_badges(self.ai, chunks, question)
         meta = {
             "description": description,
             "badges": badges,
@@ -130,7 +132,7 @@ class ConversationService(ConversationServiceProtocol):
         yield "meta", meta
 
         full_answer = ""
-        async for token in stream_answer(context_text, question):
+        async for token in stream_answer(self.ai, context_text, question):
             full_answer += token
             yield "token", token
 

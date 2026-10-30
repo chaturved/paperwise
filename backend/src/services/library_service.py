@@ -2,8 +2,6 @@ import hashlib
 import logging
 from typing import Protocol
 
-_log = logging.getLogger(__name__)
-
 from fastapi import Depends, UploadFile
 
 from src.core.enums import Plan
@@ -13,9 +11,12 @@ from src.repositories.library_repository import LibraryRepository, LibraryReposi
 from src.schemas.library import LibraryDocResponse, LibraryResponse, UploadErrorResponse, UploadItemResponse, UploadResponse
 from src.schemas.user import MessageResponse
 from src.services.tier_service import TierService, TierServiceProtocol
-from src.utils.hugging_face import get_embeddings
+from src.integrations.ai import get_ai_provider
+from src.integrations.ai.base import AIProvider
 from src.integrations.storage import S3Storage
 from src.utils.text_utils import chunk_text, extract_text_from_bytes
+
+_log = logging.getLogger(__name__)
 
 
 class LibraryServiceProtocol(Protocol):
@@ -31,10 +32,12 @@ class LibraryService(LibraryServiceProtocol):
         repo: LibraryRepositoryProtocol = Depends(LibraryRepository),
         tier: TierServiceProtocol = Depends(TierService),
         storage: S3Storage = Depends(S3Storage),
+        ai: AIProvider = Depends(get_ai_provider),
     ) -> None:
         self.repo = repo
         self.tier = tier
         self.storage = storage
+        self.ai = ai
 
     def get_library_data(self, user_id: int) -> LibraryResponse:
         rows = self.repo.get_all(user_id)
@@ -65,7 +68,7 @@ class LibraryService(LibraryServiceProtocol):
                 extracted_text = extract_text_from_bytes(contents, ext)
 
                 chunks = chunk_text(extracted_text)
-                embeddings = await get_embeddings(chunks)
+                embeddings = await self.ai.get_embeddings(chunks)
 
                 library = Library(
                     user_id=user_id,
@@ -83,7 +86,7 @@ class LibraryService(LibraryServiceProtocol):
                         library_id=library.id,
                         chunk_index=i,
                         chunk_text=chunk_txt,
-                        embedding=emb.tolist() if hasattr(emb, "tolist") else list(emb),
+                        embedding=emb,
                     )
                     for i, (chunk_txt, emb) in enumerate(zip(chunks, embeddings))
                 ]

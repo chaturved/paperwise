@@ -1364,7 +1364,7 @@ Language:     Python 3.11+
 Database:     PostgreSQL + pgvector (via SQLAlchemy)
 Auth:         JWT (python-jose) + OAuth (authlib)
 Email:        smtplib (standard library)
-AI:           Hugging Face Inference API
+AI:           Provider adapter — Gemini API or Hugging Face Inference API
   Embeddings: sentence-transformers/all-MiniLM-L6-v2 (384-dim)
   LLM:        meta-llama/Llama-3.1-8B-Instruct
 Storage:      AWS S3-compatible (Supabase Storage, boto3)
@@ -1557,7 +1557,7 @@ These are fixes to the existing codebase required before new features are layere
 | `src/integrations/storage.py` | `put_object` and `delete_object` calls have no error handling | Wrap in try/except `botocore.exceptions.ClientError`, raise `HTTPException(502)` |
 | `src/api/v1/query.py` | SSE stream ends with `data: [DONE]` even on LLM failure | Catch exceptions in `streamer()`, yield `event: error\ndata: {...}\n\n` before returning |
 | `src/utils/text_utils.py` | Unsupported file extension returns `""` silently | Raise `HTTPException(400, "Unsupported file type: .xyz")` |
-| `requirements.txt` | `certifi` used in `hugging_face.py` but not listed | Add `certifi` |
+| `requirements.txt` | `certifi` used in `integrations/ai/huggingface.py` but not listed | Add `certifi` |
 
 ---
 

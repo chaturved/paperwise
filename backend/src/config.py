@@ -12,7 +12,14 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = ""
 
-    HF_API_BASE: str = "https://api-inference.huggingface.co/models"
+    AI_PROVIDER: str = "gemini"  # "gemini" or "huggingface"
+    EMBEDDING_DIMENSIONS: int = 384  # size of the pgvector column — changing it needs an Alembic migration + re-embed
+
+    GEMINI_API_BASE: str = "https://generativelanguage.googleapis.com/v1beta"
+    GEMINI_API_KEY: str = ""
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
+    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
+
     HF_API_KEY: str = ""
     HF_EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     HF_CHAT_MODEL: str = "meta-llama/Llama-3.1-8B-Instruct"

@@ -13,6 +13,8 @@ class LibraryRepositoryProtocol(Protocol):
     def get_by_content_hash(self, user_id: int, content_hash: str) -> Optional[Library]: ...
     def add(self, library: Library) -> Library: ...
     def add_chunks(self, chunks: list[LibraryChunk]) -> None: ...
+    def get_chunks_after(self, chunk_id: int, limit: int) -> list[LibraryChunk]: ...
+    def set_embeddings(self, chunks: list[LibraryChunk], embeddings: list[list[float]]) -> None: ...
     def delete(self, lib: Library) -> None: ...
     def clear_user_library(self, user_id: int) -> None: ...
     def get_top_k_chunks(
@@ -45,6 +47,20 @@ class LibraryRepository(LibraryRepositoryProtocol):
 
     def add_chunks(self, chunks: list[LibraryChunk]) -> None:
         self.db.add_all(chunks)
+        self.db.commit()
+
+    def get_chunks_after(self, chunk_id: int, limit: int) -> list[LibraryChunk]:
+        return (
+            self.db.query(LibraryChunk)
+            .filter(LibraryChunk.id > chunk_id)
+            .order_by(LibraryChunk.id)
+            .limit(limit)
+            .all()
+        )
+
+    def set_embeddings(self, chunks: list[LibraryChunk], embeddings: list[list[float]]) -> None:
+        for chunk, embedding in zip(chunks, embeddings):
+            chunk.embedding = embedding
         self.db.commit()
 
     def delete(self, lib: Library) -> None:

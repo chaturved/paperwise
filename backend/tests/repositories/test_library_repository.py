@@ -122,3 +122,26 @@ class TestLibraryRepository:
         result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1], top_k=1, doc_id=5)
 
         assert result == expected
+
+
+class TestLibraryRepositoryReembedding:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.db = MagicMock(spec_set=Session)
+        self.repo = LibraryRepository(db=self.db)
+
+    def test_get_chunks_after_returns_next_batch(self):
+        expected = [MagicMock(spec=LibraryChunk)]
+        self.db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = expected
+
+        assert self.repo.get_chunks_after(chunk_id=10, limit=50) == expected
+        self.db.query.assert_called_once_with(LibraryChunk)
+
+    def test_set_embeddings_assigns_each_chunk_and_commits(self):
+        chunks = [MagicMock(spec=LibraryChunk), MagicMock(spec=LibraryChunk)]
+
+        self.repo.set_embeddings(chunks, [[0.1], [0.2]])
+
+        assert chunks[0].embedding == [0.1]
+        assert chunks[1].embedding == [0.2]
+        self.db.commit.assert_called_once()

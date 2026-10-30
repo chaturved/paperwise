@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from ..config import settings
 from ..database.db import Base
 
 if TYPE_CHECKING:
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 
 try:
     from pgvector.sqlalchemy import Vector
-    _EMBEDDING_COL = Vector(384)
+    _EMBEDDING_COL = Vector(settings.EMBEDDING_DIMENSIONS)
 except ImportError:
     from sqlalchemy import Text as _Text
     _EMBEDDING_COL = _Text()

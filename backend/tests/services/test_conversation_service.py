@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from src.integrations.ai.base import AIProvider
 from src.core.enums import Plan
 from src.core.exceptions import NotFoundError
 from src.repositories.conversation_repository import ConversationRepositoryProtocol
@@ -25,10 +26,12 @@ class TestConversationService:
         self.mock_conv_repo = MagicMock(spec_set=ConversationRepositoryProtocol)
         self.mock_lib_repo = MagicMock(spec_set=LibraryRepositoryProtocol)
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
+        self.mock_ai = MagicMock(spec_set=AIProvider)
         self.svc = ConversationService(
             conv_repo=self.mock_conv_repo,
             lib_repo=self.mock_lib_repo,
             tier=self.mock_tier,
+            ai=self.mock_ai,
         )
 
     # ── list_conversations ────────────────────────────────────────────────────
@@ -163,16 +166,15 @@ class TestConversationService:
         conv = _make_conv(title="New conversation")
         self.mock_conv_repo.get_by_id.return_value = conv
 
-        mock_vector = MagicMock()
-        mock_vector.tolist.return_value = [0.1, 0.2]
+        mock_vector = [0.1, 0.2]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ctx, question):
+        async def fake_stream(ai, ctx, question):
             yield "hello"
             yield " world"
 
         with (
-            patch("src.services.conversation_service.get_embedding", AsyncMock(return_value=mock_vector)),
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
             patch("src.services.conversation_service.get_library_chunks", return_value=[]),
             patch("src.services.conversation_service.build_context_text", return_value="ctx"),
             patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("desc", ["b1"]))),
@@ -191,15 +193,14 @@ class TestConversationService:
     async def test_ask_auto_renames_new_conversation(self):
         conv = _make_conv(title="New conversation")
         self.mock_conv_repo.get_by_id.return_value = conv
-        mock_vector = MagicMock()
-        mock_vector.tolist.return_value = [0.1]
+        mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ctx, question):
+        async def fake_stream(ai, ctx, question):
             yield "answer"
 
         with (
-            patch("src.services.conversation_service.get_embedding", AsyncMock(return_value=mock_vector)),
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
             patch("src.services.conversation_service.get_library_chunks", return_value=[]),
             patch("src.services.conversation_service.build_context_text", return_value=""),
             patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("", []))),
@@ -215,15 +216,14 @@ class TestConversationService:
     async def test_ask_touches_existing_conversation(self):
         conv = _make_conv(title="My chat")
         self.mock_conv_repo.get_by_id.return_value = conv
-        mock_vector = MagicMock()
-        mock_vector.tolist.return_value = [0.1]
+        mock_vector = [0.1]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
-        async def fake_stream(ctx, question):
+        async def fake_stream(ai, ctx, question):
             yield "answer"
 
         with (
-            patch("src.services.conversation_service.get_embedding", AsyncMock(return_value=mock_vector)),
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
             patch("src.services.conversation_service.get_library_chunks", return_value=[]),
             patch("src.services.conversation_service.build_context_text", return_value=""),
             patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("", []))),

@@ -1,8 +1,10 @@
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.orm import Session
 
+from src.core.enums import DocumentStatus
 from src.models import Library, LibraryChunk
 from src.repositories.library_repository import LibraryRepository
 
@@ -145,3 +147,75 @@ class TestLibraryRepositoryReembedding:
         assert chunks[0].embedding == [0.1]
         assert chunks[1].embedding == [0.2]
         self.db.commit.assert_called_once()
+
+
+class TestLibraryStatusMethods:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.db = MagicMock(spec_set=Session)
+        self.repo = LibraryRepository(db=self.db)
+
+    def test_count_active_returns_the_scalar(self):
+        self.db.query.return_value.filter.return_value.scalar.return_value = 3
+
+        assert self.repo.count_active(user_id=1) == 3
+
+    def test_count_active_is_zero_when_there_are_no_rows(self):
+        self.db.query.return_value.filter.return_value.scalar.return_value = None
+
+        assert self.repo.count_active(user_id=1) == 0
+
+    def test_get_looks_the_document_up_by_primary_key(self):
+        expected = MagicMock(spec=Library)
+        self.db.get.return_value = expected
+
+        assert self.repo.get(5) is expected
+        self.db.get.assert_called_once_with(Library, 5)
+
+    def test_transition_status_wins_when_one_row_changed(self):
+        self.db.query.return_value.filter.return_value.update.return_value = 1
+
+        assert self.repo.transition_status(1, DocumentStatus.UPLOADING, DocumentStatus.PROCESSING) is True
+        self.db.commit.assert_called_once()
+
+    def test_transition_status_loses_when_the_status_already_moved(self):
+        self.db.query.return_value.filter.return_value.update.return_value = 0
+
+        assert self.repo.transition_status(1, DocumentStatus.UPLOADING, DocumentStatus.PROCESSING) is False
+
+    def test_set_status_records_status_message_and_time(self):
+        lib = MagicMock(spec=Library)
+
+        self.repo.set_status(lib, DocumentStatus.FAILED, "could not read")
+
+        assert lib.status == DocumentStatus.FAILED
+        assert lib.error_message == "could not read"
+        assert lib.status_updated_at is not None
+        self.db.commit.assert_called_once()
+
+    def test_finish_processing_saves_text_chunks_and_status_in_one_commit(self):
+        lib = MagicMock(spec=Library)
+        chunks = [MagicMock(spec=LibraryChunk)]
+
+        self.repo.finish_processing(lib, "the text", "abc123", chunks)
+
+        assert lib.extracted_text == "the text"
+        assert lib.content_hash == "abc123"
+        assert lib.status == DocumentStatus.READY
+        assert lib.error_message is None
+        self.db.add_all.assert_called_once_with(chunks)
+        self.db.commit.assert_called_once()
+
+    def test_delete_chunks_removes_only_that_documents_chunks(self):
+        self.repo.delete_chunks(7)
+
+        self.db.query.assert_called_once_with(LibraryChunk)
+        self.db.commit.assert_called_once()
+
+    def test_list_stale_returns_matching_documents(self):
+        expected = [MagicMock(spec=Library)]
+        self.db.query.return_value.filter.return_value.all.return_value = expected
+
+        result = self.repo.list_stale([DocumentStatus.UPLOADING], datetime(2026, 1, 1))
+
+        assert result == expected

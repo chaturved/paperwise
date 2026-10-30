@@ -3,11 +3,11 @@
 import asyncio
 import json
 import sys
-import weakref
 from pathlib import Path
 
 from ...config import settings
 from ...core.exceptions import BadRequestError
+from ...utils.concurrency import PerLoopSemaphore
 from .messages import (
     BUSY_MESSAGE,
     TIMEOUT_MESSAGE,
@@ -18,15 +18,8 @@ from .messages import (
 # The worker is started as `python -m src.integrations.documents.worker`, so it must run from the backend root.
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
 
-# One limiter per event loop, so only a few workers run at once however many uploads arrive together.
-_worker_slots: "weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.Semaphore]" = weakref.WeakKeyDictionary()
-
-
-def _slots() -> asyncio.Semaphore:
-    loop = asyncio.get_running_loop()
-    if loop not in _worker_slots:
-        _worker_slots[loop] = asyncio.Semaphore(settings.EXTRACT_MAX_CONCURRENCY)
-    return _worker_slots[loop]
+# Only a few workers run at once, however many uploads arrive together.
+_worker_slots = PerLoopSemaphore(lambda: settings.EXTRACT_MAX_CONCURRENCY)
 
 
 async def _run_worker(contents: bytes, ext: str) -> str:
@@ -70,7 +63,7 @@ async def extract_text_isolated(contents: bytes, ext: str) -> str:
     At most EXTRACT_MAX_CONCURRENCY workers run at once. Raises BadRequestError for unreadable or
     oversized files, when parsing runs too long, and when no worker frees up in time.
     """
-    slots = _slots()
+    slots = _worker_slots.get()
     try:
         await asyncio.wait_for(slots.acquire(), timeout=settings.EXTRACT_QUEUE_TIMEOUT_SECONDS)
     except TimeoutError:

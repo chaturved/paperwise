@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 from src.core.enums import Plan
 from src.core.exceptions import PlanLimitError
 from src.repositories.tier_repository import TierRepositoryProtocol
-from src.services.tier_service import TierService
+from src.services.tier_service import TierService, UploadMeta
 
 
 class TestTierService:
@@ -44,6 +44,28 @@ class TestTierService:
     def test_upload_free_allows_docx(self):
         files = [UploadFile(filename="contract.docx", file=io.BytesIO(b""), size=1024)]
         self.svc.check_upload(Plan.FREE, files, current_doc_count=0)
+
+    # ── check_upload_metadata ─────────────────────────────────────────────────
+
+    def test_metadata_accepts_files_within_the_free_limits(self):
+        files = [UploadMeta("contract.docx", 2 * 1024 * 1024), UploadMeta("notes.md", 10)]
+        self.svc.check_upload_metadata(Plan.FREE, files, current_doc_count=3)
+
+    def test_metadata_rejects_going_over_the_document_limit(self):
+        with pytest.raises(PlanLimitError) as exc:
+            self.svc.check_upload_metadata(Plan.FREE, [UploadMeta("a.pdf", 1), UploadMeta("b.pdf", 1)], current_doc_count=4)
+        assert exc.value.limit == "documents"
+
+    def test_metadata_rejects_a_file_over_the_size_limit(self):
+        with pytest.raises(PlanLimitError) as exc:
+            self.svc.check_upload_metadata(Plan.FREE, [UploadMeta("big.pdf", 11 * 1024 * 1024)], current_doc_count=0)
+        assert exc.value.limit == "file_size"
+
+    @pytest.mark.parametrize("name", ["slides.pptx", "no_extension"])
+    def test_metadata_rejects_unsupported_types(self, name):
+        with pytest.raises(PlanLimitError) as exc:
+            self.svc.check_upload_metadata(Plan.FREE, [UploadMeta(name, 1)], current_doc_count=0)
+        assert exc.value.limit == "file_type"
 
     def test_upload_pro_no_doc_limit(self):
         files = [UploadFile(filename="a.pdf", file=io.BytesIO(b""), size=1024)]

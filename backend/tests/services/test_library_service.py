@@ -21,6 +21,8 @@ def _make_lib(id=1, name="doc.pdf", type="pdf", size=1024, path: str | None = "/
     lib.size = size
     lib.path = path
     lib.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    lib.status = "ready"
+    lib.error_message = None
     return lib
 
 

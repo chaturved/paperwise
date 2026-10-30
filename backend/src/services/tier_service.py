@@ -1,11 +1,17 @@
 from datetime import datetime, timezone
-from typing import Optional, Protocol, TypedDict
+from collections.abc import Sequence
+from typing import NamedTuple, Optional, Protocol, TypedDict
 
 from fastapi import Depends, UploadFile
 
 from src.core.enums import Plan
 from src.core.exceptions import PlanLimitError
 from src.repositories.tier_repository import TierRepositoryProtocol, TierRepository
+
+
+class UploadMeta(NamedTuple):
+    name: str
+    size: int
 
 
 class PlanLimits(TypedDict):
@@ -36,6 +42,7 @@ LIMITS: dict[Plan, PlanLimits] = {
 
 class TierServiceProtocol(Protocol):
     def check_upload(self, plan: Plan, files: list[UploadFile], current_doc_count: int) -> None: ...
+    def check_upload_metadata(self, plan: Plan, files: Sequence[UploadMeta], current_doc_count: int) -> None: ...
     def check_and_log_ask(self, plan: Plan, user_id: int) -> None: ...
     def check_history(self, plan: Plan, created_at: datetime) -> None: ...
 
@@ -48,15 +55,18 @@ class TierService(TierServiceProtocol):
         return LIMITS[plan]
 
     def check_upload(self, plan: Plan, files: list[UploadFile], current_doc_count: int) -> None:
+        metadata = [UploadMeta(f.filename or "", f.size or 0) for f in files]
+        self.check_upload_metadata(plan, metadata, current_doc_count)
+
+    def check_upload_metadata(self, plan: Plan, files: Sequence[UploadMeta], current_doc_count: int) -> None:
         limits = self._limits(plan)
         if limits["max_docs"] is not None and current_doc_count + len(files) > limits["max_docs"]:
             raise PlanLimitError("documents")
         max_bytes = limits["max_file_mb"] * 1024 * 1024
         for f in files:
-            if (f.size or 0) > max_bytes:
+            if f.size > max_bytes:
                 raise PlanLimitError("file_size")
-            name = f.filename or ""
-            ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+            ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
             if ext not in limits["allowed_types"]:
                 raise PlanLimitError("file_type")
 

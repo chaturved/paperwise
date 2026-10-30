@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     EXTRACT_MAX_MEMORY_MB: int = 2048  # enforced on Linux (the Docker image); macOS ignores address-space limits
     EXTRACT_MAX_CONCURRENCY: int = 2  # workers allowed at once per server process; extra uploads wait their turn
     EXTRACT_QUEUE_TIMEOUT_SECONDS: int = 60  # how long an upload may wait for a free worker before it is refused
+    # Uploads go straight from the browser to storage, then are processed in the background.
+    UPLOAD_URL_EXPIRY_SECONDS: int = 600
+    INGEST_MAX_CONCURRENCY: int = 3  # documents processed at once per server process
+    STALE_UPLOAD_HOURS: int = 1  # an upload that never completes is removed after this long
+    STALE_PROCESSING_MINUTES: int = 15  # a document stuck processing after a restart is marked failed
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 

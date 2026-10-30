@@ -1,18 +1,32 @@
+from datetime import UTC, datetime
 from typing import Optional, Protocol
 
 from fastapi import Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from src.core.enums import DocumentStatus
 from src.database.db import get_db
 from src.models import Library, LibraryChunk
 
 
+def _now() -> datetime:
+    return datetime.now(UTC)
+
+
 class LibraryRepositoryProtocol(Protocol):
     def get_all(self, user_id: int) -> list[Library]: ...
+    def count_active(self, user_id: int) -> int: ...
+    def get(self, doc_id: int) -> Library | None: ...
     def get_by_id(self, doc_id: int, user_id: int) -> Optional[Library]: ...
     def get_by_content_hash(self, user_id: int, content_hash: str) -> Optional[Library]: ...
     def add(self, library: Library) -> Library: ...
     def add_chunks(self, chunks: list[LibraryChunk]) -> None: ...
+    def transition_status(self, doc_id: int, from_status: DocumentStatus, to_status: DocumentStatus) -> bool: ...
+    def set_status(self, lib: Library, status: DocumentStatus, error_message: str | None = None) -> None: ...
+    def finish_processing(self, lib: Library, text: str, content_hash: str, chunks: list[LibraryChunk]) -> None: ...
+    def delete_chunks(self, library_id: int) -> None: ...
+    def list_stale(self, statuses: list[DocumentStatus], cutoff: datetime) -> list[Library]: ...
     def get_chunks_after(self, chunk_id: int, limit: int) -> list[LibraryChunk]: ...
     def set_embeddings(self, chunks: list[LibraryChunk], embeddings: list[list[float]]) -> None: ...
     def delete(self, lib: Library) -> None: ...
@@ -33,6 +47,18 @@ class LibraryRepository(LibraryRepositoryProtocol):
     def get_all(self, user_id: int) -> list[Library]:
         return self.db.query(Library).filter(Library.user_id == user_id).all()
 
+    def count_active(self, user_id: int) -> int:
+        """Documents that use up the plan limit: everything except ones that failed."""
+        return (
+            self.db.query(func.count(Library.id))
+            .filter(Library.user_id == user_id, Library.status != DocumentStatus.FAILED)
+            .scalar()
+            or 0
+        )
+
+    def get(self, doc_id: int) -> Library | None:
+        return self.db.get(Library, doc_id)
+
     def get_by_id(self, doc_id: int, user_id: int) -> Optional[Library]:
         return self.db.query(Library).filter(Library.id == doc_id, Library.user_id == user_id).first()
 
@@ -48,6 +74,43 @@ class LibraryRepository(LibraryRepositoryProtocol):
     def add_chunks(self, chunks: list[LibraryChunk]) -> None:
         self.db.add_all(chunks)
         self.db.commit()
+
+    def transition_status(self, doc_id: int, from_status: DocumentStatus, to_status: DocumentStatus) -> bool:
+        """Move a document to a new status only if it is still in the expected one. True if this call won."""
+        updated = (
+            self.db.query(Library)
+            .filter(Library.id == doc_id, Library.status == from_status)
+            .update(
+                {Library.status: to_status, Library.error_message: None, Library.status_updated_at: _now()},
+                synchronize_session=False,
+            )
+        )
+        self.db.commit()
+        return updated == 1
+
+    def set_status(self, lib: Library, status: DocumentStatus, error_message: str | None = None) -> None:
+        lib.status = status
+        lib.error_message = error_message
+        lib.status_updated_at = _now()
+        self.db.commit()
+
+    def finish_processing(self, lib: Library, text: str, content_hash: str, chunks: list[LibraryChunk]) -> None:
+        """Save the extracted text, the chunks and the 'ready' status in a single transaction."""
+        lib.extracted_text = text
+        lib.content_hash = content_hash
+        lib.status = DocumentStatus.READY
+        lib.error_message = None
+        lib.status_updated_at = _now()
+        self.db.add_all(chunks)
+        self.db.commit()
+
+    def delete_chunks(self, library_id: int) -> None:
+        self.db.query(LibraryChunk).filter(LibraryChunk.library_id == library_id).delete(synchronize_session=False)
+        self.db.commit()
+
+    def list_stale(self, statuses: list[DocumentStatus], cutoff: datetime) -> list[Library]:
+        last_change = func.coalesce(Library.status_updated_at, Library.created_at)
+        return self.db.query(Library).filter(Library.status.in_(statuses), last_change < cutoff).all()
 
     def get_chunks_after(self, chunk_id: int, limit: int) -> list[LibraryChunk]:
         return (

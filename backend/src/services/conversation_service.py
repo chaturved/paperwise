@@ -31,11 +31,6 @@ from src.utils.chunk_formatter import ChunkFormatter
 from src.utils.citations import CitationExtractor
 
 GENERAL_HISTORY_MESSAGES = 10
-GENERAL_DESCRIPTION = "A general answer. It is not based on your documents, so there are no sources to check."
-GENERAL_BADGES = [
-    {"label": "AI generated", "icon": "bot"},
-    {"label": "Not from your documents", "icon": "warning"},
-]
 
 
 class ConversationServiceProtocol(Protocol):
@@ -172,7 +167,7 @@ class ConversationService(ConversationServiceProtocol):
             tokens = self.answers.stream(chunks, question)
         else:
             sources = []
-            meta = {"description": GENERAL_DESCRIPTION, "badges": GENERAL_BADGES, "sources": [], "general": True}
+            meta = {"description": "", "badges": [], "sources": [], "general": True}
             tokens = self.answers.stream_general(question, history)
 
         yield "meta", meta

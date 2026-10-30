@@ -68,13 +68,13 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
   };
   const toggleSource = (n: number) => setExpandedSource((current) => (current === n ? null : n));
 
-  const hasMeta    = !streaming && (meta?.description || (meta?.badges && meta.badges.length > 0));
+  const hasMeta    = !streaming && !meta?.general && (meta?.description || (meta?.badges && meta.badges.length > 0));
 
   return (
     <div className="msg-in group">
       <div className="flex-1 min-w-0">
         <div className="mb-2.5 flex items-center gap-2.5">
-          <span className="font-mono text-xs text-muted">Paperwise</span>
+          <span className="font-mono text-xs text-muted">{meta?.general ? "Paperwise · general answer" : "Paperwise"}</span>
           {streaming ? (
             <div className="flex items-center gap-[3px]">
               {[0, 150, 300].map((d) => (

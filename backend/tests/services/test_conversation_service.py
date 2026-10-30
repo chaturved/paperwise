@@ -298,14 +298,10 @@ class TestConversationService:
         describe.assert_not_called()
         self.mock_lib_repo.get_top_k_chunks.assert_not_called()
 
-    async def test_general_chat_sends_no_sources_and_says_the_answer_is_not_from_the_documents(self):
+    async def test_general_chat_sends_no_sources_and_marks_the_answer_as_general(self):
         events, *_ = await self._ask_in_general_mode()
 
-        meta = events[0][1]
-        assert meta["sources"] == []
-        assert meta["general"] is True
-        assert "not based on your documents" in meta["description"]
-        assert "Not from your documents" in [b["label"] for b in meta["badges"]]
+        assert events[0][1] == {"description": "", "badges": [], "sources": [], "general": True}
         assert [e for e in events if e[0] == "token"] == [("token", "Hello "), ("token", "there")]
         assert events[-1] == ("cited", [])
 

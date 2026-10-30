@@ -42,6 +42,7 @@ This is a resume-quality production project. It must feel like a real product an
 - Pydantic Settings (env config)
 - PyMuPDF + python-docx
 - AI provider adapter (`integrations/ai/`): Gemini (httpx) + HuggingFace Inference
+- Document parsing (`integrations/documents/`): PyMuPDF + python-docx, run in an isolated worker process with time, memory and concurrency limits
 - python-jose + passlib (JWT)
 - authlib + httpx (Google OAuth)
 - boto3 (Supabase Storage / S3)
@@ -126,6 +127,7 @@ backend/src/
     storage.py          ← S3 / Supabase Storage
     mailer.py           ← SMTP email
     google_oauth.py     ← Google sign-in (Authlib)
+    documents/          ← Reading uploads safely: parsers, isolated worker process, runner, user-facing messages
   utils/                ← Pure shared helpers (JWT, hashing, text parsing, query building)
     jwt.py
     query_utils.py

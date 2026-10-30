@@ -8,12 +8,8 @@ import pytest
 
 from src.config import settings
 from src.core.exceptions import BadRequestError
-from src.utils import isolated_extract
-from src.utils.isolated_extract import (
-    BUSY_MESSAGE,
-    TIMEOUT_MESSAGE,
-    extract_text_isolated,
-)
+from src.integrations.documents import extract_text_isolated, runner
+from src.integrations.documents.messages import BUSY_MESSAGE, TIMEOUT_MESSAGE
 
 
 def _docx_bytes(text: str) -> bytes:
@@ -69,14 +65,14 @@ async def test_slow_parsing_is_stopped_after_the_timeout(monkeypatch):
 async def test_timed_out_worker_is_killed(monkeypatch):
     monkeypatch.setattr(settings, "EXTRACT_TIMEOUT_SECONDS", 0)
     started = []
-    real_exec = isolated_extract.asyncio.create_subprocess_exec
+    real_exec = runner.asyncio.create_subprocess_exec
 
     async def spy(*args, **kwargs):
         process = await real_exec(*args, **kwargs)
         started.append(process)
         return process
 
-    monkeypatch.setattr(isolated_extract.asyncio, "create_subprocess_exec", spy)
+    monkeypatch.setattr(runner.asyncio, "create_subprocess_exec", spy)
 
     with pytest.raises(BadRequestError):
         await extract_text_isolated(b"hello", "txt")
@@ -85,12 +81,12 @@ async def test_timed_out_worker_is_killed(monkeypatch):
 
 
 async def test_crashed_worker_is_reported_as_too_complex(monkeypatch):
-    real_exec = isolated_extract.asyncio.create_subprocess_exec
+    real_exec = runner.asyncio.create_subprocess_exec
 
     async def crashing(*_args, **kwargs):
         return await real_exec(sys.executable, "-c", "import os; os._exit(139)", **kwargs)
 
-    monkeypatch.setattr(isolated_extract.asyncio, "create_subprocess_exec", crashing)
+    monkeypatch.setattr(runner.asyncio, "create_subprocess_exec", crashing)
 
     with pytest.raises(BadRequestError) as exc:
         await extract_text_isolated(b"hello", "txt")
@@ -103,7 +99,7 @@ _SLOW_WORKER = "import time; time.sleep(0.3); print('{\"ok\": true, \"text\": \"
 def _track_concurrency(monkeypatch):
     """Replace the worker with a slow stand-in and record how many run at the same time."""
     state = {"running": 0, "peak": 0}
-    real_exec = isolated_extract.asyncio.create_subprocess_exec
+    real_exec = runner.asyncio.create_subprocess_exec
 
     async def slow_worker(*_args, **kwargs):
         state["running"] += 1
@@ -119,7 +115,7 @@ def _track_concurrency(monkeypatch):
         process.wait = wait
         return process
 
-    monkeypatch.setattr(isolated_extract.asyncio, "create_subprocess_exec", slow_worker)
+    monkeypatch.setattr(runner.asyncio, "create_subprocess_exec", slow_worker)
     return state
 
 

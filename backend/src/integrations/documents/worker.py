@@ -1,16 +1,17 @@
 """Worker process that parses one uploaded file.
 
-Run as `python -m src.utils.extract_worker <ext>`: the file bytes arrive on stdin and one JSON object
-is written to stdout. The parent (`isolated_extract.py`) enforces the wall-clock timeout; this process
-also limits its own memory and CPU so a hostile file cannot take down the web server.
+Run as `python -m src.integrations.documents.worker <ext>`: the file bytes arrive on stdin and one JSON
+object is written to stdout. The parent (runner.py) enforces the wall-clock timeout; this process also
+limits its own memory and CPU so a hostile file cannot take down the web server.
 """
 
 import json
 import sys
 
-from ..config import settings
-from ..core.exceptions import BadRequestError
-from .text_utils import TOO_LARGE_MESSAGE, extract_text_from_bytes
+from ...config import settings
+from ...core.exceptions import BadRequestError
+from .messages import TOO_LARGE_MESSAGE
+from .parsers import parse_document
 
 
 def _limit_resources() -> None:
@@ -36,7 +37,7 @@ def main() -> None:
     contents = sys.stdin.buffer.read()
 
     try:
-        result: dict[str, object] = {"ok": True, "text": extract_text_from_bytes(contents, ext)}
+        result: dict[str, object] = {"ok": True, "text": parse_document(contents, ext)}
     except BadRequestError as exc:
         result = {"ok": False, "message": exc.message}
     except MemoryError:

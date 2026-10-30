@@ -5,7 +5,7 @@ from typing import Protocol
 from fastapi import Depends, UploadFile
 
 from src.core.enums import Plan
-from src.core.exceptions import BadRequestError, NotFoundError, UploadFailedError
+from src.core.exceptions import BadRequestError, ConflictError, NotFoundError, UploadFailedError
 from src.models import Library, LibraryChunk
 from src.repositories.library_repository import LibraryRepository, LibraryRepositoryProtocol
 from src.schemas.library import LibraryDocResponse, LibraryResponse, UploadErrorResponse, UploadItemResponse, UploadResponse
@@ -13,8 +13,8 @@ from src.schemas.user import MessageResponse
 from src.services.tier_service import TierService, TierServiceProtocol
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
+from src.integrations.documents import NO_TEXT_MESSAGE, extract_text_isolated
 from src.integrations.storage import S3Storage
-from src.utils.isolated_extract import extract_text_isolated
 from src.utils.text_utils import chunk_text, clean_text
 
 _log = logging.getLogger(__name__)
@@ -57,48 +57,7 @@ class LibraryService(LibraryServiceProtocol):
 
         for f in files:
             try:
-                raw = await f.read()
-                content_hash = hashlib.sha256(raw).hexdigest()
-                if self.repo.get_by_content_hash(user_id, content_hash):
-                    raise ValueError("This file has already been uploaded")
-                f.file.seek(0)
-
-                ext = (f.filename or "").split(".")[-1].lower()
-                extracted_text = await extract_text_isolated(raw, ext)
-                if not clean_text(extracted_text):
-                    raise BadRequestError(
-                        "No readable text found. Scanned or image-only files aren't supported yet."
-                    )
-
-                file_url, contents = await self.storage.save_raw_file(f, user_id)
-                size_bytes = len(contents)
-
-                chunks = chunk_text(extracted_text)
-                embeddings = await self.ai.get_embeddings(chunks)
-
-                library = Library(
-                    user_id=user_id,
-                    name=f.filename,
-                    type=ext,
-                    size=size_bytes,
-                    path=file_url,
-                    extracted_text=extracted_text,
-                    content_hash=content_hash,
-                )
-                library = self.repo.add(library)
-
-                chunk_records = [
-                    LibraryChunk(
-                        library_id=library.id,
-                        chunk_index=i,
-                        chunk_text=chunk_txt,
-                        embedding=emb,
-                    )
-                    for i, (chunk_txt, emb) in enumerate(zip(chunks, embeddings))
-                ]
-                self.repo.add_chunks(chunk_records)
-                f.file.seek(0)
-                uploaded.append(UploadItemResponse.model_validate(library))
+                uploaded.append(await self._ingest(user_id, f))
             except Exception as e:
                 _log.exception("Failed to process upload %s", f.filename)
                 errors.append(UploadErrorResponse(file=f.filename or "", error=str(e)))
@@ -107,6 +66,52 @@ class LibraryService(LibraryServiceProtocol):
             raise UploadFailedError(errors=errors)
 
         return UploadResponse(uploaded=uploaded, errors=errors)
+
+    async def _ingest(self, user_id: int, f: UploadFile) -> UploadItemResponse:
+        """Read one uploaded file, extract and embed its text, then store the file and its chunks."""
+        raw = await f.read()
+        content_hash = self._reject_duplicate(user_id, raw)
+        f.file.seek(0)
+
+        ext = (f.filename or "").split(".")[-1].lower()
+        text = await self._extract_text(raw, ext)
+
+        file_url, contents = await self.storage.save_raw_file(f, user_id)
+        chunks = chunk_text(text)
+        embeddings = await self.ai.get_embeddings(chunks)
+
+        library = self.repo.add(
+            Library(
+                user_id=user_id,
+                name=f.filename,
+                type=ext,
+                size=len(contents),
+                path=file_url,
+                extracted_text=text,
+                content_hash=content_hash,
+            )
+        )
+        self.repo.add_chunks(
+            [
+                LibraryChunk(library_id=library.id, chunk_index=i, chunk_text=chunk, embedding=embedding)
+                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+            ]
+        )
+        f.file.seek(0)
+        return UploadItemResponse.model_validate(library)
+
+    def _reject_duplicate(self, user_id: int, raw: bytes) -> str:
+        content_hash = hashlib.sha256(raw).hexdigest()
+        if self.repo.get_by_content_hash(user_id, content_hash):
+            raise ConflictError("This file has already been uploaded")
+        return content_hash
+
+    @staticmethod
+    async def _extract_text(raw: bytes, ext: str) -> str:
+        text = await extract_text_isolated(raw, ext)
+        if not clean_text(text):
+            raise BadRequestError(NO_TEXT_MESSAGE)
+        return text
 
     def delete_document(self, doc_id: int, user_id: int) -> MessageResponse:
         lib = self.repo.get_by_id(doc_id, user_id)

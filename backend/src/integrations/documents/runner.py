@@ -1,18 +1,22 @@
+"""Run the document worker process for one file, with a timeout and a cap on how many run at once."""
+
 import asyncio
 import json
 import sys
 import weakref
 from pathlib import Path
 
-from ..config import settings
-from ..core.exceptions import BadRequestError
-from .text_utils import TOO_LARGE_MESSAGE, UNREADABLE_FILE_MESSAGE
+from ...config import settings
+from ...core.exceptions import BadRequestError
+from .messages import (
+    BUSY_MESSAGE,
+    TIMEOUT_MESSAGE,
+    TOO_LARGE_MESSAGE,
+    UNREADABLE_FILE_MESSAGE,
+)
 
-TIMEOUT_MESSAGE = "This file took too long to process. Try a smaller or simpler file."
-BUSY_MESSAGE = "Paperwise is busy processing other files. Please try again in a moment."
-
-# The worker is started as `python -m src.utils.extract_worker`, so it must run from the backend root.
-_BACKEND_ROOT = Path(__file__).resolve().parents[2]
+# The worker is started as `python -m src.integrations.documents.worker`, so it must run from the backend root.
+_BACKEND_ROOT = Path(__file__).resolve().parents[3]
 
 # One limiter per event loop, so only a few workers run at once however many uploads arrive together.
 _worker_slots: "weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.Semaphore]" = weakref.WeakKeyDictionary()
@@ -29,7 +33,7 @@ async def _run_worker(contents: bytes, ext: str) -> str:
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
-        "src.utils.extract_worker",
+        "src.integrations.documents.worker",
         ext.lower(),
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,

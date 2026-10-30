@@ -69,7 +69,7 @@ export function SiteNav({ showLogin = true }: SiteNavProps) {
 
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            {loading ? <span className="h-8 w-40 animate-pulse rounded bg-ink/10" aria-hidden="true" /> : user ? (
+            {loading ? <span className="h-8 w-20 animate-pulse rounded bg-ink/10 sm:w-40" aria-hidden="true" /> : user ? (
               <>
                 <Link href="/settings/profile" className="btn-secondary hidden sm:inline-flex !min-h-8 !px-3 !text-sm">Profile</Link>
                 <Link href="/dashboard" className="btn-primary !min-h-8 !px-3">Open workspace</Link>

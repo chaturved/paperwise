@@ -40,7 +40,7 @@ export default function PasswordPage() {
 
   return (
     <div>
-      <h1 className="mb-8 text-[32px] font-medium tracking-[-0.04em] text-ink">Password</h1>
+      <h1 className="mb-8 font-display text-[40px] font-normal tracking-[-0.0125em] text-ink">Password</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {fields.map((f) => (

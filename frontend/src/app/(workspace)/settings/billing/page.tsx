@@ -29,7 +29,7 @@ export default function BillingPage() {
     <div>
       <div className="mb-8">
         <p className="mb-2 text-sm text-ink/55">Your account</p>
-        <h1 className="text-[32px] font-medium tracking-[-0.04em] text-ink">Plan &amp; billing</h1>
+        <h1 className="font-display text-[40px] font-normal tracking-[-0.0125em] text-ink">Plan &amp; billing</h1>
         <p className="mt-2 text-sm leading-6 text-ink/60">See your current plan and what each tier includes.</p>
       </div>
 

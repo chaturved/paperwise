@@ -50,7 +50,7 @@ export function AnalyticsContent() {
 
   return (
     <div className="pb-16">
-      <h1 className="text-[32px] font-medium tracking-[-0.04em] sm:text-[36px]">Usage</h1>
+      <h1 className="font-display text-[40px] font-normal tracking-[-0.0125em]">Usage</h1>
       <p className="mt-2 text-[14px] leading-6 text-ink/55">See how your documents and conversations are used in Paperwise.</p>
 
       <div className="mb-12 mt-9 flex gap-2 border-b border-ink/10 pb-3" aria-label="Usage tabs">

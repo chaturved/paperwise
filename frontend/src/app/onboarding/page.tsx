@@ -96,7 +96,7 @@ export default function OnboardingPage() {
         {/* Step 1 — Welcome */}
         {step === 1 && (
           <div className="animate-fu">
-            <h2 className="mb-2 text-[30px] font-medium leading-tight tracking-[-0.04em]">
+            <h2 className="mb-2 font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">
               Welcome to Paperwise{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}
             </h2>
             <p className="text-sm text-muted mb-8">
@@ -118,7 +118,7 @@ export default function OnboardingPage() {
         {/* Step 2 — Upload */}
         {step === 2 && (
           <div className="animate-fu">
-            <h2 className="mb-2 text-[30px] font-medium leading-tight tracking-[-0.04em]">Upload your first document</h2>
+            <h2 className="mb-2 font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">Upload your first document</h2>
             <p className="text-sm text-muted mb-6">Drop a PDF, TXT, or MD file to get started.</p>
 
             {uploadedDoc ? (
@@ -163,7 +163,7 @@ export default function OnboardingPage() {
         {/* Step 3 — Ask */}
         {step === 3 && (
           <div className="animate-fu">
-            <h2 className="mb-2 text-[30px] font-medium leading-tight tracking-[-0.04em]">Now ask something about it!</h2>
+            <h2 className="mb-2 font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">Now ask something about it!</h2>
             <p className="text-sm text-muted mb-6">Try one of these or write your own.</p>
 
             <div className="flex flex-col gap-2 mb-5">

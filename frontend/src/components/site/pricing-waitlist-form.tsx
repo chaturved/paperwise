@@ -27,7 +27,7 @@ export function PricingWaitlistForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
+    <form onSubmit={handleSubmit(onSubmit)}>
       <div className="flex flex-col gap-2 sm:flex-row">
         <label htmlFor="waitlist-email" className="sr-only">Email address</label>
         <input
@@ -39,13 +39,13 @@ export function PricingWaitlistForm() {
           aria-describedby={errors.email ? "waitlist-email-error" : undefined}
           disabled={joined}
           {...register("email")}
-          className="min-h-12 min-w-0 flex-1 rounded-full border border-ink/15 bg-workspace px-4 text-sm text-ink outline-none placeholder:text-ink/45 focus:border-accent/60 disabled:opacity-60"
+          className="min-h-12 min-w-0 flex-1 rounded border border-white/60 bg-transparent px-4 text-base text-white outline-none placeholder:text-white/55 focus:border-white disabled:opacity-60"
         />
-        <button type="submit" disabled={isSubmitting || joined} className="min-h-12 rounded-full bg-ink px-6 text-sm font-semibold text-bg transition hover:opacity-85 disabled:opacity-60">
+        <button type="submit" disabled={isSubmitting || joined} className="btn-light disabled:opacity-60">
           {joined ? "You're on the list" : isSubmitting ? "Joining…" : "Notify me"}
         </button>
       </div>
-      {errors.email && <p id="waitlist-email-error" role="alert" className="mt-2 text-xs font-medium text-red-500">{errors.email.message}</p>}
+      {errors.email && <p id="waitlist-email-error" role="alert" className="mt-2 text-xs font-medium text-red-300">{errors.email.message}</p>}
     </form>
   );
 }

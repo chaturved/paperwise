@@ -80,7 +80,7 @@ export default function OnboardingPage() {
       <AuthBackground />
       <div className="auth-panel !max-w-[520px]">
         {/* Logo */}
-        <span className="mb-10 block font-display text-xl font-medium tracking-[-0.05em]">paperwise<span className="text-accent">.</span></span>
+        <span className="mb-10 block font-display text-[28px] leading-none tracking-[-0.02em]">Paperwise</span>
 
         {/* Progress */}
         <div className="flex items-center gap-2 mb-3">
@@ -109,7 +109,7 @@ export default function OnboardingPage() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setStep(2)} className="btn-primary w-full !rounded-full">
+            <button onClick={() => setStep(2)} className="btn-primary btn-lg w-full">
               Let&apos;s go <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -153,7 +153,7 @@ export default function OnboardingPage() {
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
               <button onClick={() => setStep(3)} disabled={!uploadedDoc}
-                className="btn-primary flex-1 !rounded-full disabled:opacity-40">
+                className="btn-primary btn-lg flex-1 disabled:opacity-40">
                 Continue <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -198,7 +198,7 @@ export default function OnboardingPage() {
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
               <button onClick={() => (question.trim() ? goAsk(question) : handleComplete())}
-                className="btn-primary flex-1 !rounded-full">
+                className="btn-primary btn-lg flex-1">
                 Start Conversation <ArrowRight className="h-4 w-4" />
               </button>
             </div>

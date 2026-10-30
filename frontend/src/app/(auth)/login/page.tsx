@@ -75,14 +75,14 @@ function LoginContent() {
     <div className="auth-page relative">
       <AuthBackground />
       <div className="auth-panel">
-        <Link href="/" className="mb-8 block font-display text-xl font-medium tracking-[-0.05em] xl:hidden">paperwise<span className="text-accent">.</span></Link>
+        <Link href="/" aria-label="Paperwise home" className="mx-auto mb-6 grid h-10 w-10 place-items-center rounded-lg bg-ink font-display text-xl leading-none text-bg">P</Link>
 
-        <h2 className="mb-1 text-[30px] font-medium leading-tight tracking-[-0.04em]">Sign in</h2>
-        <p className="text-sm text-muted mb-8">Welcome back to Paperwise.</p>
+        <h2 className="mb-1 text-center font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">Sign in</h2>
+        <p className="text-center text-sm text-muted mb-8">Welcome back to Paperwise.</p>
 
         <a
           href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/auth/google`}
-          className="flex items-center justify-center gap-3 w-full h-11 rounded-btn-md border-system bg-ink/[0.04] text-sm text-ink/80 hover:bg-ink/[0.07] transition-all mb-5"
+          className="btn-secondary mb-5 w-full gap-3 !min-h-11 !rounded-lg !border-line"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -101,22 +101,22 @@ function LoginContent() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-muted mb-1.5">Email</label>
+            <label className="block text-sm text-ink/60 mb-1.5">Email</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-faint" />
               <input
                 {...register("email")}
                 type="email"
                 placeholder="you@example.com"
-                className="w-full h-11 input-base pl-10 pr-4 text-sm"
+                className="w-full h-11 input-base !rounded-lg !border-line pl-10 pr-4 text-sm"
               />
             </div>
-            {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-muted">Password</label>
+              <label className="text-sm text-ink/60">Password</label>
               <Link href="/forgot-password" className="text-xs text-faint hover:text-muted transition">
                 Forgot password?
               </Link>
@@ -127,22 +127,22 @@ function LoginContent() {
                 {...register("password")}
                 type={showPw ? "text" : "password"}
                 placeholder="••••••••"
-                className="w-full h-11 input-base pl-10 pr-10 text-sm"
+                className="w-full h-11 input-base !rounded-lg !border-line pl-10 pr-10 text-sm"
               />
               <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-faint hover:text-muted">
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-primary w-full !rounded-btn-md disabled:opacity-50"
+            className="btn-primary btn-lg w-full !min-h-11 !rounded-lg disabled:opacity-50"
           >
             {isSubmitting
-              ? <span className="h-4 w-4 rounded-full border-2 border-ink/30 border-t-white animate-spin" />
+              ? <span className="h-4 w-4 rounded-full border-2 border-bg/30 border-t-bg animate-spin" />
               : <>Sign in <ArrowRight className="h-4 w-4" /></>}
           </button>
         </form>
@@ -159,12 +159,12 @@ function LoginContent() {
             value={magicEmail}
             onChange={(e) => setMagicEmail(e.target.value)}
             placeholder="your@email.com"
-            className="flex-1 h-10 input-base px-3 text-sm"
+            className="flex-1 h-11 input-base !rounded-lg !border-line px-3 text-sm"
           />
           <button
             onClick={handleMagicLink}
             disabled={magicLoading}
-            className="h-10 px-4 rounded-btn-md bg-ink/[0.07] border-system text-sm text-ink/70 hover:bg-ink/[0.1] disabled:opacity-50 transition whitespace-nowrap"
+            className="btn-secondary !min-h-11 !rounded-lg !border-line whitespace-nowrap disabled:opacity-50"
           >
             {magicLoading ? "Sending…" : "Send link"}
           </button>

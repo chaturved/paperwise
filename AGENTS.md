@@ -211,6 +211,9 @@ frontend/src/
     layout.tsx                ← Root layout (fonts, providers)
     page.tsx                  ← Landing
     pricing/page.tsx
+    product/page.tsx
+    security/page.tsx
+    use-cases/page.tsx
     privacy/page.tsx
     terms/page.tsx
     onboarding/page.tsx
@@ -289,12 +292,14 @@ const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/conversations
 
 Use Tailwind CSS v4 exclusively. Do not use inline `style={{}}` unless a value is computed at runtime and cannot be expressed as a Tailwind class.
 
-Design system:
-- **Background:** white / near-white
-- **Accents:** amber only — no purple
-- **Borders:** subtle — `border-neutral-200` on light surfaces, `border-white/10` on dark
-- **Typography:** clear hierarchy — one weight jump per heading level
-- **Radius:** consistent — `rounded-lg` for cards, `rounded-md` for inputs and buttons
+Design system (Harvey-inspired, editorial):
+- **Background:** warm off-white (`bg-bg`), cards on `bg-surface` (white) or `bg-card` (warm grey). Dark mode flips every token.
+- **Type:** Newsreader (`font-display`) for headlines, Instrument Sans for UI and body, Geist Mono for source names and small data. Display weight 400, tracking `-0.0125em`.
+- **Accent:** one deep amber (`text-accent`), used only for source citations. Everything else is ink on warm neutral.
+- **Painted surfaces:** product UI sits on grainy dark backdrops (`paint`, `paint-warm`, `bezel` in `globals.css`). Do not use blurred glow blobs.
+- **Borders:** hairline `border-line`. Inputs use `border-field`.
+- **Radius:** `rounded` (4px) for buttons and inputs on marketing pages, `rounded-lg` (8px) for cards and auth/app inputs.
+- **Buttons:** use `btn-primary`, `btn-secondary`, `btn-light` and `btn-outline-light`; add `btn-lg` for 48px.
 
 When a design reference is provided, match it exactly — layout, spacing, color, font size, proportions. Do not approximate. Do not simplify unless explicitly asked.
 

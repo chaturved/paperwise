@@ -1,45 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/context/AuthContext";
-
-const links = [
-  { label: "Product", href: "/#technology" },
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "Pricing", href: "/pricing" },
-];
+import { PromoBar } from "@/components/site/promo-bar";
+import { megaMenus, navLinks, type MenuItem } from "@/components/site/nav-data";
 
 interface SiteNavProps {
   showLogin?: boolean;
 }
 
+function MenuLink({ item, onNavigate }: { item: MenuItem; onNavigate: () => void }) {
+  return (
+    <Link href={item.href} onClick={onNavigate} className="mb-6 block max-w-[360px]">
+      <span className="inline-flex items-center gap-2 text-[15px] font-medium">
+        {item.label}
+        {item.badge && <span className="rounded-[2px] bg-[#f4ec1e] px-1.5 py-px text-[11px] font-medium tracking-wide text-[#0f0e0d]">{item.badge}</span>}
+      </span>
+      <span className="mt-1 block text-[14.5px] leading-snug text-ink/60">{item.description}</span>
+    </Link>
+  );
+}
+
 export function SiteNav({ showLogin = true }: SiteNavProps) {
-  const [open, setOpen] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { user, loading } = useAuth();
-  const firstName = user?.full_name.trim().split(/\s+/)[0] || "Account";
+  const activeMenu = megaMenus.find((menu) => menu.id === openId);
+  const close = () => setOpenId(null);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpenId(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-ink/10 bg-bg/95 text-ink backdrop-blur-xl">
-      <nav aria-label="Main navigation" className="relative mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-5 md:px-8">
-        <Link href="/" onClick={() => setOpen(false)} className="font-display text-xl font-medium tracking-[-0.05em]">paperwise<span className="text-accent">.</span></Link>
-        <div className="ml-7 hidden items-center gap-1 md:flex lg:ml-12">
-          {links.map((link) => <Link key={link.label} href={link.href} className="rounded-sm px-3 py-2 text-[13px] font-medium text-ink/70 transition hover:text-accent">{link.label}</Link>)}
-        </div>
-        <div className="ml-auto hidden items-center gap-3 md:flex">
-          <ThemeToggle />
-          {loading ? <span className="h-5 w-16 animate-pulse rounded-full bg-ink/10" aria-label="Checking account status" role="status" /> : user ? (
-            <Link href="/settings/profile" className="max-w-36 truncate px-2 text-[13px] font-medium text-ink/75 hover:text-ink">Hi, {firstName}</Link>
-          ) : showLogin ? <Link href="/login" className="px-2 text-[13px] font-medium text-ink/75 hover:text-ink">Log in</Link> : null}
-          {loading ? <span className="h-9 w-32 animate-pulse rounded-full bg-ink/10" aria-hidden="true" /> : (
-            <Link href={user ? "/dashboard" : "/signup"} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[13px] font-medium text-bg transition hover:opacity-80">{user ? "Open workspace" : "Get started"} <ArrowUpRight size={14} /></Link>
-          )}
-        </div>
-        <div className="ml-auto flex items-center gap-2 md:hidden"><ThemeToggle /><button type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)} className="grid h-10 w-10 place-items-center rounded-sm border border-ink/15">{open ? <X size={20} /> : <Menu size={20} />}</button></div>
-      </nav>
-      {open && <div className="border-t border-ink/10 bg-bg px-5 py-3 md:hidden"><div className="mx-auto flex max-w-[1280px] flex-col">{links.map((link) => <Link key={link.label} href={link.href} onClick={() => setOpen(false)} className="rounded-sm px-3 py-3 text-sm font-medium hover:bg-ink/5">{link.label}</Link>)}{!loading && user && <Link href="/settings/profile" onClick={() => setOpen(false)} className="rounded-sm px-3 py-3 text-sm font-medium hover:bg-ink/5">Profile</Link>}{!loading && !user && showLogin && <Link href="/login" onClick={() => setOpen(false)} className="rounded-sm px-3 py-3 text-sm font-medium hover:bg-ink/5">Log in</Link>}{!loading && <Link href={user ? "/dashboard" : "/signup"} onClick={() => setOpen(false)} className="mt-2 rounded-full bg-ink px-4 py-3 text-center text-sm font-medium text-bg">{user ? "Open workspace" : "Get started"}</Link>}</div></div>}
-    </header>
+    <div className="sticky top-0 z-50">
+      <PromoBar />
+      <header onMouseLeave={close} className={`relative bg-bg ${activeMenu ? "border-b border-line" : ""}`}>
+        <nav aria-label="Main navigation" className="mx-auto flex h-[72px] max-w-[1280px] items-center gap-8 px-5 md:px-8">
+          <Link href="/" onClick={() => { close(); setMobileOpen(false); }} className="font-display text-[28px] leading-none tracking-[-0.02em]">Paperwise</Link>
+
+          <ul className="hidden items-center gap-1 lg:flex">
+            {megaMenus.map((menu) => (
+              <li key={menu.id}>
+                <button
+                  type="button"
+                  aria-expanded={openId === menu.id}
+                  onClick={() => setOpenId(openId === menu.id ? null : menu.id)}
+                  onMouseEnter={() => setOpenId(menu.id)}
+                  className={`relative inline-flex items-center gap-1.5 px-3 py-[25px] text-[14.5px] font-medium transition-colors ${activeMenu && openId !== menu.id ? "text-ink/55" : ""}`}
+                >
+                  {menu.label}
+                  <ChevronDown size={14} className={`transition-transform ${openId === menu.id ? "rotate-180" : ""}`} />
+                  {openId === menu.id && <span className="absolute inset-x-3 bottom-0 h-px bg-ink" />}
+                </button>
+              </li>
+            ))}
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} onMouseEnter={close} className={`inline-flex px-3 py-[25px] text-[14.5px] font-medium transition-colors ${activeMenu ? "text-ink/55" : ""}`}>{link.label}</Link>
+              </li>
+            ))}
+          </ul>
+
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            {loading ? <span className="h-8 w-40 animate-pulse rounded bg-ink/10" aria-hidden="true" /> : user ? (
+              <>
+                <Link href="/settings/profile" className="btn-secondary hidden sm:inline-flex !min-h-8 !px-3 !text-sm">Profile</Link>
+                <Link href="/dashboard" className="btn-primary !min-h-8 !px-3">Open workspace</Link>
+              </>
+            ) : (
+              <>
+                {showLogin && <Link href="/login" className="btn-secondary hidden sm:inline-flex !min-h-8 !px-3">Log in</Link>}
+                <Link href="/signup" className="btn-primary !min-h-8 !px-3">Get started</Link>
+              </>
+            )}
+            <button type="button" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)} className="grid h-8 w-9 place-items-center rounded border border-line lg:hidden">
+              {mobileOpen ? <X size={16} /> : <Menu size={16} />}
+            </button>
+          </div>
+        </nav>
+
+        {activeMenu && (
+          <div className="absolute inset-x-0 top-full hidden border-b border-line bg-bg lg:block">
+            <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_1fr_1.05fr] gap-10 px-8 pb-10 pt-10">
+              {activeMenu.columns.map((column, index) => (
+                <div key={index}>{column.map((item) => <MenuLink key={item.label} item={item} onNavigate={close} />)}</div>
+              ))}
+              <Link href={activeMenu.feature.href} onClick={close} className="block">
+                <div className={`paint ${activeMenu.feature.tone === "warm" ? "paint-warm" : ""} h-56 rounded-lg`} />
+                <span className="mt-5 block text-[15px] font-medium">{activeMenu.feature.title}</span>
+                <span className="mt-1 block text-[14.5px] text-ink/60">{activeMenu.feature.description}</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {mobileOpen && (
+          <div className="border-t border-line bg-bg px-5 pb-4 lg:hidden">
+            {[...megaMenus.flatMap((menu) => menu.columns.flat().slice(0, 2)), ...navLinks.map((link) => ({ label: link.label, href: link.href }))].map((item) => (
+              <Link key={item.href + item.label} href={item.href} onClick={() => setMobileOpen(false)} className="block border-b border-line py-3 text-[15px] font-medium">{item.label}</Link>
+            ))}
+            {!loading && !user && showLogin && <Link href="/login" onClick={() => setMobileOpen(false)} className="block border-b border-line py-3 text-[15px] font-medium">Log in</Link>}
+          </div>
+        )}
+      </header>
+    </div>
   );
 }

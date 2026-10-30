@@ -16,7 +16,7 @@ export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploa
   return (
     <div className="flex min-h-0 flex-1 overflow-y-auto px-5 py-10 sm:px-8">
       <div className="m-auto w-full max-w-[780px] pb-16 sm:pb-24">
-        <h1 className="mb-9 text-center font-sans text-[28px] font-medium tracking-[-0.035em] text-ink sm:text-[34px]">
+        <h1 className="mb-9 text-center font-display text-[36px] font-normal tracking-[-0.0125em] text-ink sm:text-[44px]">
           What would you like to know?
         </h1>
         <InputBox value={value} onChange={onChange} onSend={() => onSend()} isStreaming={isStreaming} isUploading={isUploading} onAttach={onAttach} textareaRef={textareaRef} />

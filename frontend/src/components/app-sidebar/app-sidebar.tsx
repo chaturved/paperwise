@@ -115,7 +115,7 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
     <aside className="flex h-full w-full flex-col overflow-hidden border-r border-ink/10 bg-rail text-ink">
       <ConversationSearchDialog open={searchOpen} onOpenChange={setSearchOpen} recentConversations={conversations} onSelect={handleConvSelect} />
       <div className="flex h-[72px] shrink-0 items-center justify-between gap-2 px-5">
-        <Link href="/dashboard" className="font-display text-[21px] font-medium tracking-[-0.045em]">paperwise<span className="text-accent">.</span></Link>
+        <Link href="/dashboard" className="font-display text-[21px] font-normal tracking-[-0.0125em]">Paperwise</Link>
         <div className="flex items-center gap-1 pr-5 md:pr-0">
           <button type="button" onClick={() => setSearchOpen((open) => !open)} aria-label="Search conversations" aria-expanded={searchOpen}
             className="flex h-9 w-9 items-center justify-center rounded-md text-ink/55 transition hover:bg-ink/[0.07] hover:text-ink"><Search size={18} strokeWidth={1.8} /></button>
@@ -184,7 +184,7 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
       <DropdownMenu.Root open={accountOpen} onOpenChange={setAccountOpen}>
         <DropdownMenu.Trigger asChild>
           <button type="button" aria-label={`${user?.full_name || "Account"} menu`} className="flex h-[74px] w-full shrink-0 items-center gap-3 border-t border-ink/10 px-4 text-left transition hover:bg-ink/[0.05] data-[state=open]:bg-ink/[0.06]">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-[#211608]">{user?.avatar_initials || user?.full_name?.slice(0, 2).toUpperCase() || "PW"}</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink text-[11px] font-semibold text-bg">{user?.avatar_initials || user?.full_name?.slice(0, 2).toUpperCase() || "PW"}</span>
             <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium">{user?.full_name || "Account"}</span><span className="block text-[11px] text-ink/50">{user?.plan === "pro" ? "Pro" : "Free"}</span></span>
             <ChevronRight size={16} className={`text-ink/40 transition-transform ${accountOpen ? "-rotate-90" : ""}`} />
           </button>
@@ -193,7 +193,7 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
           <DropdownMenu.Content side="top" align="start" sideOffset={10} collisionPadding={12}
             className="z-[100] w-[288px] max-w-[calc(100vw-24px)] rounded-lg border border-ink/10 bg-card p-2 text-ink shadow-[0_20px_60px_rgba(0,0,0,0.18)] outline-none dark:shadow-black/50">
             <div className="flex items-center gap-3 rounded-md bg-ink/[0.04] px-3 py-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-[#211608]">{user?.avatar_initials || user?.full_name?.slice(0, 2).toUpperCase() || "PW"}</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-ink text-[11px] font-semibold text-bg">{user?.avatar_initials || user?.full_name?.slice(0, 2).toUpperCase() || "PW"}</span>
               <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-semibold">{user?.full_name || "Account"}</span><span className="block truncate text-[11px] text-ink/50">{user?.email}</span></span>
             </div>
             <DropdownMenu.Label className="px-3 pb-1 pt-3 text-[11px] font-medium text-ink/45">Account</DropdownMenu.Label>

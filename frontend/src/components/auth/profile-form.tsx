@@ -49,7 +49,7 @@ export function ProfileForm() {
       {/* Avatar */}
       <div className="mb-8">
         <p className="text-[12px] font-medium text-ink/40 mb-3">Avatar</p>
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-xl font-bold text-[#211608]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-ink text-xl font-semibold text-bg">
           {user?.avatar_initials || "??"}
         </div>
       </div>
@@ -80,7 +80,7 @@ export function ProfileForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-full bg-ink px-6 py-3 text-[14px] font-medium text-bg transition hover:opacity-90 disabled:opacity-50"
+          className="btn-primary btn-lg disabled:opacity-50"
         >
           {isSubmitting ? "Saving…" : "Save changes"}
         </button>

@@ -37,7 +37,7 @@ function SourceBadge({ n }: { n: number }) {
 
 function BadgeChip({ badge }: { badge: Badge }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[10px] font-medium bg-ink/[0.12] text-ink/75 whitespace-nowrap">
+    <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded text-[10px] font-medium bg-ink/[0.12] text-ink/75 whitespace-nowrap">
       <span className="opacity-50">{BADGE_ICONS[badge.icon] ?? <Sparkles size={10} />}</span>
       {badge.label}
     </span>
@@ -149,14 +149,14 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
 
         {hasContext && (
           <div className="mt-4 pt-3.5 border-t-system space-y-2.5">
-            <span className="text-[10px] font-semibold tracking-[0.09em] uppercase text-ink/60">Context used</span>
+            <span className="text-xs font-medium text-ink/60">Context used</span>
             {meta?.snippets && meta.snippets.length > 0 && (
               <div className="space-y-1.5 pl-1">{meta.snippets.map((s, i) => <SnippetCard key={i} snippet={s} />)}</div>
             )}
             {meta?.sources && meta.sources.length > 0 && (
               <div className="space-y-1.5 pl-1">
                 {meta.snippets && meta.snippets.length > 0 && (
-                  <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-ink/60 pt-1">Documents</div>
+                  <div className="text-xs font-medium text-ink/60 pt-1">Documents</div>
                 )}
                 {meta.sources.map((src: Source, i: number) => (
                   <button key={i} onClick={() => setExpandedSource(expandedSource === i + 1 ? null : i + 1)} className="w-full text-left group/src">

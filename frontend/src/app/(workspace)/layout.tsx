@@ -30,7 +30,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-dvh min-w-0 flex-col bg-workspace text-ink md:flex-row">
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-ink/10 bg-rail px-4 md:hidden">
-        <span className="text-sm font-semibold tracking-tight">paperwise<span className="text-accent">.</span></span>
+        <span className="text-sm font-semibold tracking-tight">Paperwise</span>
         <div className="flex items-center gap-2"><ThemeToggle /><button type="button" aria-label="Open navigation" onClick={() => setMobileMenuOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-sm border border-ink/15"><Menu size={18} /></button></div>
       </div>
       {mobileMenuOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMobileMenuOpen(false)} />}

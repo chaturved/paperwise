@@ -1,10 +1,11 @@
+import { PageHero } from "@/components/site/page-sections";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 
 function Section({ title, children, first }: { title: string; children: React.ReactNode; first?: boolean }) {
   return (
-    <div className={`py-9 ${!first ? "border-t border-ink/10" : ""}`}>
-      <h2 className="mb-4 flex items-center gap-3 font-display text-[21px] font-medium tracking-[-0.02em] text-ink">
+    <div className={`py-9 ${!first ? "border-t border-line" : ""}`}>
+      <h2 className="mb-4 flex items-center gap-3 font-display text-[21px] font-normal tracking-[-0.02em] text-ink">
         <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
         {title}
       </h2>
@@ -14,15 +15,15 @@ function Section({ title, children, first }: { title: string; children: React.Re
 }
 
 function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-[15px] leading-8 text-ink/65">{children}</p>;
+  return <p className="text-[15px] leading-8 text-ink/75">{children}</p>;
 }
 
 function Bullets({ items }: { items: [string, string][] }) {
   return (
     <ul className="space-y-2">
       {items.map(([label, desc]) => (
-        <li key={label} className="flex gap-2 text-[15px] leading-8 text-ink/65">
-          <span className="mt-[3px] flex-shrink-0 text-accent">•</span>
+        <li key={label} className="flex gap-2 text-[15px] leading-8 text-ink/75">
+          <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
           <span><span className="font-medium text-ink">{label}</span> — {desc}</span>
         </li>
       ))}
@@ -35,18 +36,12 @@ export default function PrivacyPage() {
     <div className="min-h-screen overflow-x-hidden bg-bg text-ink">
       <SiteNav />
 
-      <section className="px-5 pb-14 pt-32 text-center md:px-8 md:pt-36">
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-ink/20 px-3 py-1 text-xs font-medium text-ink/60"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Legal</div>
-          <h1 className="mx-auto max-w-4xl font-display text-[37px] font-medium leading-none tracking-[-0.03em] md:text-[56px] lg:text-[64px]">Privacy Policy</h1>
-          <p className="mx-auto mt-6 max-w-2xl text-[17px] leading-7 text-ink/60 md:text-[20px] md:leading-8">
-            Your documents are yours. We collect only what we need and never share it.
-          </p>
-          <p className="mt-5 text-[13px] text-ink/45">Last updated: May 2026</p>
-        </div>
-      </section>
+      <PageHero crumbs={[{ label: "Legal" }, { label: "Privacy Policy" }]} title="Privacy Policy">
+        <p>Your documents are yours. We collect only what we need and never share it.</p>
+        <p className="!mt-0 !text-sm !text-ink/50">Last updated: May 2026</p>
+      </PageHero>
 
-      <div className="mx-auto max-w-[760px] px-5 pb-16 md:px-6">
+      <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8"><div className="max-w-[760px]">
 
         <Section title="What data we collect" first>
           <P>We collect only what&apos;s necessary to run Paperwise:</P>
@@ -72,8 +67,8 @@ export default function PrivacyPage() {
               "Documents are chunked and embedded into a vector index so we can retrieve relevant passages when you ask a question.",
               "Conversation history is used to give the AI multi-turn context within your sessions.",
             ].map((item) => (
-              <li key={item} className="flex gap-2 text-[15px] leading-8 text-ink/65">
-                <span className="mt-[3px] flex-shrink-0 text-accent">•</span>
+              <li key={item} className="flex gap-2 text-[15px] leading-8 text-ink/75">
+                <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
                 <span>{item}</span>
               </li>
             ))}
@@ -106,8 +101,8 @@ export default function PrivacyPage() {
               ["paperwise_access_token", "short-lived JWT (15 minutes) used to authenticate API requests."],
               ["paperwise_refresh_token", "longer-lived token (7 days) used to issue new access tokens without requiring you to log in again."],
             ] as [string, string][]).map(([label, desc]) => (
-              <li key={label} className="flex gap-2 text-[15px] leading-8 text-ink/65">
-                <span className="mt-[3px] flex-shrink-0 text-accent">•</span>
+              <li key={label} className="flex gap-2 text-[15px] leading-8 text-ink/75">
+                <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
                 <span><code className="rounded bg-ink/[0.07] px-1.5 py-0.5 text-xs text-ink">{label}</code> — {desc}</span>
               </li>
             ))}
@@ -116,10 +111,10 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Contact">
-          <P>Questions about this policy? Email <a href="mailto:hello@paperwise.ai" className="text-accent hover:opacity-80 transition">hello@paperwise.ai</a> — we aim to respond within 2 business days.</P>
+          <P>Questions about this policy? Email <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 hover:opacity-70 transition">hello@paperwise.ai</a> — we aim to respond within 2 business days.</P>
         </Section>
 
-      </div>
+      </div></div>
 
       <SiteFooter />
     </div>

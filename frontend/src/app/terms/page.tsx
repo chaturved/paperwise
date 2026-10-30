@@ -1,10 +1,11 @@
+import { PageHero } from "@/components/site/page-sections";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 
 function Section({ title, children, first }: { title: string; children: React.ReactNode; first?: boolean }) {
   return (
-    <div className={`py-9 ${!first ? "border-t border-ink/10" : ""}`}>
-      <h2 className="mb-4 flex items-center gap-3 font-display text-[21px] font-medium tracking-[-0.02em] text-ink">
+    <div className={`py-9 ${!first ? "border-t border-line" : ""}`}>
+      <h2 className="mb-4 flex items-center gap-3 font-display text-[21px] font-normal tracking-[-0.02em] text-ink">
         <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
         {title}
       </h2>
@@ -14,15 +15,15 @@ function Section({ title, children, first }: { title: string; children: React.Re
 }
 
 function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-[15px] leading-8 text-ink/65">{children}</p>;
+  return <p className="text-[15px] leading-8 text-ink/75">{children}</p>;
 }
 
 function Bullets({ items }: { items: string[] }) {
   return (
     <ul className="space-y-2">
       {items.map((item) => (
-        <li key={item} className="flex gap-2 text-[15px] leading-8 text-ink/65">
-          <span className="mt-[3px] flex-shrink-0 text-accent">•</span>
+        <li key={item} className="flex gap-2 text-[15px] leading-8 text-ink/75">
+          <span className="mt-[3px] flex-shrink-0 text-ink/40">•</span>
           <span>{item}</span>
         </li>
       ))}
@@ -35,18 +36,12 @@ export default function TermsPage() {
     <div className="min-h-screen overflow-x-hidden bg-bg text-ink">
       <SiteNav />
 
-      <section className="px-5 pb-14 pt-32 text-center md:px-8 md:pt-36">
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-ink/20 px-3 py-1 text-xs font-medium text-ink/60"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Legal</div>
-          <h1 className="mx-auto max-w-4xl font-display text-[37px] font-medium leading-none tracking-[-0.03em] md:text-[56px] lg:text-[64px]">Terms of Service</h1>
-          <p className="mx-auto mt-6 max-w-2xl text-[17px] leading-7 text-ink/60 md:text-[20px] md:leading-8">
-            These terms govern your access to and use of Paperwise. Please read them carefully.
-          </p>
-          <p className="mt-5 text-[13px] text-ink/45">Last updated: May 2026</p>
-        </div>
-      </section>
+      <PageHero crumbs={[{ label: "Legal" }, { label: "Terms of Service" }]} title="Terms of Service">
+        <p>These terms govern your access to and use of Paperwise. Please read them carefully.</p>
+        <p className="!mt-0 !text-sm !text-ink/50">Last updated: May 2026</p>
+      </PageHero>
 
-      <div className="mx-auto max-w-[760px] px-5 pb-16 md:px-6">
+      <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8"><div className="max-w-[760px]">
 
         <Section title="Acceptance of terms" first>
           <P>By creating a Paperwise account or using the Paperwise service, you agree to these Terms of Service. If you do not agree, do not use the service.</P>
@@ -96,7 +91,7 @@ export default function TermsPage() {
         <Section title="Account termination">
           <P>You may delete your account at any time from Settings → Profile → Danger Zone. All your data will be permanently deleted within 30 days.</P>
           <P>We may suspend or terminate accounts that violate these terms, with or without notice depending on the severity of the violation. Severe violations (illegal content, fraud, abuse) may result in immediate termination without refund.</P>
-          <P>If your account is terminated erroneously, contact <a href="mailto:hello@paperwise.ai" className="text-accent hover:opacity-80 transition">hello@paperwise.ai</a> within 14 days.</P>
+          <P>If your account is terminated erroneously, contact <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 hover:opacity-70 transition">hello@paperwise.ai</a> within 14 days.</P>
         </Section>
 
         <Section title="Limitation of liability">
@@ -110,10 +105,10 @@ export default function TermsPage() {
         </Section>
 
         <Section title="Contact">
-          <P>Questions about these terms? Email <a href="mailto:hello@paperwise.ai" className="text-accent hover:opacity-80 transition">hello@paperwise.ai</a> — we aim to respond within 2 business days.</P>
+          <P>Questions about these terms? Email <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 hover:opacity-70 transition">hello@paperwise.ai</a> — we aim to respond within 2 business days.</P>
         </Section>
 
-      </div>
+      </div></div>
 
       <SiteFooter />
     </div>

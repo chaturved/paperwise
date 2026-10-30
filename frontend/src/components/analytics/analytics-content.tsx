@@ -55,9 +55,9 @@ export function AnalyticsContent() {
 
       <div className="mb-12 mt-9 flex gap-2 border-b border-ink/10 pb-3" aria-label="Usage tabs">
         <button type="button" onClick={() => switchView("overview")} aria-pressed={view === "overview"}
-          className={`rounded-full px-4 py-2 text-[13px] transition ${view === "overview" ? "bg-ink/[0.09] font-medium text-ink" : "text-ink/55 hover:text-ink"}`}>Overview</button>
+          className={`rounded-md px-4 py-2 text-[13px] transition ${view === "overview" ? "bg-ink/[0.09] font-medium text-ink" : "text-ink/55 hover:text-ink"}`}>Overview</button>
         <button type="button" onClick={() => switchView("analytics")} aria-pressed={view === "analytics"}
-          className={`rounded-full px-4 py-2 text-[13px] transition ${view === "analytics" ? "bg-ink/[0.09] font-medium text-ink" : "text-ink/55 hover:text-ink"}`}>Analytics</button>
+          className={`rounded-md px-4 py-2 text-[13px] transition ${view === "analytics" ? "bg-ink/[0.09] font-medium text-ink" : "text-ink/55 hover:text-ink"}`}>Analytics</button>
       </div>
 
       {error && (
@@ -93,9 +93,9 @@ export function AnalyticsContent() {
           <section aria-labelledby="activity-title">
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div><h2 id="activity-title" className="text-[22px] font-medium tracking-[-0.025em]">Question activity</h2><p className="mt-1 text-[14px] text-ink/55">Questions asked across your documents over time.</p></div>
-              <div className="flex gap-1 rounded-full bg-ink/[0.06] p-1" aria-label="Date range">
+              <div className="flex gap-1 rounded-md bg-ink/[0.06] p-1" aria-label="Date range">
                 {([7, 30] as const).map((range) => <button key={range} type="button" onClick={() => setDays(range)} aria-pressed={days === range}
-                  className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition ${days === range ? "bg-workspace text-ink shadow-sm" : "text-ink/55 hover:text-ink"}`}>{range}d</button>)}
+                  className={`rounded px-3 py-1.5 text-[12px] font-medium transition ${days === range ? "bg-workspace text-ink shadow-sm" : "text-ink/55 hover:text-ink"}`}>{range}d</button>)}
               </div>
             </div>
             <div className="mt-6 rounded-lg border border-ink/10 px-5 pb-5 pt-6 sm:px-7">

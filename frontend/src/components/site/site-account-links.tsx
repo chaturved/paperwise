@@ -19,8 +19,8 @@ export function SiteAccountLinks() {
 
   return (
     <>
-      {links.map((link) => <li key={link.href}><Link href={link.href} className="text-[13px] text-ink/60 transition hover:text-ink">{link.label}</Link></li>)}
-      <li><a href="mailto:hello@paperwise.ai" className="text-[13px] text-ink/60 transition hover:text-ink">Contact</a></li>
+      {links.map((link) => <li key={link.href}><Link href={link.href} className="text-base text-white transition hover:text-white/70">{link.label}</Link></li>)}
+      <li><a href="mailto:hello@paperwise.ai" className="text-base text-white transition hover:text-white/70">Contact</a></li>
     </>
   );
 }

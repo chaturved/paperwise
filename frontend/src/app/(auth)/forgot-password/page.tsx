@@ -33,14 +33,14 @@ export default function ForgotPasswordPage() {
     <div className="auth-page relative">
       <AuthBackground />
       <div className="auth-panel">
-        <Link href="/" className="mb-8 block font-display text-xl font-medium tracking-[-0.05em] xl:hidden">paperwise<span className="text-accent">.</span></Link>
+        <Link href="/" aria-label="Paperwise home" className="mx-auto mb-6 grid h-10 w-10 place-items-center rounded-lg bg-ink font-display text-xl leading-none text-bg">P</Link>
 
         {sent ? (
           <div className="text-center">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5 border-system bg-emerald-400/[0.08]">
-              <Mail className="h-6 w-6 text-emerald-400" />
+            <div className="w-14 h-14 rounded-lg flex items-center justify-center mx-auto mb-5 border border-line bg-card">
+              <Mail className="h-6 w-6 text-ink" />
             </div>
-            <h2 className="mb-2 text-[30px] font-medium leading-tight tracking-[-0.04em]">Check your inbox</h2>
+            <h2 className="mb-2 font-display text-[40px] font-normal leading-tight tracking-[-0.0125em]">Check your inbox</h2>
             <p className="text-sm text-muted mb-6">
               If an account exists for that email, you&apos;ll receive a reset link shortly.
             </p>
@@ -50,23 +50,23 @@ export default function ForgotPasswordPage() {
           </div>
         ) : (
           <>
-            <h2 className="mb-1 text-[30px] font-medium leading-tight tracking-[-0.04em]">Reset your password</h2>
-            <p className="text-sm text-muted mb-8">Enter your email and we&apos;ll send you a reset link.</p>
+            <h2 className="mb-1 text-center font-display text-[36px] font-normal leading-tight tracking-[-0.0125em]">Reset your password</h2>
+            <p className="text-center text-sm text-muted mb-8">Enter your email and we&apos;ll send you a reset link.</p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-muted mb-1.5">Email</label>
+                <label className="block text-sm text-ink/60 mb-1.5">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-faint" />
                   <input {...register("email")} type="email" placeholder="you@example.com"
-                    className="w-full h-11 input-base pl-10 pr-4 text-sm" />
+                    className="w-full h-11 input-base !rounded-lg !border-line pl-10 pr-4 text-sm" />
                 </div>
-                {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
               </div>
 
-              <button type="submit" disabled={isSubmitting} className="btn-primary w-full !rounded-btn-md disabled:opacity-50">
+              <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full !min-h-11 !rounded-lg disabled:opacity-50">
                 {isSubmitting
-                  ? <span className="h-4 w-4 rounded-full border-2 border-ink/30 border-t-white animate-spin" />
+                  ? <span className="h-4 w-4 rounded-full border-2 border-bg/30 border-t-bg animate-spin" />
                   : <>Send reset link <ArrowRight className="h-4 w-4" /></>}
               </button>
             </form>

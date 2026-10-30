@@ -32,13 +32,13 @@ function MagicLinkSentContent() {
     <div className="auth-page relative">
       <AuthBackground />
       <div className="auth-panel text-center">
-        <Link href="/" className="mb-10 block font-display text-xl font-medium tracking-[-0.05em]">paperwise<span className="text-accent">.</span></Link>
+        <Link href="/" aria-label="Paperwise home" className="mx-auto mb-6 grid h-10 w-10 place-items-center rounded-lg bg-ink font-display text-xl leading-none text-bg">P</Link>
 
-        <div className="w-14 h-14 rounded-full border-system flex items-center justify-center mx-auto mb-5 bg-accent/10">
-          <Mail className="h-6 w-6 text-accent" />
+        <div className="w-14 h-14 rounded-lg border border-line flex items-center justify-center mx-auto mb-5 bg-card">
+          <Mail className="h-6 w-6 text-ink" />
         </div>
 
-        <h2 className="mb-2 text-[30px] font-medium tracking-[-0.04em]">Check your email</h2>
+        <h2 className="mb-2 font-display text-[40px] font-normal leading-tight tracking-[-0.0125em]">Check your email</h2>
 
         {email && (
           <p className="text-sm text-muted mb-1">

@@ -11,40 +11,45 @@ import sys
 from ...config import settings
 from ...core.exceptions import BadRequestError
 from .messages import TOO_LARGE_MESSAGE
-from .parsers import parse_document
+from .parsers import DocumentParser
 
 
-def _limit_resources() -> None:
-    try:
-        import resource
-    except ImportError:  # not a POSIX platform
-        return
-
-    limits = (
-        (resource.RLIMIT_AS, settings.EXTRACT_MAX_MEMORY_MB * 1024 * 1024),
-        (resource.RLIMIT_CPU, settings.EXTRACT_TIMEOUT_SECONDS + 5),
-    )
-    for kind, value in limits:
+class ResourceLimits:
+    def apply(self) -> None:
         try:
-            resource.setrlimit(kind, (value, value))
-        except (ValueError, OSError):  # the platform refuses this limit (for example macOS and RLIMIT_AS)
-            pass
+            import resource
+        except ImportError:  # not a POSIX platform
+            return
+
+        limits = (
+            (resource.RLIMIT_AS, settings.EXTRACT_MAX_MEMORY_MB * 1024 * 1024),
+            (resource.RLIMIT_CPU, settings.EXTRACT_TIMEOUT_SECONDS + 5),
+        )
+        for kind, value in limits:
+            try:
+                resource.setrlimit(kind, (value, value))
+            except (ValueError, OSError):  # the platform refuses this limit (for example macOS and RLIMIT_AS)
+                pass
 
 
-def main() -> None:
-    ext = sys.argv[1] if len(sys.argv) > 1 else ""
-    _limit_resources()
-    contents = sys.stdin.buffer.read()
+class ExtractionWorker:
+    def __init__(self, parser: DocumentParser, limits: ResourceLimits) -> None:
+        self.parser = parser
+        self.limits = limits
 
-    try:
-        result: dict[str, object] = {"ok": True, "text": parse_document(contents, ext)}
-    except BadRequestError as exc:
-        result = {"ok": False, "message": exc.message}
-    except MemoryError:
-        result = {"ok": False, "message": TOO_LARGE_MESSAGE}
+    def run(self, ext: str) -> None:
+        self.limits.apply()
+        contents = sys.stdin.buffer.read()
 
-    sys.stdout.write(json.dumps(result))
+        try:
+            result: dict[str, object] = {"ok": True, "text": self.parser.parse(contents, ext)}
+        except BadRequestError as exc:
+            result = {"ok": False, "message": exc.message}
+        except MemoryError:
+            result = {"ok": False, "message": TOO_LARGE_MESSAGE}
+
+        sys.stdout.write(json.dumps(result))
 
 
 if __name__ == "__main__":
-    main()
+    ExtractionWorker(DocumentParser(), ResourceLimits()).run(sys.argv[1] if len(sys.argv) > 1 else "")

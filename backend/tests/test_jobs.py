@@ -2,7 +2,7 @@ import asyncio
 from unittest.mock import MagicMock, patch
 
 from src.config import settings
-from src.core import jobs
+from src.core.jobs import DocumentJobs
 
 
 def _session():
@@ -11,16 +11,13 @@ def _session():
     return session
 
 
-async def test_process_document_job_runs_the_service_with_its_own_session():
+async def test_process_runs_the_service_with_its_own_session():
     session = _session()
     service = MagicMock()
     service.process = MagicMock(side_effect=lambda doc_id: asyncio.sleep(0))
 
-    with (
-        patch.object(jobs, "SessionLocal", return_value=session),
-        patch.object(jobs, "_ingestion_service", return_value=service) as build,
-    ):
-        await jobs.process_document_job(5)
+    with patch.object(DocumentJobs, "_ingestion_service", return_value=service) as build:
+        await DocumentJobs(session_factory=lambda: session).process(5)
 
     build.assert_called_once_with(session)
     service.process.assert_called_once_with(5)
@@ -40,24 +37,18 @@ async def test_only_a_few_documents_are_processed_at_once(monkeypatch):
     service = MagicMock()
     service.process = slow_process
 
-    with (
-        patch.object(jobs, "SessionLocal", side_effect=_session),
-        patch.object(jobs, "_ingestion_service", return_value=service),
-    ):
-        await asyncio.gather(*(jobs.process_document_job(i) for i in range(6)))
+    with patch.object(DocumentJobs, "_ingestion_service", return_value=service):
+        await asyncio.gather(*(DocumentJobs(session_factory=_session).process(i) for i in range(6)))
 
     assert state["peak"] == 2
 
 
-def test_recover_interrupted_documents_uses_its_own_session():
+def test_recover_interrupted_uses_its_own_session():
     session = _session()
     service = MagicMock()
 
-    with (
-        patch.object(jobs, "SessionLocal", return_value=session),
-        patch.object(jobs, "_ingestion_service", return_value=service),
-    ):
-        jobs.recover_interrupted_documents()
+    with patch.object(DocumentJobs, "_ingestion_service", return_value=service):
+        DocumentJobs(session_factory=lambda: session).recover_interrupted()
 
     service.recover_interrupted.assert_called_once_with()
     session.__exit__.assert_called_once()

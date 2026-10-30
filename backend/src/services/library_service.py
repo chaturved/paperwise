@@ -7,8 +7,13 @@ from fastapi import Depends
 
 from src.core.enums import DocumentStatus, Plan
 from src.core.exceptions import BadRequestError, ConflictError, NotFoundError
+from src.integrations.documents import ContentTypes
+from src.integrations.storage import S3Storage
 from src.models import Library
-from src.repositories.library_repository import LibraryRepository, LibraryRepositoryProtocol
+from src.repositories.library_repository import (
+    LibraryRepository,
+    LibraryRepositoryProtocol,
+)
 from src.schemas.library import (
     CreateUploadsRequest,
     CreateUploadsResponse,
@@ -18,8 +23,6 @@ from src.schemas.library import (
 )
 from src.schemas.user import MessageResponse
 from src.services.tier_service import TierService, TierServiceProtocol, UploadMeta
-from src.integrations.documents import content_type_for
-from src.integrations.storage import S3Storage
 
 _log = logging.getLogger(__name__)
 
@@ -39,10 +42,12 @@ class LibraryService(LibraryServiceProtocol):
         repo: LibraryRepositoryProtocol = Depends(LibraryRepository),
         tier: TierServiceProtocol = Depends(TierService),
         storage: S3Storage = Depends(S3Storage),
+        content_types: ContentTypes = Depends(ContentTypes),
     ) -> None:
         self.repo = repo
         self.tier = tier
         self.storage = storage
+        self.content_types = content_types
 
     def get_library_data(self, user_id: int) -> LibraryResponse:
         rows = self.repo.get_all(user_id)
@@ -62,7 +67,7 @@ class LibraryService(LibraryServiceProtocol):
             name = os.path.basename(f.name)
             ext = name.rsplit(".", 1)[-1].lower()
             key = self.storage.key_for(user_id, name)
-            content_type = content_type_for(ext)
+            content_type = self.content_types.for_extension(ext)
             library = self.repo.add(
                 Library(
                     user_id=user_id,

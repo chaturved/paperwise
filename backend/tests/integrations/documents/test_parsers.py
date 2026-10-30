@@ -7,8 +7,8 @@ import pytest
 
 from src.config import settings
 from src.core.exceptions import BadRequestError
-from src.integrations.documents.parsers import parse_document
-from src.utils.text_utils import clean_text
+from src.integrations.documents.parsers import DocumentParser
+from src.utils.text_utils import TextChunker
 
 
 def _docx_bytes(build) -> bytes:
@@ -30,12 +30,12 @@ class TestExtractDocx:
             table.cell(1, 1).text = "2%"
             document.add_paragraph("Termination")
 
-        text = parse_document(_docx_bytes(build), "docx")
+        text = DocumentParser().parse(_docx_bytes(build), "docx")
 
         assert text.splitlines() == ["Payment terms", "Due | 30 days", "Late fee | 2%", "Termination"]
 
     def test_empty_document_has_no_readable_text(self):
-        assert clean_text(parse_document(_docx_bytes(lambda d: None), "docx")) == ""
+        assert TextChunker().clean(DocumentParser().parse(_docx_bytes(lambda d: None), "docx")) == ""
 
 
 def _zip_bytes(members: dict[str, bytes]) -> bytes:
@@ -53,14 +53,14 @@ class TestUploadSafetyLimits:
 
         assert len(bomb) < 1024 * 1024
         with pytest.raises(BadRequestError) as exc:
-            parse_document(bomb, "docx")
+            DocumentParser().parse(bomb, "docx")
         assert "too large" in exc.value.message
 
     def test_docx_with_too_many_entries_is_rejected(self):
         many = _zip_bytes({f"part{i}.xml": b"x" for i in range(settings.MAX_DOCX_ENTRIES + 1)})
 
         with pytest.raises(BadRequestError) as exc:
-            parse_document(many, "docx")
+            DocumentParser().parse(many, "docx")
         assert "too large" in exc.value.message
 
     def test_pdf_with_too_many_pages_is_rejected(self, monkeypatch):
@@ -72,7 +72,7 @@ class TestUploadSafetyLimits:
         pdf.close()
 
         with pytest.raises(BadRequestError) as exc:
-            parse_document(contents, "pdf")
+            DocumentParser().parse(contents, "pdf")
         assert "too large" in exc.value.message
 
     def test_forged_size_in_zip_headers_is_not_trusted(self):
@@ -88,14 +88,14 @@ class TestUploadSafetyLimits:
         forged[central + 24 : central + 28] = (10).to_bytes(4, "little")
 
         with pytest.raises(BadRequestError):
-            parse_document(bytes(forged), "docx")
+            DocumentParser().parse(bytes(forged), "docx")
 
     def test_decompressed_output_over_the_cap_stops_early(self, monkeypatch):
         monkeypatch.setattr(settings, "MAX_DOCX_UNZIPPED_MB", 1)
         two_parts = _zip_bytes({"a.xml": b"\0" * (700 * 1024), "b.xml": b"\0" * (700 * 1024)})
 
         with pytest.raises(BadRequestError) as exc:
-            parse_document(two_parts, "docx")
+            DocumentParser().parse(two_parts, "docx")
         assert "too large" in exc.value.message
 
     def test_pdf_text_over_the_cap_is_rejected_while_reading_pages(self, monkeypatch):
@@ -107,33 +107,33 @@ class TestUploadSafetyLimits:
         pdf.close()
 
         with pytest.raises(BadRequestError) as exc:
-            parse_document(contents, "pdf")
+            DocumentParser().parse(contents, "pdf")
         assert "too large" in exc.value.message
 
     def test_text_longer_than_the_cap_is_rejected(self, monkeypatch):
         monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 10)
 
         with pytest.raises(BadRequestError) as exc:
-            parse_document(b"a" * 11, "txt")
+            DocumentParser().parse(b"a" * 11, "txt")
         assert "too large" in exc.value.message
 
     def test_text_at_the_cap_is_accepted(self, monkeypatch):
         monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 10)
 
-        assert parse_document(b"a" * 10, "txt") == "a" * 10
+        assert DocumentParser().parse(b"a" * 10, "txt") == "a" * 10
 
 
 class TestExtractOtherTypes:
     def test_txt_is_decoded(self):
-        assert parse_document(b"hello", "txt") == "hello"
+        assert DocumentParser().parse(b"hello", "txt") == "hello"
 
     def test_unsupported_type_raises(self):
         with pytest.raises(BadRequestError):
-            parse_document(b"x", "exe")
+            DocumentParser().parse(b"x", "exe")
 
     @pytest.mark.parametrize("ext", ["pdf", "docx"])
     def test_empty_or_corrupt_file_gives_a_plain_message(self, ext):
         for contents in (b"", b"not a real document"):
             with pytest.raises(BadRequestError) as exc:
-                parse_document(contents, ext)
+                DocumentParser().parse(contents, ext)
             assert "couldn't be read" in exc.value.message

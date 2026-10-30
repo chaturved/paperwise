@@ -53,6 +53,18 @@ Do not introduce new libraries without explaining the reason and asking first.
 
 ---
 
+## Classes and SOLID
+
+Backend logic lives in classes, one responsibility each. Only code the framework requires stays a function: route handlers, `Depends` providers (`get_db`, `get_current_user_id`), the lifespan hook and Alembic migrations.
+
+- **Single responsibility:** a class has one reason to change. Shaping chunks (`ChunkFormatter`) and prompting the AI (`AnswerGenerator`) are separate classes.
+- **Open/closed:** add behaviour by adding a class, not by editing a switch. `DocumentParser` takes a mapping of file type to `FileParser`.
+- **Dependency inversion:** a class receives what it needs in `__init__` and, where it has more than one implementation or is mocked in tests, depends on a `Protocol`. Wire it with `Depends(TheClass)`.
+- **Shared limits live on the class, not the instance.** `Depends` builds a new object per request, so a concurrency limit (`PerLoopSemaphore`) or a cached client is a class attribute.
+- **Background work** (`core/jobs.py`, `DocumentJobs`) runs after the request is over, so it opens its own session and builds its services by hand, passing real objects (never the `Depends(...)` defaults).
+
+---
+
 ## Core Principles
 
 These apply to every file, every feature, every change.
@@ -110,6 +122,8 @@ backend/src/
     conversation_service.py
     library_service.py
     token_service.py
+    answer_generator.py ← Prompts the AI and streams the answer
+    ingestion_service.py ← Background indexing of uploaded documents
     query_service.py
   repositories/         ← All DB queries (one file per domain)
     user_repository.py
@@ -128,9 +142,9 @@ backend/src/
     mailer.py           ← SMTP email
     google_oauth.py     ← Google sign-in (Authlib)
     documents/          ← Reading uploads safely: parsers, isolated worker process, runner, user-facing messages
-  utils/                ← Pure shared helpers (JWT, hashing, text parsing, query building)
+  utils/                ← Small single-purpose classes (JwtCodec, PasswordHasher, TextChunker, ChunkFormatter)
     jwt.py
-    query_utils.py
+    chunk_formatter.py
     security.py
     text_utils.py
   migrations/           ← Alembic migration files

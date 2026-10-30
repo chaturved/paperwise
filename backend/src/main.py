@@ -9,13 +9,13 @@ from starlette.middleware.sessions import SessionMiddleware
 from .api import router
 from .config import settings
 from .core.exception_handlers import register_exception_handlers
-from .core.jobs import recover_interrupted_documents
+from .core.jobs import DocumentJobs
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     try:
-        recover_interrupted_documents()
+        DocumentJobs().recover_interrupted()
     except Exception:  # a failed cleanup must never stop the API from starting
         logging.getLogger(__name__).exception("Could not recover interrupted documents")
     yield

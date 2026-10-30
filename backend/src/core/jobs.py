@@ -1,27 +1,43 @@
 """Work that runs after a response has been sent, or at startup, with its own database session."""
 
+from collections.abc import Callable
+
+from sqlalchemy.orm import Session
+
 from src.config import settings
 from src.database.db import SessionLocal
 from src.integrations.ai import get_ai_provider
+from src.integrations.documents import IsolatedExtractor, ReadableTextExtractor
 from src.integrations.storage import S3Storage
 from src.repositories.library_repository import LibraryRepository
 from src.services.ingestion_service import IngestionService
 from src.utils.concurrency import PerLoopSemaphore
-
-_ingest_slots = PerLoopSemaphore(lambda: settings.INGEST_MAX_CONCURRENCY)
-
-
-def _ingestion_service(db) -> IngestionService:
-    return IngestionService(repo=LibraryRepository(db), storage=S3Storage(), ai=get_ai_provider())
+from src.utils.text_utils import TextChunker
 
 
-async def process_document_job(doc_id: int) -> None:
-    """Index one uploaded document. At most INGEST_MAX_CONCURRENCY run at once per server process."""
-    async with _ingest_slots.get():
-        with SessionLocal() as db:
-            await _ingestion_service(db).process(doc_id)
+class DocumentJobs:
+    """At most INGEST_MAX_CONCURRENCY documents are processed at once per server process, shared by every instance."""
 
+    _ingest_slots = PerLoopSemaphore(lambda: settings.INGEST_MAX_CONCURRENCY)
 
-def recover_interrupted_documents() -> None:
-    with SessionLocal() as db:
-        _ingestion_service(db).recover_interrupted()
+    def __init__(self, session_factory: Callable[[], Session] = SessionLocal) -> None:
+        self.session_factory = session_factory
+
+    async def process(self, doc_id: int) -> None:
+        async with self._ingest_slots.get():
+            with self.session_factory() as db:
+                await self._ingestion_service(db).process(doc_id)
+
+    def recover_interrupted(self) -> None:
+        with self.session_factory() as db:
+            self._ingestion_service(db).recover_interrupted()
+
+    def _ingestion_service(self, db: Session) -> IngestionService:
+        chunker = TextChunker()
+        return IngestionService(
+            repo=LibraryRepository(db),
+            storage=S3Storage(),
+            ai=get_ai_provider(),
+            reader=ReadableTextExtractor(extractor=IsolatedExtractor(), chunker=chunker),
+            chunker=chunker,
+        )

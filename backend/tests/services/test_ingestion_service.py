@@ -1,12 +1,13 @@
 import hashlib
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.core.enums import DocumentStatus
 from src.core.exceptions import BadRequestError
 from src.integrations.ai.base import AIProvider
+from src.integrations.documents import ReadableTextExtractor
 from src.integrations.storage import S3Storage, StorageError
 from src.repositories.library_repository import LibraryRepositoryProtocol
 from src.services.ingestion_service import (
@@ -15,6 +16,7 @@ from src.services.ingestion_service import (
     RETRYABLE_MESSAGE,
     IngestionService,
 )
+from src.utils.text_utils import TextChunker
 
 RAW = b"file bytes"
 RAW_HASH = hashlib.sha256(RAW).hexdigest()
@@ -36,13 +38,14 @@ class TestProcess:
         self.storage.download.return_value = RAW
         self.ai = MagicMock(spec_set=AIProvider)
         self.ai.get_embeddings = AsyncMock(side_effect=lambda chunks: [[0.1] for _ in chunks])
-        self.service = IngestionService(self.repo, self.storage, self.ai)
+        self.reader = MagicMock(spec_set=ReadableTextExtractor)
+        self.service = IngestionService(self.repo, self.storage, self.ai, self.reader, TextChunker())
         self.lib = _lib()
         self.repo.get.return_value = self.lib
 
     async def _process(self, text="Payment is due in 30 days."):
-        with patch("src.services.ingestion_service.extract_readable_text", AsyncMock(return_value=text)):
-            await self.service.process(1)
+        self.reader.extract = AsyncMock(return_value=text)
+        await self.service.process(1)
 
     async def test_indexes_the_file_and_marks_it_ready(self):
         await self._process("Payment is due in 30 days.")
@@ -86,11 +89,8 @@ class TestProcess:
         self.repo.finish_processing.assert_called_once()
 
     async def test_fails_permanently_when_the_file_cannot_be_read(self):
-        with patch(
-            "src.services.ingestion_service.extract_readable_text",
-            AsyncMock(side_effect=BadRequestError("This file couldn't be read.")),
-        ):
-            await self.service.process(1)
+        self.reader.extract = AsyncMock(side_effect=BadRequestError("This file couldn't be read."))
+        await self.service.process(1)
 
         self.repo.set_status.assert_called_once_with(self.lib, DocumentStatus.FAILED, "This file couldn't be read.")
         self.storage.delete_file.assert_called_once_with(self.lib.path)
@@ -143,7 +143,13 @@ class TestRecoverInterrupted:
     def setup(self):
         self.repo = MagicMock(spec_set=LibraryRepositoryProtocol)
         self.storage = MagicMock(spec_set=S3Storage)
-        self.service = IngestionService(self.repo, self.storage, MagicMock(spec_set=AIProvider))
+        self.service = IngestionService(
+            self.repo,
+            self.storage,
+            MagicMock(spec_set=AIProvider),
+            MagicMock(spec_set=ReadableTextExtractor),
+            TextChunker(),
+        )
 
     def test_marks_stuck_processing_documents_as_failed_and_removes_abandoned_uploads(self):
         stuck, abandoned = _lib(id=1), _lib(id=2, status=DocumentStatus.UPLOADING, path="https://s/object/library/2/y/b.pdf")

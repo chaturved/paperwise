@@ -1,9 +1,13 @@
 from fastapi import APIRouter, BackgroundTasks, Depends
 
 from src.core.dependencies import get_current_user, get_current_user_id
-from src.core.jobs import process_document_job
+from src.core.jobs import DocumentJobs
 from src.models.user import User
-from src.schemas.library import CreateUploadsRequest, CreateUploadsResponse, LibraryDocResponse
+from src.schemas.library import (
+    CreateUploadsRequest,
+    CreateUploadsResponse,
+    LibraryDocResponse,
+)
 from src.services.library_service import LibraryService, LibraryServiceProtocol
 
 router = APIRouter(prefix="/library", tags=["Library"])
@@ -32,10 +36,11 @@ def complete_upload(
     background: BackgroundTasks,
     user_id: int = Depends(get_current_user_id),
     service: LibraryServiceProtocol = Depends(LibraryService),
+    jobs: DocumentJobs = Depends(DocumentJobs),
 ) -> LibraryDocResponse:
     doc, started = service.complete_upload(user_id, doc_id)
     if started:
-        background.add_task(process_document_job, doc_id)
+        background.add_task(jobs.process, doc_id)
     return doc
 
 
@@ -45,10 +50,11 @@ def retry_processing(
     background: BackgroundTasks,
     user: User = Depends(get_current_user),
     service: LibraryServiceProtocol = Depends(LibraryService),
+    jobs: DocumentJobs = Depends(DocumentJobs),
 ) -> LibraryDocResponse:
     doc, started = service.retry_processing(user.id, user.plan, doc_id)
     if started:
-        background.add_task(process_document_job, doc_id)
+        background.add_task(jobs.process, doc_id)
     return doc
 
 

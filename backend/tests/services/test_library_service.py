@@ -4,12 +4,18 @@ from unittest.mock import MagicMock
 import pytest
 
 from src.core.enums import DocumentStatus, Plan
-from src.core.exceptions import BadRequestError, ConflictError, NotFoundError, PlanLimitError
+from src.core.exceptions import (
+    BadRequestError,
+    ConflictError,
+    NotFoundError,
+    PlanLimitError,
+)
+from src.integrations.documents import ContentTypes
+from src.integrations.storage import S3Storage
 from src.repositories.library_repository import LibraryRepositoryProtocol
 from src.schemas.library import CreateUploadsRequest, UploadFileRequest
 from src.services.library_service import LibraryService
 from src.services.tier_service import TierServiceProtocol
-from src.integrations.storage import S3Storage
 
 
 def _make_lib(id=1, name="doc.pdf", type="pdf", size=1024, path: str | None = "/tmp/doc.pdf"):
@@ -32,7 +38,7 @@ class TestLibraryService:
         self.mock_repo.get_by_content_hash.return_value = None
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_storage = MagicMock(spec_set=S3Storage)
-        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage)
+        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes())
 
     # ── get_library_data ──────────────────────────────────────────────────────
 
@@ -126,7 +132,7 @@ class TestDirectUploads:
         self.mock_storage.public_url.return_value = "https://s/object/library/7/id/contract.pdf"
         self.mock_storage.key_from_path.return_value = "7/id/contract.pdf"
         self.mock_storage.create_upload_url.return_value = "https://signed.example/put"
-        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage)
+        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes())
 
     @staticmethod
     def _assign_id(library):

@@ -8,11 +8,11 @@ from src.config import settings
 from src.core.enums import DocumentStatus
 from src.core.exceptions import AppError, ConflictError
 from src.integrations.ai.base import AIProvider
-from src.integrations.documents import extract_readable_text
+from src.integrations.documents import ReadableTextExtractor
 from src.integrations.storage import S3Storage, StorageError
 from src.models import Library, LibraryChunk
 from src.repositories.library_repository import LibraryRepositoryProtocol
-from src.utils.text_utils import chunk_text
+from src.utils.text_utils import TextChunker
 
 _log = logging.getLogger(__name__)
 
@@ -28,10 +28,19 @@ class IngestionService:
     work is over by the time it runs.
     """
 
-    def __init__(self, repo: LibraryRepositoryProtocol, storage: S3Storage, ai: AIProvider) -> None:
+    def __init__(
+        self,
+        repo: LibraryRepositoryProtocol,
+        storage: S3Storage,
+        ai: AIProvider,
+        reader: ReadableTextExtractor,
+        chunker: TextChunker,
+    ) -> None:
         self.repo = repo
         self.storage = storage
         self.ai = ai
+        self.reader = reader
+        self.chunker = chunker
 
     async def process(self, doc_id: int) -> None:
         lib = self.repo.get(doc_id)
@@ -60,8 +69,8 @@ class IngestionService:
         if existing is not None and existing.id != lib.id:
             raise ConflictError(DUPLICATE_MESSAGE)
 
-        text = await extract_readable_text(raw, lib.type)
-        chunks = chunk_text(text)
+        text = await self.reader.extract(raw, lib.type)
+        chunks = self.chunker.chunk(text)
         embeddings = await self.ai.get_embeddings(chunks)
 
         self.repo.delete_chunks(lib.id)  # clears anything left by an earlier attempt

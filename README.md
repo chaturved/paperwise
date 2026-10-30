@@ -97,7 +97,7 @@ backend/
     models/            SQLAlchemy models
     schemas/            Pydantic request/response schemas
     core/               exceptions, exception handlers, shared enums, DI dependencies
-    utils/              HF client, text chunking/extraction, storage, query prompting
+    utils/              JWT, password hashing, text chunking, chunk formatting
   alembic/             DB migrations
   tests/                pytest suite
 

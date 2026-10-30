@@ -7,7 +7,7 @@ python-jose
 passlib
 pydantic[email]
 alembic
-bcrypt
+bcrypt==4.0.1
 PyMuPDF
 python-docx
 psycopg[binary]

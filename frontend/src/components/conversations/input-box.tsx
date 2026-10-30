@@ -2,6 +2,12 @@
 
 import { useRef } from "react";
 import { ArrowUp, Plus, X } from "lucide-react";
+import type { AskMode } from "@/types";
+
+const MODES: { value: AskMode; label: string }[] = [
+  { value: "documents", label: "Documents" },
+  { value: "general", label: "General" },
+];
 
 interface Props {
   value: string;
@@ -11,12 +17,14 @@ interface Props {
   isUploading: boolean;
   onAttach: (files: File[]) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  mode: AskMode;
+  onModeChange: (mode: AskMode) => void;
   placeholder?: string;
   scope?: string;
   onClearScope?: () => void;
 }
 
-export function InputBox({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, placeholder = "Ask a question about your documents", scope, onClearScope }: Props) {
+export function InputBox({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, mode, onModeChange, placeholder, scope, onClearScope }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
@@ -40,7 +48,7 @@ export function InputBox({ value, onChange, onSend, isStreaming, isUploading, on
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         aria-label="Ask Paperwise"
-        placeholder={placeholder}
+        placeholder={placeholder ?? (mode === "general" ? "Ask anything" : "Ask a question about your documents")}
         className="max-h-[180px] min-h-[44px] w-full resize-none overflow-y-auto bg-transparent px-1 text-base leading-6 text-ink outline-none placeholder:text-ink/45"
       />
       <div className="mt-2 flex items-center justify-between gap-3">
@@ -55,7 +63,21 @@ export function InputBox({ value, onChange, onSend, isStreaming, isUploading, on
               if (files.length) onAttach(files);
               event.target.value = "";
             }} />
-          {scope && (
+          <div role="radiogroup" aria-label="What to ask about" className="inline-flex h-8 shrink-0 overflow-hidden rounded border border-line text-[13px]">
+            {MODES.map(({ value: optionValue, label }, index) => (
+              <button
+                key={optionValue}
+                type="button"
+                role="radio"
+                aria-checked={mode === optionValue}
+                onClick={() => onModeChange(optionValue)}
+                className={`px-3 transition ${index > 0 ? "border-l border-line" : ""} ${mode === optionValue ? "bg-ink text-bg" : "text-ink/70 hover:text-ink"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {mode === "documents" && scope && (
             <span className="inline-flex h-8 min-w-0 items-center gap-1.5 rounded border border-line pl-3 pr-2 text-[13px] text-ink/75">
               <span className="truncate">{scope}</span>
               {onClearScope && (

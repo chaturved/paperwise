@@ -23,7 +23,8 @@ class TestTierRepository:
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()
 
-    def test_remove_query_deletes_the_entry_and_commits(self):
+    def test_remove_query_clears_a_failed_session_then_deletes_the_entry_and_commits(self):
         self.repo.remove_query(log_id=5)
+        self.db.rollback.assert_called_once()
         self.db.query.return_value.filter.return_value.delete.assert_called_once()
         self.db.commit.assert_called_once()

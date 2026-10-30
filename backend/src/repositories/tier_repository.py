@@ -38,5 +38,6 @@ class TierRepository(TierRepositoryProtocol):
         return log.id
 
     def remove_query(self, log_id: int) -> None:
+        self.db.rollback()
         self.db.query(QueryUsageLog).filter(QueryUsageLog.id == log_id).delete()
         self.db.commit()

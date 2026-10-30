@@ -220,9 +220,29 @@ class TestConversationService:
 
         self.mock_tier.refund_ask.assert_called_once_with(77)
 
-    async def test_a_question_that_fails_while_streaming_is_refunded(self):
+    async def test_a_question_that_fails_before_any_answer_text_is_refunded(self):
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
         self.mock_tier.check_and_log_ask.return_value = 78
+        self.mock_lib_repo.get_top_k_chunks.return_value = []
+
+        async def broken_stream(chunks, question):
+            raise RuntimeError("model went away")
+            yield  # pragma: no cover - makes this an async generator
+
+        with (
+            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=[0.1])),
+            patch.object(self.mock_answers, "describe", AsyncMock(return_value=("", []))),
+            patch.object(self.mock_answers, "stream", broken_stream),
+            pytest.raises(RuntimeError),
+        ):
+            async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
+                pass
+
+        self.mock_tier.refund_ask.assert_called_once_with(78)
+
+    async def test_a_question_stays_counted_once_part_of_the_answer_has_been_sent(self):
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        self.mock_tier.check_and_log_ask.return_value = 79
         self.mock_lib_repo.get_top_k_chunks.return_value = []
 
         async def broken_stream(chunks, question):
@@ -238,7 +258,7 @@ class TestConversationService:
             async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
                 pass
 
-        self.mock_tier.refund_ask.assert_called_once_with(78)
+        self.mock_tier.refund_ask.assert_not_called()
 
     async def test_a_question_over_the_limit_is_refused_without_a_refund(self):
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
@@ -250,6 +270,61 @@ class TestConversationService:
 
         self.mock_tier.refund_ask.assert_not_called()
         self.mock_conv_repo.add_message.assert_not_called()
+
+    async def _ask_in_general_mode(self, history=()):
+        order = []
+        self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
+        self.mock_conv_repo.get_recent_messages.side_effect = lambda *a, **k: (order.append("history"), list(history))[1]
+        self.mock_conv_repo.add_message.side_effect = lambda *a, **k: order.append(f"add:{a[1]}")
+        seen = {}
+
+        async def fake_general(question, previous):
+            seen["question"], seen["history"] = question, previous
+            yield "Hello "
+            yield "there"
+
+        with (
+            patch.object(self.mock_ai, "get_embedding", AsyncMock()) as embed,
+            patch.object(self.mock_answers, "describe", AsyncMock()) as describe,
+            patch.object(self.mock_answers, "stream_general", fake_general),
+        ):
+            events = [e async for e in self.svc.ask(1, 1, "What is a lien?", None, 5, Plan.FREE, use_documents=False)]
+        return events, order, seen, embed, describe
+
+    async def test_general_chat_does_not_search_or_describe_the_documents(self):
+        _, _, _, embed, describe = await self._ask_in_general_mode()
+
+        embed.assert_not_called()
+        describe.assert_not_called()
+        self.mock_lib_repo.get_top_k_chunks.assert_not_called()
+
+    async def test_general_chat_sends_no_sources_and_says_the_answer_is_not_from_the_documents(self):
+        events, *_ = await self._ask_in_general_mode()
+
+        meta = events[0][1]
+        assert meta["sources"] == []
+        assert meta["general"] is True
+        assert "not based on your documents" in meta["description"]
+        assert "Not from your documents" in [b["label"] for b in meta["badges"]]
+        assert [e for e in events if e[0] == "token"] == [("token", "Hello "), ("token", "there")]
+        assert events[-1] == ("cited", [])
+
+    async def test_general_chat_gives_the_model_the_earlier_messages_but_not_the_new_question_twice(self):
+        earlier = [SimpleNamespace(role="user", content="Hi"), SimpleNamespace(role="assistant", content="Hello")]
+
+        _, order, seen, *_ = await self._ask_in_general_mode(history=earlier)
+
+        assert seen["history"] == [("user", "Hi"), ("assistant", "Hello")]
+        assert seen["question"] == "What is a lien?"
+        assert order.index("history") < order.index("add:user")
+
+    async def test_general_answers_are_stored_without_sources(self):
+        await self._ask_in_general_mode()
+
+        stored = next(c for c in self.mock_conv_repo.add_message.call_args_list if c.args[1] == "assistant")
+        assert stored.args[2] == "Hello there"
+        assert stored.args[3]["sources"] == []
+        assert stored.args[3]["cited"] == []
 
     async def test_ask_auto_renames_new_conversation(self):
         conv = _make_conv(title="New conversation")

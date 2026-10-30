@@ -59,3 +59,18 @@ def test_the_cited_sources_are_sent_after_the_answer(client):
 
     assert 'data: {"cited": [1]}' in body
     assert body.index('"token"') < body.index('"cited"') < body.index("[DONE]")
+
+
+def test_asking_about_documents_is_the_default_and_general_chat_has_to_be_asked_for(client):
+    seen = []
+
+    class _Service:
+        async def ask(self, *args, **_kwargs):
+            seen.append(args[-1])
+            yield "cited", []
+
+    app.dependency_overrides[ConversationService] = lambda: _Service()
+    client.post("/api/v1/conversations/1/ask", json={"question": "hi"})
+    client.post("/api/v1/conversations/1/ask", json={"question": "hi", "use_documents": False})
+
+    assert seen == [True, False]

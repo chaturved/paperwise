@@ -100,3 +100,42 @@ class TestStream:
 
         assert tokens == [NOT_FOUND_MESSAGE]
         ai.stream_chat.assert_not_called()
+
+
+class TestStreamGeneral:
+    async def _prompt_for(self, question, history):
+        ai = _ai()
+        prompts = []
+
+        async def fake_stream(prompt, *args, **kwargs):
+            prompts.append(prompt)
+            yield "x"
+            yield "y"
+
+        ai.stream_chat = fake_stream
+        tokens = [t async for t in _generator(ai).stream_general(question, history)]
+        return tokens, prompts[0]
+
+    async def test_answers_without_documents_and_does_not_search_them(self):
+        tokens, prompt = await self._prompt_for("What is a lien?", [])
+
+        assert tokens == ["x", "y"]
+        assert "What is a lien?" in prompt
+        assert "cannot see the user's documents" in prompt
+        assert "never cite sources" in prompt
+        assert "Conversation so far" not in prompt
+
+    async def test_includes_the_conversation_so_far_so_follow_ups_make_sense(self):
+        history = [("user", "What is a lien?"), ("assistant", "A claim on property.")]
+
+        _, prompt = await self._prompt_for("Who can place one?", history)
+
+        assert "User: What is a lien?" in prompt
+        assert "Assistant: A claim on property." in prompt
+        assert prompt.rstrip().endswith("User: Who can place one?\nAssistant:")
+
+    async def test_long_earlier_messages_are_shortened(self):
+        _, prompt = await self._prompt_for("q", [("assistant", "z" * 5000)])
+
+        assert "z" * 1500 in prompt
+        assert "z" * 1501 not in prompt

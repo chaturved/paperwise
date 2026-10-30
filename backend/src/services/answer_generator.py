@@ -9,11 +9,13 @@ from src.integrations.ai.base import AIProvider
 from src.utils.chunk_formatter import ChunkFormatter
 
 NOT_FOUND_MESSAGE = "I couldn't find that in your documents."
+HISTORY_CHARS_PER_MESSAGE = 1500
 
 
 class AnswerGeneratorProtocol(Protocol):
     async def describe(self, chunks: list[dict], question: str) -> tuple[str, list[dict]]: ...
     def stream(self, chunks: list[dict], question: str) -> AsyncGenerator[str, None]: ...
+    def stream_general(self, question: str, history: list[tuple[str, str]]) -> AsyncGenerator[str, None]: ...
 
 
 class AnswerGenerator(AnswerGeneratorProtocol):
@@ -107,5 +109,22 @@ Example response:
             f"If the excerpts do not contain the answer, reply with exactly: {NOT_FOUND_MESSAGE} and nothing else:"
         )
 
+        async for token in self.ai.stream_chat(prompt):
+            yield token
+
+    async def stream_general(self, question: str, history: list[tuple[str, str]]) -> AsyncGenerator[str, None]:
+        """Answer without the user's documents, using the conversation so far for follow-up questions."""
+        transcript = "\n".join(
+            f"{'User' if role == 'user' else 'Assistant'}: {content[:HISTORY_CHARS_PER_MESSAGE]}" for role, content in history
+        )
+        prompt = (
+            "You are Paperwise, a helpful assistant. In this reply you cannot see the user's documents, so never say "
+            "or imply that an answer comes from them and never cite sources. If the user asks what is in their "
+            "documents, tell them to switch the message box to Documents. Answer clearly and keep it short unless "
+            "they ask for more detail. If it is a legal, medical or financial question, give general information "
+            "only and say a professional should confirm it.\n\n"
+            + (f"Conversation so far:\n{transcript}\n\n" if transcript else "")
+            + f"User: {question}\nAssistant:"
+        )
         async for token in self.ai.stream_chat(prompt):
             yield token

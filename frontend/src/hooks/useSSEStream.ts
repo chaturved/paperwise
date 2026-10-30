@@ -19,7 +19,7 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
   const controllerRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    async (conversationId: number, question: string, docId: number | null = null) => {
+    async (conversationId: number, question: string, docId: number | null = null, useDocuments = true) => {
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
@@ -31,7 +31,7 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
           method: "POST",
           signal: controller.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, filters: docId === null ? null : { doc_id: docId }, top_k: 5 }),
+          body: JSON.stringify({ question, filters: docId === null ? null : { doc_id: docId }, top_k: 5, use_documents: useDocuments }),
           onmessage(ev) {
             if (controllerRef.current !== controller) return;
             if (ev.data === "[DONE]") {

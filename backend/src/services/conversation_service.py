@@ -30,6 +30,13 @@ from src.services.tier_service import TierService, TierServiceProtocol
 from src.utils.chunk_formatter import ChunkFormatter
 from src.utils.citations import CitationExtractor
 
+GENERAL_HISTORY_MESSAGES = 10
+GENERAL_DESCRIPTION = "A general answer. It is not based on your documents, so there are no sources to check."
+GENERAL_BADGES = [
+    {"label": "AI generated", "icon": "bot"},
+    {"label": "Not from your documents", "icon": "warning"},
+]
+
 
 class ConversationServiceProtocol(Protocol):
     def list_conversations(self, user_id: int) -> list[ConversationOut]: ...
@@ -46,6 +53,7 @@ class ConversationServiceProtocol(Protocol):
         filters: AskFilters | None,
         top_k: int,
         plan: Plan,
+        use_documents: bool = True,
     ) -> AsyncGenerator[tuple[str, dict | str], None]: ...
 
 
@@ -121,6 +129,7 @@ class ConversationService(ConversationServiceProtocol):
         filters: AskFilters | None,
         top_k: int,
         plan: Plan,
+        use_documents: bool = True,
     ) -> AsyncGenerator[tuple[str, dict | str], None]:
         conv = self.conv_repo.get_by_id(conv_id, user_id)
         if not conv:
@@ -128,11 +137,15 @@ class ConversationService(ConversationServiceProtocol):
         self.tier.check_history(plan, conv.created_at or datetime.now(UTC))
         log_id = self.tier.check_and_log_ask(plan, user_id)
 
+        answer_started = False
         try:
-            async for event in self._answer(conv, conv_id, user_id, question, filters, top_k):
+            async for event in self._answer(conv, conv_id, user_id, question, filters, top_k, use_documents):
+                answer_started = answer_started or event[0] == "token"
                 yield event
         except Exception:
-            self.tier.refund_ask(log_id)
+            # Refund only when no answer text reached the user, so a failure cannot be used to get answers for free.
+            if not answer_started:
+                self.tier.refund_ask(log_id)
             raise
 
     async def _answer(
@@ -143,26 +156,34 @@ class ConversationService(ConversationServiceProtocol):
         question: str,
         filters: AskFilters | None,
         top_k: int,
+        use_documents: bool,
     ) -> AsyncGenerator[tuple[str, dict | str], None]:
+        history = [] if use_documents else [(m.role, m.content) for m in self.conv_repo.get_recent_messages(conv_id, GENERAL_HISTORY_MESSAGES)]
         self.conv_repo.add_message(conv_id, "user", question)
 
-        query_vector = await self.ai.get_embedding(question)
-        doc_id = filters.doc_id if filters else None
-        results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
-        chunks = self.formatter.from_results(results)
-        sources = self.formatter.sources(chunks)
-
-        description, badges = await self.answers.describe(chunks, question)
-        meta = {"description": description, "badges": badges, "sources": sources}
+        if use_documents:
+            query_vector = await self.ai.get_embedding(question)
+            doc_id = filters.doc_id if filters else None
+            results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
+            chunks = self.formatter.from_results(results)
+            sources = self.formatter.sources(chunks)
+            description, badges = await self.answers.describe(chunks, question)
+            meta = {"description": description, "badges": badges, "sources": sources}
+            tokens = self.answers.stream(chunks, question)
+        else:
+            sources = []
+            meta = {"description": GENERAL_DESCRIPTION, "badges": GENERAL_BADGES, "sources": [], "general": True}
+            tokens = self.answers.stream_general(question, history)
 
         yield "meta", meta
 
         full_answer = ""
-        async for token in self.answers.stream(chunks, question):
+        async for token in tokens:
             full_answer += token
             yield "token", token
 
-        cited = [] if full_answer.strip().startswith(NOT_FOUND_MESSAGE) else self.citations.cited(full_answer, len(sources))
+        grounded = use_documents and not full_answer.strip().startswith(NOT_FOUND_MESSAGE)
+        cited = self.citations.cited(full_answer, len(sources)) if grounded else []
         yield "cited", cited
 
         stored_meta = {**meta, "sources": [s for s in sources if s["n"] in cited], "cited": cited}

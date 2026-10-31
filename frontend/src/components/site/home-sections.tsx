@@ -96,14 +96,15 @@ export function PlansTeaser() {
   return (
     <div className="mt-12">
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="paint flex min-h-[340px] flex-col rounded-lg p-7 text-white md:p-9">
-          <span className="w-fit rounded-[3px] bg-white/15 px-2 py-0.5 text-xs font-medium">Available now</span>
+        <div className="flex min-h-[340px] flex-col rounded-lg border border-line bg-surface p-7 md:p-9">
+          <span className="w-fit rounded-[3px] border border-line px-2 py-0.5 text-xs font-medium text-ink/70">
+            Available now
+          </span>
           <h3 className="mt-5 font-display text-[40px] font-normal leading-none tracking-[-0.01em]">Free</h3>
-          <p className="mt-3 max-w-[36ch] text-base leading-[1.35] text-white/85">
+          <p className="mt-3 max-w-[36ch] text-base leading-[1.35] text-ink/65">
             Everything you need to try Paperwise on your own documents. No payment details.
           </p>
           <Points
-            light
             items={["Ask questions of your documents", "Answers with numbered sources", "A library to keep your files"]}
           />
           <div className="mt-auto pt-8">
@@ -111,21 +112,21 @@ export function PlansTeaser() {
               signedOutLabel="Get started free"
               signedInLabel="Open your workspace"
               arrow="right"
-              className={buttonVariants({ variant: "light", size: "lg" })}
+              className={buttonVariants({ variant: "primary", size: "lg" })}
             />
           </div>
         </div>
-        <div className="flex min-h-[340px] flex-col rounded-lg border border-line bg-surface p-7 md:p-9">
+        <div className="paint paint-warm flex min-h-[340px] flex-col rounded-lg p-7 text-white md:p-9">
           <span className="w-fit rounded-[3px] bg-[#f4ec1e] px-2 py-0.5 text-xs font-medium text-[#0f0e0d]">
             Coming soon
           </span>
           <h3 className="mt-5 font-display text-[40px] font-normal leading-none tracking-[-0.01em]">Pro</h3>
-          <p className="mt-3 max-w-[36ch] text-base leading-[1.35] text-ink/65">
+          <p className="mt-3 max-w-[36ch] text-base leading-[1.35] text-white/85">
             For people who read more than a few documents. More room, larger files and your full history.
           </p>
-          <Points items={["More documents and questions", "Larger files", "Full conversation history"]} />
+          <Points light items={["More documents and questions", "Larger files", "Full conversation history"]} />
           <div className="mt-auto pt-8">
-            <Link href="/pricing" className={buttonVariants({ variant: "secondary", size: "default" })}>
+            <Link href="/pricing" className={buttonVariants({ variant: "light", size: "lg" })}>
               Join the waitlist
             </Link>
           </div>

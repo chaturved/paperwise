@@ -216,3 +216,12 @@ class TestLibraryStatusMethods:
 
         assert lib.key_dates == [{"label": "x"}]
         self.db.commit.assert_called_once()
+
+    def test_page_counts_gives_the_highest_page_of_each_document_and_skips_ones_without_pages(self):
+        (self.db.query.return_value.join.return_value.filter.return_value.group_by.return_value.all.return_value) = [
+            (1, 12),
+            (2, None),
+            (3, 4),
+        ]
+
+        assert self.repo.page_counts(user_id=7) == {1: 12, 3: 4}

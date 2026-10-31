@@ -23,9 +23,10 @@ interface Props {
   question?: string | null;
   failed?: boolean;
   onRewrite?: () => void;
+  onCite?: (n: number) => void;
 }
 
-export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite }: Props) {
+export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite, onCite }: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
   const [feedback, setFeedbackState] = useState<"up" | "down" | null>(null);
 
@@ -46,6 +47,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
 
   const showSource = (n: number) => {
     setExpandedSource(n);
+    onCite?.(n);
     document.getElementById(sourceElementId(messageKey, n))?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
   const toggleSource = (n: number) => setExpandedSource((current) => (current === n ? null : n));
@@ -101,7 +103,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
           </div>
         )}
 
-        {!streaming && !failed && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} />}
+        {!streaming && !failed && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} className={onCite && "xl:hidden"} />}
 
         {!streaming && !failed && (
           <div className="mt-3 flex items-center gap-1">

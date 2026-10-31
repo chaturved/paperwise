@@ -4,25 +4,27 @@ import type { Source } from "@/types";
 import { CitationBadge } from "./citation-chip";
 import { SourceViewer } from "./source-viewer";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Props {
   messageKey: string;
   sources: Source[];
   expanded: number | null;
   onToggle: (n: number) => void;
+  className?: string;
 }
 
 export const sourceElementId = (messageKey: string, n: number) => `source-${messageKey}-${n}`;
 
 const canView = (source: Source) => source.icon === "pdf" && source.doc_id !== undefined && Boolean(source.page);
 
-export function SourcesPanel({ messageKey, sources, expanded, onToggle }: Props) {
+export function SourcesPanel({ messageKey, sources, expanded, onToggle, className }: Props) {
   const [viewing, setViewing] = useState<Source | null>(null);
 
   if (sources.length === 0) return null;
 
   return (
-    <div className="mt-6 border-t border-line pt-5">
+    <div className={cn("mt-6 border-t border-line pt-5", className)}>
       <div className="mb-3 flex items-baseline justify-between">
         <h3 className="text-sm font-medium">Sources</h3>
         <span className="font-mono text-xs text-muted">{sources.length} {sources.length === 1 ? "passage" : "passages"}</span>

@@ -7,11 +7,13 @@ import { useAttachDocuments } from "@/hooks/useAttachDocuments";
 import { useConversationChat } from "@/hooks/useConversationChat";
 import { useFollowUps } from "@/hooks/useFollowUps";
 import { useLibrary } from "@/hooks/useLibrary";
+import { citedSources } from "@/lib/citations";
 import type { LibraryDoc } from "@/types";
 import { AddDocumentButton } from "./add-document-button";
 import { AIMessage } from "./ai-message";
 import { FollowUpSuggestions } from "./follow-up-suggestions";
 import { InputBox } from "./input-box";
+import { SourcesAside } from "./sources-aside";
 import { DashboardWelcome } from "./dashboard-welcome";
 import { HistoryLimitNotice } from "./history-limit-notice";
 import { UserMessage } from "./user-message";
@@ -83,6 +85,20 @@ function DashboardInner() {
   const lastAssistantId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
   const questionBefore = (index: number): string | null => messages.slice(0, index).reverse().find((message) => message.role === "user")?.content ?? null;
 
+  const [citedMessageId, setCitedMessageId] = useState<number | null>(null);
+  const [asideSource, setAsideSource] = useState<number | null>(null);
+  useEffect(() => {
+    setCitedMessageId(null);
+    setAsideSource(null);
+  }, [lastAssistantId, activeConvId]);
+  const showInAside = useCallback((messageId: number, n: number) => {
+    setCitedMessageId(messageId);
+    setAsideSource(n);
+  }, []);
+  const withSources = messages.filter((message) => message.role === "assistant" && !message.failed && citedSources(message.meta).length > 0);
+  const asideMessage = withSources.find((message) => message.id === citedMessageId) ?? withSources.at(-1);
+  const asideSources = asideMessage ? citedSources(asideMessage.meta) : [];
+
   const inChat = messages.length > 0 || activeConvId !== null;
   const title = inChat ? conversations.find((conversation) => conversation.id === activeConvId)?.title ?? "Conversation" : "New chat";
 
@@ -96,13 +112,14 @@ function DashboardInner() {
       {inChat && chat.historyLocked ? (
         <HistoryLimitNotice onNewChat={chat.newChat} />
       ) : inChat ? (
-        <>
+        <div className="flex min-h-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col">
           <div className="thin-scroll relative z-10 flex-1 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
             <div className="mx-auto w-full max-w-[700px] space-y-9">
             {chat.loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg, index) =>
               msg.role === "user"
                 ? <UserMessage key={msg.id} content={msg.content} />
-                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined} />
+                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined} onCite={(n) => showInAside(msg.id, n)} />
             )}
             {isStreaming && (
               <AIMessage content={streamingContent} meta={chat.streamingMeta} streaming timestamp={new Date().toISOString()} />
@@ -131,7 +148,16 @@ function DashboardInner() {
             <p className="mt-2.5 text-center text-xs text-muted">Check sources before relying on an answer.</p>
             </div>
           </div>
-        </>
+          </div>
+          {asideMessage && (
+            <SourcesAside
+              messageId={asideMessage.id}
+              sources={asideSources}
+              expanded={asideSource}
+              onToggle={(n) => setAsideSource((current) => (current === n ? null : n))}
+            />
+          )}
+        </div>
       ) : (
         <DashboardWelcome
           value={inputValue}

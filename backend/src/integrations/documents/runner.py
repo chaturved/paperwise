@@ -71,4 +71,4 @@ class IsolatedExtractor:
 
         if not result.get("ok"):
             raise BadRequestError(str(result.get("message") or UNREADABLE_FILE_MESSAGE))
-        return [Page(item["number"], str(item["text"])) for item in result["pages"]]
+        return [Page(item["number"], str(item["text"]), bool(item.get("scanned", False))) for item in result["pages"]]

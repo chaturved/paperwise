@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, Text
+from sqlalchemy import Boolean, ForeignKey, Integer, Text, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..config import settings
@@ -27,6 +27,7 @@ class LibraryChunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer)
     chunk_text: Mapped[str] = mapped_column(Text)
     page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    scanned: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     embedding = mapped_column(_EMBEDDING_COL, nullable=True)
 
     library: Mapped[Library] = relationship("Library", back_populates="chunks")

@@ -193,6 +193,11 @@ class TestScannedPdf:
         assert [(p.number, p.text.strip()) for p in pages] == [(1, "Payment is due in 30 days"), (2, "scanned page 2")]
         assert ocr.read_pages == [1]
 
+    def test_only_the_pages_read_with_ocr_are_marked_as_scanned(self):
+        pages = PdfParser(TextBudget(), _FakeOcr()).parse(_pdf(("text", "Payment is due"), ("image", "x")))
+
+        assert [p.scanned for p in pages] == [False, True]
+
     def test_ocr_is_not_used_when_every_page_has_text(self):
         ocr = _FakeOcr()
 

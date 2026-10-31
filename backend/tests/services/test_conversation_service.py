@@ -429,7 +429,7 @@ class TestConversationService:
     async def _ask_with_passages(self, answer: str):
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
         passages = [
-            (SimpleNamespace(chunk_index=i, page_number=i + 1, chunk_text=f"passage {i + 1}"),
+            (SimpleNamespace(chunk_index=i, page_number=i + 1, scanned=False, chunk_text=f"passage {i + 1}"),
              SimpleNamespace(id=7, name="lease.pdf", type="pdf", path="/lease.pdf"))
             for i in range(3)
         ]
@@ -449,7 +449,7 @@ class TestConversationService:
 
         sources = events[0][1]["sources"]
         assert [s["n"] for s in sources] == [1, 2, 3]
-        assert sources[1] == {"n": 2, "doc_id": 7, "name": "lease.pdf", "page": 2, "quote": "passage 2", "icon": "pdf"}
+        assert sources[1] == {"n": 2, "doc_id": 7, "name": "lease.pdf", "page": 2, "scanned": False, "quote": "passage 2", "icon": "pdf"}
 
     async def test_ask_reports_only_citations_that_match_a_real_source(self):
         events = await self._ask_with_passages("Rent is due monthly [2], plus a late fee [9].")

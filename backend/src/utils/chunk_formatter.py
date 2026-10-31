@@ -8,6 +8,7 @@ class ChunkFormatter:
                 "library_path": lib.path,
                 "chunk_index": chunk.chunk_index,
                 "page_number": chunk.page_number,
+                "scanned": chunk.scanned,
                 "text": chunk.chunk_text,
             }
             for chunk, lib in results
@@ -28,6 +29,7 @@ class ChunkFormatter:
                 "doc_id": c["library_id"],
                 "name": c["library_name"],
                 "page": c["page_number"],
+                "scanned": c["scanned"],
                 "quote": c["text"],
                 "icon": (c["library_type"] or "text").lower(),
             }

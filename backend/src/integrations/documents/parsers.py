@@ -81,14 +81,15 @@ class PdfParser(FileParser):
             if doc.page_count > settings.MAX_PDF_PAGES:
                 raise BadRequestError(TOO_LARGE_MESSAGE)
             texts = self.budget.collect(page.get_text() for page in doc)  # type: ignore[attr-defined]
+            scanned: set[int] = set()
             if self.ocr is not None:
-                texts = self._read_blank_pages(doc, texts, self.ocr)
-            return [Page(number, text) for number, text in enumerate(texts, start=1)]
+                texts, scanned = self._read_blank_pages(doc, texts, self.ocr)
+            return [Page(number, text, number - 1 in scanned) for number, text in enumerate(texts, start=1)]
 
-    def _read_blank_pages(self, doc: fitz.Document, texts: list[str], ocr: PageOcr) -> list[str]:
+    def _read_blank_pages(self, doc: fitz.Document, texts: list[str], ocr: PageOcr) -> tuple[list[str], set[int]]:
         blank = [index for index, text in enumerate(texts) if not text.strip()]
         if not blank:
-            return texts
+            return texts, set()
 
         if len(blank) > settings.OCR_MAX_PAGES:
             if len(blank) == len(texts):
@@ -99,8 +100,8 @@ class PdfParser(FileParser):
             for index in blank:
                 texts[index] = ocr.read(doc[index])
         except OcrUnavailableError:
-            return texts
-        return self.budget.collect(texts)
+            return texts, set()
+        return self.budget.collect(texts), {index for index in blank if texts[index].strip()}
 
 
 class DocxParser(FileParser):

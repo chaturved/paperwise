@@ -41,7 +41,10 @@ export function SourcesPanel({ messageKey, sources, expanded, onToggle }: Props)
                 <span className={`font-display text-[17px] leading-[1.45] tracking-[-0.0125em] ${open ? "block" : "line-clamp-3"}`}>“{source.quote}”</span>
               </button>
               <div className="flex items-center justify-between gap-3 px-4 pb-3.5">
-                <span className="truncate font-mono text-xs text-muted">{source.name}</span>
+                <span className="truncate font-mono text-xs text-muted">
+                  {source.name}
+                  {source.scanned && <span title="This page was read from an image, so check figures against the original"> · read from a scan</span>}
+                </span>
                 {canView(source) && (
                   <Button type="button" onClick={() => setViewing(source)} variant="link" size="inline" className="shrink-0 text-[13px] font-medium">
                     Open page

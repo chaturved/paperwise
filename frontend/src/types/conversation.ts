@@ -14,6 +14,7 @@ export interface Source {
   doc_id?: number;
   name: string;
   page?: number | null;
+  scanned?: boolean;
   quote: string;
   icon: string;
 }

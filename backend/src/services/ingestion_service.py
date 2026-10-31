@@ -70,8 +70,8 @@ class IngestionService:
             raise ConflictError(DUPLICATE_MESSAGE)
 
         pages = await self.reader.extract(raw, lib.type)
-        passages = [(page.number, text) for page in pages for text in self.chunker.chunk(page.text)]
-        embeddings = await self.ai.get_embeddings([text for _, text in passages])
+        passages = [(page.number, page.scanned, text) for page in pages for text in self.chunker.chunk(page.text)]
+        embeddings = await self.ai.get_embeddings([text for _, _, text in passages])
 
         self.repo.finish_processing(
             lib,
@@ -79,9 +79,14 @@ class IngestionService:
             content_hash,
             [
                 LibraryChunk(
-                    library_id=lib.id, chunk_index=i, chunk_text=text, page_number=number, embedding=embedding
+                    library_id=lib.id,
+                    chunk_index=i,
+                    chunk_text=text,
+                    page_number=number,
+                    scanned=scanned,
+                    embedding=embedding,
                 )
-                for i, ((number, text), embedding) in enumerate(zip(passages, embeddings))
+                for i, ((number, scanned, text), embedding) in enumerate(zip(passages, embeddings))
             ],
         )
 

@@ -1,18 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Download, GitBranch, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { toast } from "sonner";
-import { setFeedback } from "@/lib/api/analytics";
 import { CITATION_HREF_PREFIX, citedSources, linkCitations } from "@/lib/citations";
-import { answerToMarkdown, downloadText } from "@/lib/export-answer";
 import { Button } from "@/components/ui/button";
 import type { Meta } from "@/types";
+import { AnswerActions } from "./answer-actions";
 import { CitationChip } from "./citation-chip";
 import { SourcesPanel, sourceElementId } from "./sources-panel";
-import { VersionSwitcher } from "./version-switcher";
+import { VersionSwitcher, type MessageVersions } from "./version-switcher";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
@@ -25,34 +22,16 @@ interface Props {
   failed?: boolean;
   onRewrite?: () => void;
   onCite?: (n: number) => void;
-  version?: number;
-  versions?: number;
-  siblingIds?: number[];
+  versions?: MessageVersions;
   onSwitch?: (messageId: number) => void;
   onBranch?: (messageId: number) => void;
 }
 
-export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite, onCite, version = 1, versions = 1, siblingIds = [], onSwitch, onBranch }: Props) {
+export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite, onCite, versions, onSwitch, onBranch }: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
-  const [feedback, setFeedbackState] = useState<"up" | "down" | null>(null);
-
-  const handleCopy = () => { navigator.clipboard.writeText(content); toast.success("Copied!"); };
-
-  const handleFeedback = async (value: "up" | "down") => {
-    if (!messageId) return;
-    const next = feedback === value ? null : value;
-    setFeedbackState(next);
-    if (next) {
-      try { await setFeedback(messageId, next); } catch { setFeedbackState(feedback); }
-    }
-  };
-
-  const switcher = onSwitch && messageId !== undefined && (
-    <VersionSwitcher version={version} versions={versions} siblingIds={siblingIds} onSwitch={onSwitch} disabled={Boolean(streaming)} />
-  );
+  const switcher = versions && onSwitch && <VersionSwitcher versions={versions} onSwitch={onSwitch} disabled={Boolean(streaming)} />;
 
   const sources = citedSources(meta);
-  const handleExport = () => downloadText("paperwise-answer.md", answerToMarkdown(question ?? null, content, sources));
   const messageKey = String(messageId ?? "new");
 
   const showSource = (n: number) => {
@@ -61,7 +40,6 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
     document.getElementById(sourceElementId(messageKey, n))?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
   const toggleSource = (n: number) => setExpandedSource((current) => (current === n ? null : n));
-
 
   return (
     <div className="msg-in group">
@@ -119,16 +97,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
         {!streaming && !failed && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} className={onCite && "xl:hidden"} />}
 
         {!streaming && !failed && (
-          <div className="mt-3 flex items-center gap-1">
-            {switcher}
-            <Button variant="ghost" size="xs" onClick={handleCopy}><Copy size={14} /> Copy</Button>
-            <Button variant="ghost" size="xs" onClick={handleExport}><Download size={14} /> Export</Button>
-            {onRewrite && <Button variant="ghost" size="xs" onClick={onRewrite}><RefreshCw size={14} /> Rewrite</Button>}
-            {onBranch && messageId !== undefined && <Button variant="ghost" size="xs" onClick={() => onBranch(messageId)}><GitBranch size={14} /> New chat from here</Button>}
-            <span className="flex-1" />
-            <Button variant="ghost" size="xs" onClick={() => handleFeedback("up")} aria-pressed={feedback === "up"} aria-label="Helpful" className={feedback === "up" ? "text-ink" : ""}><ThumbsUp size={14} fill={feedback === "up" ? "currentColor" : "none"} /></Button>
-            <Button variant="ghost" size="xs" onClick={() => handleFeedback("down")} aria-pressed={feedback === "down"} aria-label="Not helpful" className={feedback === "down" ? "text-ink" : ""}><ThumbsDown size={14} fill={feedback === "down" ? "currentColor" : "none"} /></Button>
-          </div>
+          <AnswerActions messageId={messageId} content={content} question={question} sources={sources} switcher={switcher} onRewrite={onRewrite} onBranch={onBranch} />
         )}
       </div>
     </div>

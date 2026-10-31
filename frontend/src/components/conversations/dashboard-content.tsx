@@ -6,14 +6,15 @@ import { useAppLayout } from "@/context/AppLayoutContext";
 import { useAttachDocuments } from "@/hooks/useAttachDocuments";
 import { useConversationChat } from "@/hooks/useConversationChat";
 import { useFollowUps } from "@/hooks/useFollowUps";
+import { useSourceAside } from "@/hooks/useSourceAside";
 import { useLibrary } from "@/hooks/useLibrary";
-import { citedSources } from "@/lib/citations";
 import type { LibraryDoc } from "@/types";
 import { AddDocumentButton } from "./add-document-button";
 import { AIMessage } from "./ai-message";
 import { FollowUpSuggestions } from "./follow-up-suggestions";
 import { InputBox } from "./input-box";
 import { SourcesAside } from "./sources-aside";
+import { versionsOf } from "./version-switcher";
 import { DashboardWelcome } from "./dashboard-welcome";
 import { HistoryLimitNotice } from "./history-limit-notice";
 import { UserMessage } from "./user-message";
@@ -85,19 +86,7 @@ function DashboardInner() {
   const lastAssistantId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
   const questionBefore = (index: number): string | null => messages.slice(0, index).reverse().find((message) => message.role === "user")?.content ?? null;
 
-  const [citedMessageId, setCitedMessageId] = useState<number | null>(null);
-  const [asideSource, setAsideSource] = useState<number | null>(null);
-  useEffect(() => {
-    setCitedMessageId(null);
-    setAsideSource(null);
-  }, [lastAssistantId, activeConvId]);
-  const showInAside = useCallback((messageId: number, n: number) => {
-    setCitedMessageId(messageId);
-    setAsideSource(n);
-  }, []);
-  const withSources = messages.filter((message) => message.role === "assistant" && !message.failed && citedSources(message.meta).length > 0);
-  const asideMessage = withSources.find((message) => message.id === citedMessageId) ?? withSources.at(-1);
-  const asideSources = asideMessage ? citedSources(asideMessage.meta) : [];
+  const sourceAside = useSourceAside(messages, `${activeConvId}:${lastAssistantId}`);
 
   const inChat = messages.length > 0 || activeConvId !== null;
   const title = inChat ? conversations.find((conversation) => conversation.id === activeConvId)?.title ?? "Conversation" : "New chat";
@@ -118,8 +107,8 @@ function DashboardInner() {
             <div className="mx-auto w-full max-w-[700px] space-y-9">
             {chat.loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg, index) =>
               msg.role === "user"
-                ? <UserMessage key={msg.id} messageId={msg.id} content={msg.content} version={msg.version} versions={msg.versions} siblingIds={msg.sibling_ids} busy={isStreaming} onEdit={chat.edit} onSwitch={chat.switchVersion} />
-                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined} onCite={(n) => showInAside(msg.id, n)} version={msg.version} versions={msg.versions} siblingIds={msg.sibling_ids} onSwitch={chat.switchVersion} onBranch={isStreaming ? undefined : chat.branch} />
+                ? <UserMessage key={msg.id} messageId={msg.id} content={msg.content} versions={versionsOf(msg)} busy={isStreaming} onEdit={chat.edit} onSwitch={chat.switchVersion} />
+                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined} onCite={(n) => sourceAside.show(msg.id, n)} versions={versionsOf(msg)} onSwitch={chat.switchVersion} onBranch={isStreaming ? undefined : chat.branch} />
             )}
             {isStreaming && (
               <AIMessage content={streamingContent} meta={chat.streamingMeta} streaming timestamp={new Date().toISOString()} />
@@ -149,14 +138,7 @@ function DashboardInner() {
             </div>
           </div>
           </div>
-          {asideMessage && (
-            <SourcesAside
-              messageId={asideMessage.id}
-              sources={asideSources}
-              expanded={asideSource}
-              onToggle={(n) => setAsideSource((current) => (current === n ? null : n))}
-            />
-          )}
+          {sourceAside.aside && <SourcesAside {...sourceAside.aside} onToggle={sourceAside.toggle} />}
         </div>
       ) : (
         <DashboardWelcome

@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useMessageVersions } from "@/hooks/useMessageVersions";
 import { useSSEStream, type TurnChange } from "@/hooks/useSSEStream";
 import { historyLimitReached } from "@/lib/api-error";
-import { branchConversation, createConversation, getMessages, selectVersion } from "@/lib/api/conversations";
+import { createConversation, getMessages } from "@/lib/api/conversations";
 import type { Message } from "@/types";
 
 interface Options {
@@ -121,31 +122,33 @@ export function useConversationChat({ docIds, onActivity, onResetScope, onQuesti
     router.replace("/dashboard");
   }, [activeConvId, resetStream, router]);
 
+  const startConversation = useCallback(async (): Promise<number | null> => {
+    try {
+      const conv = await createConversation();
+      newConversationIdRef.current = conv.id;
+      setActiveConvId(conv.id);
+      router.replace(`/dashboard?conv=${conv.id}`);
+      onActivity();
+      return conv.id;
+    } catch {
+      toast.error("Failed to start conversation");
+      return null;
+    }
+  }, [onActivity, router]);
+
   const send = useCallback(async (question: string, change: TurnChange = {}, keep: Message[] = messages) => {
     const text = question.trim();
     if (!text || isStreaming) return;
 
-    let convId = activeConvId;
-    if (!convId) {
-      try {
-        const conv = await createConversation();
-        convId = conv.id;
-        newConversationIdRef.current = conv.id;
-        setActiveConvId(conv.id);
-        router.replace(`/dashboard?conv=${conv.id}`);
-        onActivity();
-      } catch {
-        toast.error("Failed to start conversation");
-        return;
-      }
-    }
+    const convId = activeConvId ?? (await startConversation());
+    if (!convId) return;
 
     const asked: Message = { id: Date.now(), role: "user", content: text, meta: null, created_at: new Date().toISOString() };
     setMessages(change.retryOf === undefined ? [...keep, asked] : keep);
     onQuestionSent();
 
     await sendStream(convId, text, docIds, change);
-  }, [activeConvId, docIds, isStreaming, messages, onActivity, onQuestionSent, router, sendStream]);
+  }, [activeConvId, docIds, isStreaming, messages, onQuestionSent, sendStream, startConversation]);
 
   const edit = useCallback((messageId: number, text: string) => {
     const index = messages.findIndex((message) => message.id === messageId);
@@ -160,24 +163,11 @@ export function useConversationChat({ docIds, onActivity, onResetScope, onQuesti
     send(question.content, { retryOf: messages[index].id }, messages.slice(0, index));
   }, [messages, send]);
 
-  const switchVersion = useCallback((messageId: number) => {
-    if (!activeConvId || isStreaming) return;
-    selectVersion(activeConvId, messageId)
-      .then(setMessages)
-      .catch(() => toast.error("Could not switch versions"));
-  }, [activeConvId, isStreaming]);
-
-  const branch = useCallback(async (messageId: number) => {
-    if (!activeConvId) return;
-    try {
-      const created = await branchConversation(activeConvId, messageId);
-      onActivity();
-      select(created.id);
-      toast.success("Continuing in a new chat");
-    } catch {
-      toast.error("Could not start a new chat from here");
-    }
-  }, [activeConvId, onActivity, select]);
+  const openBranch = useCallback((conversationId: number) => {
+    onActivity();
+    select(conversationId);
+  }, [onActivity, select]);
+  const { switchVersion, branch } = useMessageVersions({ convId: activeConvId, isStreaming, setMessages, onBranched: openBranch });
 
   const sendRef = useRef(send);
   sendRef.current = send;

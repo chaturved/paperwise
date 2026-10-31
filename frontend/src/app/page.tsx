@@ -24,7 +24,7 @@ export default function LandingPage() {
           <HeroCtas />
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+        <div className="page-w">
           <ProductPreview />
 
           <section className="pb-8 pt-24">
@@ -67,7 +67,7 @@ export default function LandingPage() {
           </section>
         </div>
 
-        <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8">
+        <div className="page-w pb-24">
           <FaqList groups={[{
             id: "common-questions",
             title: "Common questions",

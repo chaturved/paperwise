@@ -5,7 +5,7 @@ interface Crumb { label: string; href?: string }
 
 export function PageHero({ crumbs, title, children, first = false }: { crumbs?: Crumb[]; title: string; children: React.ReactNode; first?: boolean }) {
   return (
-    <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+    <div className="page-w">
       {crumbs && (
         <nav aria-label="Breadcrumb" className="pt-12 text-base text-ink/55">
           {crumbs.map((crumb, index) => (
@@ -83,8 +83,8 @@ export function IconColumns({ items }: { items: { icon: LucideIcon; title: strin
 
 export function DetailRows({ title, text, cta, rows }: { title: string; text: string; cta: { label: string; href: string }; rows: { icon: LucideIcon; label: string; detail: string }[] }) {
   return (
-    <section className="paint-ink bg-[#0f0e0d] px-5 py-24 text-[#faf9f7] md:px-8">
-      <div className="mx-auto grid max-w-[1280px] items-start gap-10 md:grid-cols-2">
+    <section className="paint-ink gutter bg-[#0f0e0d] py-24 text-[#faf9f7]">
+      <div className="page-inner grid items-start gap-10 md:grid-cols-2">
         <div>
           <h2 className="max-w-[14ch] text-[32px] font-medium leading-[1.1] tracking-[-0.01em]">{title}</h2>
           <p className="mb-7 mt-5 max-w-[26ch] text-xl leading-[1.3] text-[#cfccc5]">{text}</p>
@@ -120,7 +120,7 @@ export function PaintedCard({ title, text, cta, tone = "paint", children }: { ti
 
 export function PaintedCta({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+    <div className="page-w">
       <div className="paint flex min-h-[380px] flex-col justify-end gap-6 rounded-lg px-6 pb-14 pt-[72px] text-white md:px-14">
         <h2 className="max-w-[16ch] font-display text-[40px] font-normal leading-[1.05] sm:text-[52px] md:text-[58px]">{title}</h2>
         <div className="flex flex-wrap gap-3">{children}</div>

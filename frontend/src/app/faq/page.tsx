@@ -59,7 +59,7 @@ export default function FaqPage() {
         <PageHero crumbs={[{ label: "Resources" }, { label: "Questions and answers" }]} title="Questions and answers">
           <p>What you can upload, how answers are checked and how your data is handled.</p>
         </PageHero>
-        <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8">
+        <div className="page-w pb-24">
           <FaqList groups={groups} />
         </div>
         <PaintedCta title="Still deciding? Try it on one file.">

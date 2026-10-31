@@ -41,7 +41,7 @@ export function SiteNav({ showLogin = true }: SiteNavProps) {
     <div className="sticky top-0 z-50">
       <PromoBar />
       <header onMouseLeave={close} className={`relative bg-bg ${activeMenu ? "border-b border-line" : ""}`}>
-        <nav aria-label="Main navigation" className="mx-auto flex h-[72px] max-w-[1280px] items-center gap-8 px-5 md:px-8">
+        <nav aria-label="Main navigation" className="nav-w flex h-[72px] items-center gap-8">
           <Link href="/" onClick={() => { close(); setMobileOpen(false); }} className="font-display text-[28px] leading-none tracking-[-0.02em]">Paperwise</Link>
 
           <ul className="hidden items-center gap-1 lg:flex">
@@ -89,7 +89,7 @@ export function SiteNav({ showLogin = true }: SiteNavProps) {
 
         {activeMenu && (
           <div className="absolute inset-x-0 top-full hidden border-b border-line bg-bg lg:block">
-            <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_1fr_1.05fr] gap-10 px-8 pb-10 pt-10">
+            <div className="nav-w grid grid-cols-[1fr_1fr_1.05fr] gap-10 pb-10 pt-10">
               {activeMenu.columns.map((column, index) => (
                 <div key={index}>{column.map((item) => <MenuLink key={item.label} item={item} onNavigate={close} />)}</div>
               ))}

@@ -16,7 +16,7 @@ export default function ContactPage() {
         <PageHero crumbs={[{ label: "Company" }, { label: "Contact" }]} title="Talk to the Paperwise team">
           <p>Email us, or ask for a walkthrough on your own documents. A person reads every message.</p>
         </PageHero>
-        <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8">
+        <div className="page-w pb-24">
           <div className="lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
             <span aria-hidden />
             <LinkRows items={[

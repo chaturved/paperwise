@@ -105,6 +105,37 @@
   color: var(--color-danger);
 }
 
+/* Marketing width: the nav runs nearly edge to edge, page sections sit in a wider column. */
+:root {
+  --gutter: 20px;
+  --page-width: 1728px;
+  --nav-width: 1920px;
+}
+@media (min-width: 768px) { :root { --gutter: 32px; } }
+@media (min-width: 1024px) { :root { --gutter: 36px; } }
+@media (min-width: 1280px) { :root { --gutter: 40px; } }
+
+@utility gutter {
+  padding-inline: var(--gutter);
+}
+
+@utility page-w {
+  margin-inline: auto;
+  max-width: var(--page-width);
+  padding-inline: var(--gutter);
+}
+
+@utility page-inner {
+  margin-inline: auto;
+  max-width: calc(var(--page-width) - 2 * var(--gutter));
+}
+
+@utility nav-w {
+  margin-inline: auto;
+  max-width: var(--nav-width);
+  padding-inline: var(--gutter);
+}
+
 @utility link-underline {
   text-decoration: underline;
   text-underline-offset: 3px;

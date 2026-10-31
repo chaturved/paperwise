@@ -30,7 +30,7 @@ export default function LegalPage() {
       <PageHero title="Legal">
         <p>The documents that explain how Paperwise works with your files and what we expect of each other. We update them as the product changes.</p>
       </PageHero>
-      <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8">
+      <div className="page-w pb-24">
         {groups.map((group) => (
           <section key={group.title} className="border-t border-line py-8 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
             <h2 className="mb-5 font-display text-[28px] font-normal tracking-[-0.0125em] lg:mb-0">{group.title}</h2>

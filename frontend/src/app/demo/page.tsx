@@ -19,7 +19,7 @@ export default function DemoPage() {
           <p>Tell us what you work with and we will show you how Paperwise answers questions about it, with the source for every answer.</p>
         </PageHero>
 
-        <div className="mx-auto grid max-w-[1280px] gap-12 px-5 pb-24 md:px-8 lg:grid-cols-[1.15fr_1fr]">
+        <div className="page-w grid gap-12 pb-24 lg:grid-cols-[1.15fr_1fr]">
           <DemoRequestForm />
           <div>
             <h2 className="mb-6 font-display text-[28px] font-normal tracking-[-0.0125em]">What to expect</h2>

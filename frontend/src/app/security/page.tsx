@@ -35,14 +35,14 @@ export default function SecurityPage() {
           <AuthActionLink signedOutLabel="Get started" signedInLabel="Open your workspace" arrow="right" className="btn-primary btn-lg" />
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] px-5 pb-24 pt-14 md:px-8">
+        <div className="page-w pb-24 pt-14">
           <SectionHead title="What you can count on" description="Three things that shape how Paperwise treats your files." />
           <IconColumns items={principles} />
         </div>
 
         <DetailRows title="Questions people ask" text="Select a question to read the answer." cta={{ label: "Read the privacy policy", href: "/privacy" }} rows={rows} />
 
-        <div className="mx-auto max-w-[1280px] px-5 pb-24 pt-24 md:px-8">
+        <div className="page-w pb-24 pt-24">
           <SectionHead title="Still have a question?" description="Email us and a person will answer. The privacy policy and terms cover the details." />
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="mailto:hello@paperwise.ai" className="btn-primary btn-lg">Email us</a>

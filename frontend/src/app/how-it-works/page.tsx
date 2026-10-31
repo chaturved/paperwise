@@ -21,7 +21,7 @@ export default function HowItWorksPage() {
           <HeroCtas />
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+        <div className="page-w">
           <StepColumns steps={[
             { title: "Add a document", text: "Upload a PDF, Word, text or Markdown file. Paperwise reads the text and gets it ready to search." },
             { title: "Ask in plain language", text: "Type a question the way you would ask a colleague. Paperwise finds the passages that matter and writes an answer from them." },

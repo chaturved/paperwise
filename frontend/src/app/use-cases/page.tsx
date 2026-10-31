@@ -59,7 +59,7 @@ export default function UseCasesPage() {
           <HeroCtas />
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] space-y-20 px-5 pb-24 pt-10 md:px-8">
+        <div className="page-w space-y-20 pb-24 pt-10">
           {useCases.map((useCase) => (
             <section key={useCase.id}>
               <SectionHead id={useCase.id} title={useCase.title} description={useCase.description} />

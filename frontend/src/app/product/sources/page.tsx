@@ -20,7 +20,7 @@ export default function SourcesPage() {
           <HeroCtas />
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+        <div className="page-w">
           <StageWindow label="Illustrative Paperwise answer with citations" title="Client agreement" meta="PDF">
             <AnswerPreview />
           </StageWindow>

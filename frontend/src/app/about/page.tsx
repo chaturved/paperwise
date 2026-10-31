@@ -24,7 +24,7 @@ export default function AboutPage() {
         <PageHero crumbs={[{ label: "Company" }, { label: "About" }]} title="Answers you can check">
           <p>Paperwise helps people read documents faster without taking an answer on faith.</p>
         </PageHero>
-        <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+        <div className="page-w">
           <Statement lead="A document assistant you can check." rest="Most tools give you an answer and ask you to trust it. Paperwise shows the passages behind every answer, so you can read the original words yourself." />
           <section className="pb-20">
             <SectionHead title="What we care about" description="Three ideas that decide what we build and what we leave out." />

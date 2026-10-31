@@ -28,7 +28,7 @@ export function AudiencePage({ content }: { content: AudienceContent }) {
           <HeroCtas />
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+        <div className="page-w">
           <Statement lead={content.statement.lead} rest={content.statement.rest} />
 
           <section className="pb-20">

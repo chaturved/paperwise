@@ -48,7 +48,7 @@ export default function PricingPage() {
           <p>Paperwise is free to explore. When you need more room for your work, Pro is on the way.</p>
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+        <div className="page-w">
           <div className="grid gap-4 md:grid-cols-2">
             <article className="flex min-h-[560px] flex-col rounded-lg border border-line bg-surface p-8">
               <span className="w-fit rounded border border-line px-2 py-0.5 text-xs font-medium text-ink/70">Available now</span>

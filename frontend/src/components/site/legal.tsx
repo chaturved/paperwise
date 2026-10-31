@@ -18,7 +18,7 @@ export function LegalPage({ title, summary, updated, children }: LegalPageProps)
         <p>{summary}</p>
         <p className="!mt-0 !text-sm !text-ink/50">Last updated: {updated}</p>
       </PageHero>
-      <div className="mx-auto max-w-[1280px] px-5 pb-24 md:px-8">
+      <div className="page-w pb-24">
         <div className="max-w-[760px]">{children}</div>
       </div>
       <SiteFooter />

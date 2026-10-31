@@ -20,7 +20,7 @@ export default function ProductPage() {
           <HeroCtas />
         </PageHero>
 
-        <div className="mx-auto max-w-[1280px] px-5 md:px-8">
+        <div className="page-w">
           <StageWindow label="Illustrative Paperwise composer" title="Office lease" meta="DOCX">
             <ComposerCard file="Office-lease.docx" question="What notice do I need to give to end the lease early, and are there any penalties?" />
             <ChipRow chips={["Summarize", "Find a clause", "View all"]} />

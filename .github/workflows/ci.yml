@@ -52,7 +52,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/paperwise
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/paperwise
       JWT_SECRET_KEY: ci-only
       SESSION_SECRET_KEY: ci-only
     steps:

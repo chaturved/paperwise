@@ -210,6 +210,7 @@ Things that catch people out:
 - Run `alembic upgrade head` after pulling. New migrations add columns the code reads, so answers fail until they are applied.
 - `uvicorn` without `--reload` keeps serving the old code after you edit the backend; restart it.
 - Don't run `next build` while `next dev` is running. They share `.next` and corrupt it.
+- `DATABASE_URL` must start with `postgresql+psycopg://` (the driver in `requirements.txt` is psycopg 3). A plain `postgresql://` fails with `No module named 'psycopg2'` on a clean install.
 - Your `DATABASE_URL` may point at a hosted database. Check it before running migrations or scripts.
 - Layer rules, naming and the design system are in [`AGENTS.md`](AGENTS.md).
 

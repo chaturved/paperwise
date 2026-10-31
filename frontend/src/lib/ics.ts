@@ -2,12 +2,16 @@ import type { KeyDate } from "@/types";
 
 const LINE_LIMIT = 75;
 
+const CONTROL_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u2028\u2029]/g;
+
 const escapeText = (text: string): string =>
   text
+    .replace(/\r\n|\r|\n/g, "\n")
+    .replace(CONTROL_CHARACTERS, "")
     .replace(/\\/g, String.raw`\\`)
     .replace(/;/g, String.raw`\;`)
     .replace(/,/g, String.raw`\,`)
-    .replace(/\r?\n/g, String.raw`\n`);
+    .replace(/\n/g, String.raw`\n`);
 
 const fold = (line: string): string => {
   const encoder = new TextEncoder();

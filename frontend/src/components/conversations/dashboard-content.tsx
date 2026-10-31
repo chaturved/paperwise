@@ -228,7 +228,7 @@ function DashboardInner() {
             {loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg, index) =>
               msg.role === "user"
                 ? <UserMessage key={msg.id} content={msg.content} />
-                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? handleRewrite : undefined} />
+                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? handleRewrite : undefined} />
             )}
             {isStreaming && (
               <AIMessage content={streamingContent} meta={streamingMeta} streaming timestamp={new Date().toISOString()} />

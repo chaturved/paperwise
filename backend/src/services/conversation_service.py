@@ -5,7 +5,7 @@ from typing import Protocol
 from fastapi import Depends
 
 from src.core.enums import DocumentStatus, Plan
-from src.core.exceptions import NotFoundError
+from src.core.exceptions import AppError, NotFoundError
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
 from src.models import Conversation
@@ -31,6 +31,7 @@ from src.utils.chunk_formatter import ChunkFormatter
 from src.utils.citations import CitationExtractor
 
 HISTORY_MESSAGES = 10
+FAILED_MESSAGE = "Something went wrong. Please try again."
 
 
 class ConversationServiceProtocol(Protocol):
@@ -135,11 +136,17 @@ class ConversationService(ConversationServiceProtocol):
             async for event in self._answer(conv, conv_id, user_id, question, filters, top_k):
                 answer_started = answer_started or event[0] == "token"
                 yield event
-        except Exception:
+        except Exception as error:
             # Refund only when no answer text reached the user, so a failure cannot be used to get answers for free.
             if not answer_started:
                 self.tier.refund_ask(log_id)
+                self._record_failure(conv_id, error)
             raise
+
+    def _record_failure(self, conv_id: int, error: Exception) -> None:
+        message = error.message if isinstance(error, AppError) else FAILED_MESSAGE
+        meta = {"description": "", "badges": [], "sources": [], "failed": True}
+        self.conv_repo.add_message(conv_id, "assistant", message, meta)
 
     @staticmethod
     def _scope(filters: AskFilters | None) -> list[int] | None:
@@ -166,7 +173,7 @@ class ConversationService(ConversationServiceProtocol):
         filters: AskFilters | None,
         top_k: int,
     ) -> AsyncGenerator[tuple[str, dict | str], None]:
-        recent = [(m.role, m.content) for m in self.conv_repo.get_recent_messages(conv_id, HISTORY_MESSAGES)]
+        recent = [(m.role, m.content) for m in self.conv_repo.get_recent_messages(conv_id, HISTORY_MESSAGES) if not (m.meta or {}).get("failed")]
         documents = self._has_documents(user_id, filters)
         self.conv_repo.add_message(conv_id, "user", question)
 

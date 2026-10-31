@@ -218,6 +218,10 @@ class TestConversationService:
                 pass
 
         self.mock_tier.refund_ask.assert_called_once_with(77)
+        stored = self.mock_conv_repo.add_message.call_args_list[-1].args
+        assert stored[1] == "assistant"
+        assert stored[2] == "Something went wrong. Please try again."
+        assert stored[3]["failed"] is True
 
     async def test_a_question_that_fails_before_any_answer_text_is_refunded(self):
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
@@ -302,7 +306,7 @@ class TestConversationService:
         assert events[-1] == ("cited", [])
 
     async def test_general_chat_gives_the_model_the_earlier_messages_but_not_the_new_question_twice(self):
-        earlier = [SimpleNamespace(role="user", content="Hi"), SimpleNamespace(role="assistant", content="Hello")]
+        earlier = [SimpleNamespace(role="user", content="Hi", meta=None), SimpleNamespace(role="assistant", content="Hello", meta=None)]
 
         _, order, seen, *_ = await self._ask_in_general_mode(history=earlier)
 
@@ -320,7 +324,7 @@ class TestConversationService:
 
     async def _ask(self, answer="from the documents", filters=None, history=()):
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
-        self.mock_conv_repo.get_recent_messages.return_value = [SimpleNamespace(role=r, content=c) for r, c in history]
+        self.mock_conv_repo.get_recent_messages.return_value = [SimpleNamespace(role=r, content=c, meta=None) for r, c in history]
         self.mock_lib_repo.get_top_k_chunks.return_value = []
         seen = {}
 

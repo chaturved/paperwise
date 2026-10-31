@@ -9,7 +9,7 @@ from src.core.exceptions import AppError
 from src.core.rate_limit import RateLimit, UserRateLimit
 from src.models.user import User
 from src.schemas.conversation import AskRequest, ConversationCreate, ConversationRename, ConversationSearchResult
-from src.services.conversation_service import ConversationService, ConversationServiceProtocol
+from src.services.conversation_service import FAILED_MESSAGE, ConversationService, ConversationServiceProtocol
 
 _log = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ async def ask_question(
             yield f"event: error\ndata: {json.dumps({'message': e.message})}\n\n"
         except Exception:  # noqa: BLE001 - the stream is already open, so the error has to travel as an event
             _log.exception("Failed to answer question in conversation %s", conv_id)
-            yield f"event: error\ndata: {json.dumps({'message': 'Something went wrong. Please try again.'})}\n\n"
+            yield f"event: error\ndata: {json.dumps({'message': FAILED_MESSAGE})}\n\n"
         finally:
             yield "data: [DONE]\n\n"
 

@@ -28,6 +28,7 @@ export interface Meta {
   badges: Badge[];
   sources: Source[];
   cited?: number[];
+  failed?: boolean;
 }
 
 export interface Message {

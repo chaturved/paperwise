@@ -56,7 +56,7 @@ class ConversationRepository(ConversationRepositoryProtocol):
             .limit(1)
             .scalar_subquery()
         )
-        return (
+        rows = (
             self.db.query(Conversation, matching_message.label("match_content"))
             .filter(Conversation.user_id == user_id)
             .filter(or_(Conversation.title.ilike(pattern, escape="\\"), matching_message.is_not(None)))
@@ -64,6 +64,7 @@ class ConversationRepository(ConversationRepositoryProtocol):
             .limit(limit)
             .all()
         )
+        return [(conversation, content) for conversation, content in rows]
 
     def get_by_id(self, conv_id: int, user_id: int) -> Conversation | None:
         return self.db.query(Conversation).filter(Conversation.id == conv_id, Conversation.user_id == user_id).first()

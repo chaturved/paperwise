@@ -49,6 +49,6 @@ async def main(apply: bool) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     parser.add_argument("--apply", action="store_true", help="re-index the documents instead of only listing them")
     asyncio.run(main(parser.parse_args().apply))

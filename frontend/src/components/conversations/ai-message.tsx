@@ -25,6 +25,7 @@ interface Props {
   versions?: MessageVersions;
   onSwitch?: (messageId: number) => void;
   onBranch?: (messageId: number) => void;
+  onExportWord?: (messageId: number) => void;
 }
 
 export function AIMessage({
@@ -40,6 +41,7 @@ export function AIMessage({
   versions,
   onSwitch,
   onBranch,
+  onExportWord,
 }: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
   const switcher = versions && onSwitch && (
@@ -144,6 +146,7 @@ export function AIMessage({
             switcher={switcher}
             onRewrite={onRewrite}
             onBranch={onBranch}
+            onExportWord={onExportWord}
           />
         )}
       </div>

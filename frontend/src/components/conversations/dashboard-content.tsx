@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useAppLayout } from "@/context/AppLayoutContext";
 import { useAttachDocuments } from "@/hooks/useAttachDocuments";
 import { useConversationChat } from "@/hooks/useConversationChat";
+import { useAnswerExport } from "@/hooks/useAnswerExport";
 import { useFollowUps } from "@/hooks/useFollowUps";
 import { useSourceAside } from "@/hooks/useSourceAside";
 import { useLibrary } from "@/hooks/useLibrary";
@@ -95,6 +96,7 @@ function DashboardInner() {
       .reverse()
       .find((message) => message.role === "user")?.content ?? null;
 
+  const exportWord = useAnswerExport(activeConvId);
   const sourceAside = useSourceAside(messages, `${activeConvId}:${lastAssistantId}`);
 
   const inChat = messages.length > 0 || activeConvId !== null;
@@ -144,6 +146,7 @@ function DashboardInner() {
                         versions={versionsOf(msg)}
                         onSwitch={chat.switchVersion}
                         onBranch={isStreaming ? undefined : chat.branch}
+                        onExportWord={exportWord}
                       />
                     ),
                   )

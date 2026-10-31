@@ -1,5 +1,6 @@
 import type { Source } from "@/types";
 import { sourceNumber } from "@/lib/citations";
+import { downloadBlob } from "@/lib/download";
 
 export const answerToMarkdown = (question: string | null, answer: string, sources: Source[]): string => {
   const lines: string[] = [];
@@ -17,11 +18,5 @@ export const answerToMarkdown = (question: string | null, answer: string, source
   return lines.join("\n") + "\n";
 };
 
-export const downloadText = (filename: string, text: string): void => {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-};
+export const downloadText = (filename: string, text: string): void =>
+  downloadBlob(filename, new Blob([text], { type: "text/markdown;charset=utf-8" }));

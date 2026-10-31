@@ -44,3 +44,10 @@ export const getFollowUps = async (id: number): Promise<string[]> => {
   const res = await apiClient.post(`/v1/conversations/${id}/follow-ups`);
   return res.data.questions;
 };
+
+export const exportAnswerDocx = async (id: number, messageId: number): Promise<Blob> => {
+  const res = await apiClient.post(`/v1/conversations/${id}/messages/${messageId}/export`, null, {
+    responseType: "blob",
+  });
+  return res.data;
+};

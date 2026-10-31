@@ -4,6 +4,12 @@ import { useState } from "react";
 import { Copy, Download, GitBranch, RefreshCw, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { setFeedback } from "@/lib/api/analytics";
 import { answerToMarkdown, downloadText } from "@/lib/export-answer";
 import type { Source } from "@/types";
@@ -18,16 +24,27 @@ interface Props {
   switcher?: React.ReactNode;
   onRewrite?: () => void;
   onBranch?: (messageId: number) => void;
+  onExportWord?: (messageId: number) => void;
 }
 
-export function AnswerActions({ messageId, content, question, sources, switcher, onRewrite, onBranch }: Props) {
+export function AnswerActions({
+  messageId,
+  content,
+  question,
+  sources,
+  switcher,
+  onRewrite,
+  onBranch,
+  onExportWord,
+}: Props) {
   const [rating, setRating] = useState<Rating | null>(null);
 
   const copy = () => {
     navigator.clipboard.writeText(content);
     toast.success("Copied!");
   };
-  const exportAnswer = () => downloadText("paperwise-answer.md", answerToMarkdown(question ?? null, content, sources));
+  const exportMarkdown = () =>
+    downloadText("paperwise-answer.md", answerToMarkdown(question ?? null, content, sources));
 
   const rate = async (value: Rating) => {
     if (!messageId) return;
@@ -47,9 +64,17 @@ export function AnswerActions({ messageId, content, question, sources, switcher,
       <Button variant="ghost" size="xs" onClick={copy}>
         <Copy size={14} /> Copy
       </Button>
-      <Button variant="ghost" size="xs" onClick={exportAnswer}>
-        <Download size={14} /> Export
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="xs" />}>
+          <Download size={14} /> Export
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-40">
+          <DropdownMenuItem onClick={exportMarkdown}>Markdown (.md)</DropdownMenuItem>
+          {onExportWord && messageId !== undefined && (
+            <DropdownMenuItem onClick={() => onExportWord(messageId)}>Word (.docx)</DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       {onRewrite && (
         <Button variant="ghost" size="xs" onClick={onRewrite}>
           <RefreshCw size={14} /> Rewrite

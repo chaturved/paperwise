@@ -7,6 +7,7 @@ from src.core.dependencies import get_current_user, get_current_user_id
 from src.core.enums import Plan
 from src.core.exceptions import BadRequestError
 from src.main import app
+from src.services.answer_export_service import AnswerExportService, ExportedFile
 from src.services.ask_service import AskService
 
 
@@ -59,3 +60,18 @@ def test_the_cited_sources_are_sent_after_the_answer(client):
 
     assert 'data: {"cited": [1]}' in body
     assert body.index('"token"') < body.index('"cited"') < body.index("[DONE]")
+
+
+def test_an_exported_answer_downloads_as_a_word_file(client):
+    class _Service:
+        def export_docx(self, conv_id, user_id, message_id, plan):
+            assert (conv_id, user_id, message_id) == (1, 1, 7)
+            return ExportedFile("paperwise-answer.docx", b"PK-bytes", "application/vnd.test")
+
+    app.dependency_overrides[AnswerExportService] = lambda: _Service()
+    response = client.post("/api/v1/conversations/1/messages/7/export")
+
+    assert response.status_code == 200
+    assert response.content == b"PK-bytes"
+    assert response.headers["content-type"] == "application/vnd.test"
+    assert response.headers["content-disposition"] == 'attachment; filename="paperwise-answer.docx"'

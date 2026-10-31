@@ -1,7 +1,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import StreamingResponse
 
 from src.core.dependencies import get_current_user, get_current_user_id
@@ -16,6 +16,7 @@ from src.schemas.conversation import (
     FollowUpsResponse,
     MessageRef,
 )
+from src.services.answer_export_service import AnswerExportService, AnswerExportServiceProtocol
 from src.services.ask_service import FAILED_MESSAGE, AskService, AskServiceProtocol
 from src.services.conversation_service import ConversationService, ConversationServiceProtocol
 
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/conversations", tags=["Conversations"])
 ask_address_limit = RateLimit("ask-address", "90/minute")
 ask_user_limit = UserRateLimit("ask-user", "30/minute")
 follow_ups_limit = UserRateLimit("follow-ups", "30/minute")
+export_limit = UserRateLimit("export", "30/minute")
 
 
 def _data(payload: dict) -> str:
@@ -108,6 +110,21 @@ def branch_conversation(
     service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     return service.branch_conversation(conv_id, user.id, body.message_id, user.plan)
+
+
+@router.post("/{conv_id}/messages/{message_id}/export", dependencies=[Depends(export_limit)])
+def export_answer(
+    conv_id: int,
+    message_id: int,
+    user: User = Depends(get_current_user),
+    service: AnswerExportServiceProtocol = Depends(AnswerExportService),
+) -> Response:
+    file = service.export_docx(conv_id, user.id, message_id, user.plan)
+    return Response(
+        content=file.content,
+        media_type=file.media_type,
+        headers={"Content-Disposition": f'attachment; filename="{file.filename}"'},
+    )
 
 
 @router.post("/{conv_id}/follow-ups", response_model=FollowUpsResponse, dependencies=[Depends(follow_ups_limit)])

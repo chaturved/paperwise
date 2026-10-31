@@ -1842,7 +1842,7 @@ All under `/api/v1`.
 
 ### 16.4 Platform
 
-The frontend now runs on Next.js 16 and Node 24 (LTS). Next.js 16 renames `middleware.ts` to `proxy.ts`, so the route protection described in section 15 lives in `frontend/src/proxy.ts`. Fonts are served from `frontend/src/app/fonts/` instead of being fetched from Google at build time.
+The frontend now runs on Next.js 16 and Node 24 (LTS). Next.js 16 renames `middleware.ts` to `proxy.ts`, so the route protection described in section 15 lives in `frontend/src/proxy.ts`.
 
 ### 16.5 Still planned
 

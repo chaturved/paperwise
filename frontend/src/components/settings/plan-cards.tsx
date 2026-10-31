@@ -5,6 +5,7 @@ import { ArrowUpRight, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 const FREE_FEATURES = [
   "Up to 5 documents",
@@ -35,7 +36,7 @@ export function PlanCards() {
 
   return (
     <div className="grid gap-5 md:grid-cols-2">
-      <section aria-label="Free plan" className={`rounded-lg border bg-surface p-7 ${isFree ? "border-ink" : "border-line"}`}>
+      <Card role="region" aria-label="Free plan" className={isFree ? "border-ink p-7" : "p-7"}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-[28px] tracking-[-0.0125em]">Free</h2>
           {isFree && <Badge variant="solid">Current plan</Badge>}
@@ -45,9 +46,9 @@ export function PlanCards() {
         <ul className="space-y-3 border-t border-line pt-5">
           {FREE_FEATURES.map((feature) => <Feature key={feature}>{feature}</Feature>)}
         </ul>
-      </section>
+      </Card>
 
-      <section aria-label="Pro plan" className="flex flex-col rounded-lg border border-line bg-card p-7">
+      <Card role="region" aria-label="Pro plan" className="flex flex-col bg-card p-7">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-[28px] tracking-[-0.0125em]">Pro</h2>
           <Badge>Coming soon</Badge>
@@ -61,7 +62,7 @@ export function PlanCards() {
           </ul>
         </div>
         <Link href="/pricing" className={buttonVariants({ variant: "primary", size: "lg", className: "mt-7 w-full" })}>See Pro details <ArrowUpRight size={16} /></Link>
-      </section>
+      </Card>
     </div>
   );
 }

@@ -12,6 +12,8 @@ import type { Conversation } from "@/types";
 import { AccountMenu } from "./account-menu";
 import { ConversationList } from "./conversation-list";
 import { PlanMeter } from "./plan-meter";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const rowClass = (active: boolean) =>
   `flex h-9 w-full items-center gap-3 rounded px-3 text-sm transition hover:bg-ink/[0.05] hover:text-ink ${active ? "bg-ink/[0.08] font-medium text-ink" : "text-ink/80"}`;
@@ -70,15 +72,14 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
       <ConversationSearchDialog open={searchOpen} onOpenChange={setSearchOpen} recentConversations={conversations} onSelect={handleSelect} />
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-5">
         <Link href="/dashboard" className="font-display text-[23px] tracking-[-0.0125em]">Paperwise</Link>
-        <button
-          type="button"
-          onClick={() => setSearchOpen((open) => !open)}
-          aria-label="Search conversations"
-          aria-expanded={searchOpen}
-          className="mr-7 flex h-8 w-8 items-center justify-center rounded text-ink/60 transition hover:bg-ink/[0.07] hover:text-ink md:mr-0"
-        >
-          <Search size={17} strokeWidth={1.8} />
-        </button>
+        <Tooltip>
+          <TooltipTrigger
+            render={<Button variant="ghost" size="icon" aria-label="Search conversations" aria-expanded={searchOpen} onClick={() => setSearchOpen((open) => !open)} className="mr-7 text-ink/60 md:mr-0" />}
+          >
+            <Search size={17} strokeWidth={1.8} />
+          </TooltipTrigger>
+          <TooltipContent>Search chats</TooltipContent>
+        </Tooltip>
       </div>
 
       <nav aria-label="Workspace navigation" className="shrink-0 space-y-1 px-3 pt-1">

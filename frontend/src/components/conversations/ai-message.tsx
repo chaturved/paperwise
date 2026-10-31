@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { Meta } from "@/types";
 import { CitationChip } from "./citation-chip";
 import { SourcesPanel, sourceElementId } from "./sources-panel";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
   messageId?: number;
@@ -76,7 +77,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
         ) : streaming && !content ? (
           <div className="space-y-2.5 py-1">
             {[84, 68, 76].map((w, i) => (
-              <div key={i} className="h-[11px] rounded-[3px] shimmer-line" style={{ width: `${w}%`, animationDelay: `${i * 100}ms` }} />
+              <Skeleton key={i} className="h-[11px]" style={{ width: `${w}%`, animationDelay: `${i * 100}ms` }} />
             ))}
           </div>
         ) : (

@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import AppSidebar from "@/components/app-sidebar";
 import { AppLayoutProvider, useAppLayout } from "@/context/AppLayoutContext";
 import { Button } from "@/components/ui/button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const { sidebarCallbacks, setConversations } = useAppLayout();
@@ -52,7 +53,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppLayoutProvider>
-      <AppShell>{children}</AppShell>
+      <TooltipProvider>
+        <AppShell>{children}</AppShell>
+      </TooltipProvider>
     </AppLayoutProvider>
   );
 }

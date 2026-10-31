@@ -76,20 +76,11 @@ export function AnalyticsContent() {
     <div className="pb-8">
       <SettingsHeading title="Usage">See how your documents and conversations are used in Paperwise.</SettingsHeading>
 
-      <div className="mb-9 flex gap-7 border-b border-line" role="tablist" aria-label="Usage views">
-        {VIEWS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={view === value}
-            onClick={() => setView(value)}
-            className={`-mb-px border-b-2 px-1 pb-3.5 text-[15px] transition ${view === value ? "border-ink font-medium text-ink" : "border-transparent text-muted hover:text-ink"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={view} onValueChange={(value) => setView(value as View)} className="mb-9">
+        <TabsList variant="line" aria-label="Usage views">
+          {VIEWS.map(({ value, label }) => <TabsTrigger key={value} value={value}>{label}</TabsTrigger>)}
+        </TabsList>
+      </Tabs>
 
       {error && (
         <div role="alert" className="mb-8 flex items-center justify-between gap-4 rounded-lg border border-danger px-4 py-3 text-sm text-danger">

@@ -21,7 +21,18 @@ def _make_conv(id=1, title="New conversation", days_old=0):
     conv.id = id
     conv.title = title
     conv.created_at = datetime.now(UTC) - timedelta(days=days_old)
+    conv.active_leaf_id = None
     return conv
+
+
+def _chain(*turns: tuple[str, str] | tuple[str, str, dict | None]) -> list[SimpleNamespace]:
+    """Messages in one straight line: each is the child of the one before it."""
+    messages = []
+    for index, (role, content, *meta) in enumerate(turns, start=1):
+        messages.append(
+            SimpleNamespace(id=index, parent_id=index - 1 if index > 1 else None, role=role, content=content, meta=meta[0] if meta else None)
+        )
+    return messages
 
 
 class TestConversationService:
@@ -33,6 +44,9 @@ class TestConversationService:
         self.mock_ai = MagicMock(spec_set=AIProvider)
         self.mock_answers = MagicMock(spec_set=AnswerGeneratorProtocol)
         self.mock_lib_repo.get_all.return_value = [SimpleNamespace(name="lease.pdf", status="ready")]
+        self.mock_conv_repo.get_messages.return_value = []
+        self.stored_ids = iter(range(100, 1000))
+        self.mock_conv_repo.add_message.side_effect = lambda *a, **k: SimpleNamespace(id=next(self.stored_ids))
         self.svc = ConversationService(
             conv_repo=self.mock_conv_repo,
             lib_repo=self.mock_lib_repo,
@@ -149,6 +163,7 @@ class TestConversationService:
         msg.role = "user"
         msg.content = "hello"
         msg.meta = None
+        msg.parent_id = None
         msg.created_at = datetime.now(UTC)
         self.mock_conv_repo.get_by_id.return_value = conv
         self.mock_conv_repo.get_messages.return_value = [msg]
@@ -276,8 +291,9 @@ class TestConversationService:
         self.mock_lib_repo.get_all.return_value = []
         order = []
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
-        self.mock_conv_repo.get_recent_messages.side_effect = lambda *a, **k: (order.append("history"), list(history))[1]
-        self.mock_conv_repo.add_message.side_effect = lambda *a, **k: order.append(f"add:{a[1]}")
+        self.mock_conv_repo.get_messages.side_effect = lambda *a, **k: (order.append("history"), _chain(*history))[1]
+        self.mock_conv_repo.get_by_id.return_value.active_leaf_id = len(history) or None
+        self.mock_conv_repo.add_message.side_effect = lambda *a, **k: (order.append(f"add:{a[1]}"), SimpleNamespace(id=next(self.stored_ids)))[1]
         seen = {}
 
         async def fake_general(question, previous):
@@ -306,7 +322,7 @@ class TestConversationService:
         assert events[-1] == ("cited", [])
 
     async def test_general_chat_gives_the_model_the_earlier_messages_but_not_the_new_question_twice(self):
-        earlier = [SimpleNamespace(role="user", content="Hi", meta=None), SimpleNamespace(role="assistant", content="Hello", meta=None)]
+        earlier = [("user", "Hi"), ("assistant", "Hello")]
 
         _, order, seen, *_ = await self._ask_in_general_mode(history=earlier)
 
@@ -324,7 +340,8 @@ class TestConversationService:
 
     async def _ask(self, answer="from the documents", filters=None, history=()):
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
-        self.mock_conv_repo.get_recent_messages.return_value = [SimpleNamespace(role=r, content=c, meta=None) for r, c in history]
+        self.mock_conv_repo.get_messages.return_value = _chain(*history)
+        self.mock_conv_repo.get_by_id.return_value.active_leaf_id = len(history) or None
         self.mock_lib_repo.get_top_k_chunks.return_value = []
         seen = {}
 
@@ -488,9 +505,8 @@ class TestFollowUps:
         )
 
     def _history(self, *messages: tuple[str, str, dict | None]) -> None:
-        self.conv_repo.get_recent_messages.return_value = [
-            SimpleNamespace(role=role, content=content, meta=meta) for role, content, meta in messages
-        ]
+        self.conv_repo.get_messages.return_value = _chain(*messages)
+        self.conv_repo.get_by_id.return_value.active_leaf_id = len(messages)
 
     async def test_suggests_questions_after_an_answer(self):
         self._history(("user", "What is the rent?", None), ("assistant", "It is $900.", {"sources": []}))
@@ -525,3 +541,173 @@ class TestFollowUps:
         self.answers.follow_ups.side_effect = RuntimeError("quota")
 
         assert (await self.svc.follow_ups(1, 1)).questions == []
+
+
+def _node(id: int, parent_id: int | None, role: str, content: str = "", meta: dict | None = None) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=id, parent_id=parent_id, role=role, content=content or f"{role} {id}", meta=meta, conversation_id=1,
+        created_at=datetime.now(UTC),
+    )
+
+
+class TestMessageVersions:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.conv_repo = MagicMock(spec_set=ConversationRepositoryProtocol)
+        self.answers = MagicMock(spec_set=AnswerGeneratorProtocol)
+        self.tier = MagicMock(spec_set=TierServiceProtocol)
+        self.lib_repo = MagicMock(spec_set=LibraryRepositoryProtocol)
+        self.lib_repo.get_all.return_value = []
+        self.conv = _make_conv(title="My chat")
+        self.conv_repo.get_by_id.return_value = self.conv
+        self.ids = iter(range(100, 1000))
+        self.conv_repo.set_active_leaf.side_effect = lambda conv, message_id: setattr(conv, "active_leaf_id", message_id)
+        self.conv_repo.add_message.side_effect = lambda *a, **k: _node(next(self.ids), a[4] if len(a) > 4 else k.get("parent_id"), a[1], a[2], a[3])
+        self.svc = ConversationService(
+            conv_repo=self.conv_repo,
+            lib_repo=self.lib_repo,
+            tier=self.tier,
+            ai=MagicMock(spec_set=AIProvider),
+            answers=self.answers,
+            formatter=ChunkFormatter(),
+            citations=CitationExtractor(),
+        )
+
+        self.seen = {}
+
+        async def general(question, previous):
+            self.seen["question"], self.seen["history"] = question, previous
+            yield "new answer"
+
+        self.answers.stream_general = general
+
+    def _tree(self) -> list[SimpleNamespace]:
+        """1 Q1 -> 2 A1 -> 3 Q2 -> 4 A2, with 5 an edited Q2 -> 6 its answer, and 7 a retried A1."""
+        return [
+            _node(1, None, "user", "Q1"),
+            _node(2, 1, "assistant", "A1"),
+            _node(3, 2, "user", "Q2"),
+            _node(4, 3, "assistant", "A2"),
+            _node(5, 2, "user", "Q2 edited"),
+            _node(6, 5, "assistant", "A2 edited"),
+            _node(7, 1, "assistant", "A1 retried"),
+        ]
+
+    async def _ask(self, question="next", edit_of=None, retry_of=None):
+        return [e async for e in self.svc.ask(1, 1, question, None, 5, Plan.FREE, edit_of, retry_of)]
+
+    def test_messages_show_the_active_path_and_which_version_each_turn_is(self):
+        self.conv.active_leaf_id = 4
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        visible = self.svc.list_messages(1, 1, Plan.FREE)
+
+        assert [m.id for m in visible] == [1, 2, 3, 4]
+        assert [(m.version, m.versions) for m in visible] == [(1, 1), (1, 2), (1, 2), (1, 1)]
+        assert visible[2].sibling_ids == [3, 5]
+
+    def test_switching_to_another_version_continues_down_its_newest_branch(self):
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        visible = self.svc.select_version(1, 1, 5, Plan.FREE)
+
+        self.conv_repo.set_active_leaf.assert_called_once_with(self.conv, 6)
+        assert [m.id for m in visible] == [1, 2, 5, 6]
+
+    def test_switching_to_a_message_that_is_not_in_the_conversation_fails(self):
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        with pytest.raises(NotFoundError):
+            self.svc.select_version(1, 1, 99, Plan.FREE)
+
+        self.conv_repo.set_active_leaf.assert_not_called()
+
+    async def test_a_new_question_is_stored_after_the_last_message_and_becomes_the_end_of_the_conversation(self):
+        self.conv.active_leaf_id = 4
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        await self._ask()
+
+        question, answer = self.conv_repo.add_message.call_args_list
+        assert question.args[1:3] == ("user", "next") and question.args[4] == 4
+        assert answer.args[1] == "assistant" and answer.args[4] == 100
+        assert self.conv_repo.set_active_leaf.call_args_list[-1].args[1] == 101
+        assert self.seen["history"] == [("user", "Q1"), ("assistant", "A1"), ("user", "Q2"), ("assistant", "A2")]
+
+    async def test_an_edit_is_stored_beside_the_question_it_replaces_and_sees_only_what_came_before(self):
+        self.conv.active_leaf_id = 4
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        await self._ask("Q2 reworded", edit_of=3)
+
+        question, answer = self.conv_repo.add_message.call_args_list
+        assert question.args[1:3] == ("user", "Q2 reworded") and question.args[4] == 2
+        assert answer.args[4] == 100
+        assert self.seen["history"] == [("user", "Q1"), ("assistant", "A1")]
+
+    async def test_editing_a_first_question_stores_another_first_message(self):
+        self.conv.active_leaf_id = 4
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        await self._ask("Q1 reworded", edit_of=1)
+
+        assert self.conv_repo.add_message.call_args_list[0].args[4] is None
+        assert self.seen["history"] == []
+
+    async def test_a_retry_answers_the_same_question_again_without_storing_it_twice(self):
+        self.conv.active_leaf_id = 2
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        await self._ask("ignored", retry_of=2)
+
+        [answer] = self.conv_repo.add_message.call_args_list
+        assert answer.args[1] == "assistant" and answer.args[4] == 1
+        assert self.seen["question"] == "Q1"
+        assert self.seen["history"] == []
+
+    async def test_a_retry_of_a_question_is_refused_and_not_charged(self):
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        with pytest.raises(NotFoundError):
+            await self._ask(retry_of=1)
+
+        self.tier.refund_ask.assert_called_once()
+        self.conv_repo.add_message.assert_not_called()
+
+    async def test_an_edit_of_an_answer_is_refused(self):
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        with pytest.raises(NotFoundError):
+            await self._ask(edit_of=2)
+
+    async def test_a_failed_answer_is_stored_under_the_question_that_failed(self):
+        self.conv.active_leaf_id = 4
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        async def broken(question, previous):
+            raise RuntimeError("model down")
+            yield
+
+        self.answers.stream_general = broken
+
+        with pytest.raises(RuntimeError):
+            await self._ask()
+
+        failure = self.conv_repo.add_message.call_args_list[-1]
+        assert failure.args[3]["failed"] is True
+        assert failure.args[4] == 100
+
+    def test_a_branch_copies_the_path_up_to_a_message_into_a_new_conversation(self):
+        self.conv_repo.get_messages.return_value = self._tree()
+        branch = _make_conv(id=9, title="My chat")
+        branch.updated_at = datetime.now(UTC)
+        self.conv_repo.create.return_value = branch
+
+        result = self.svc.branch_conversation(1, 1, 5, Plan.FREE)
+
+        self.conv_repo.create.assert_called_once_with(1, "My chat")
+        copied = [c.args[1:3] for c in self.conv_repo.add_message.call_args_list]
+        assert copied == [("user", "Q1"), ("assistant", "A1"), ("user", "Q2 edited")]
+        assert [c.args[4] for c in self.conv_repo.add_message.call_args_list] == [None, 100, 101]
+        self.conv_repo.set_active_leaf.assert_called_once_with(branch, 102)
+        assert result.id == 9

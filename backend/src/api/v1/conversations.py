@@ -14,6 +14,7 @@ from src.schemas.conversation import (
     ConversationRename,
     ConversationSearchResult,
     FollowUpsResponse,
+    MessageRef,
 )
 from src.services.conversation_service import FAILED_MESSAGE, ConversationService, ConversationServiceProtocol
 
@@ -80,6 +81,26 @@ def messages(
     return service.list_messages(conv_id, user.id, user.plan)
 
 
+@router.post("/{conv_id}/versions")
+def select_version(
+    conv_id: int,
+    body: MessageRef,
+    user: User = Depends(get_current_user),
+    service: ConversationServiceProtocol = Depends(ConversationService),
+):
+    return service.select_version(conv_id, user.id, body.message_id, user.plan)
+
+
+@router.post("/{conv_id}/branch")
+def branch_conversation(
+    conv_id: int,
+    body: MessageRef,
+    user: User = Depends(get_current_user),
+    service: ConversationServiceProtocol = Depends(ConversationService),
+):
+    return service.branch_conversation(conv_id, user.id, body.message_id, user.plan)
+
+
 @router.post("/{conv_id}/follow-ups", response_model=FollowUpsResponse, dependencies=[Depends(follow_ups_limit)])
 async def follow_ups(
     conv_id: int,
@@ -98,7 +119,9 @@ async def ask_question(
 ):
     async def streamer():
         try:
-            async for event_type, data in service.ask(conv_id, user.id, body.question, body.filters, body.top_k, user.plan):
+            async for event_type, data in service.ask(
+                conv_id, user.id, body.question, body.filters, body.top_k, user.plan, body.edit_of, body.retry_of
+            ):
                 if event_type == "meta":
                     yield f"data: {json.dumps({'meta': data})}\n\n"
                 elif event_type == "token":

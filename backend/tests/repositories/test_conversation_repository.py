@@ -131,16 +131,16 @@ class TestConversationRepository:
         assert result == msgs
 
 
-    def test_get_recent_messages_returns_chronological_order(self):
-        msg1, msg2 = MagicMock(spec=Message), MagicMock(spec=Message)
-        (
-            self.db.query.return_value
-            .filter.return_value
-            .order_by.return_value
-            .limit.return_value
-            .all.return_value
-        ) = [msg2, msg1]
+    def test_add_message_stores_the_parent_it_follows(self):
+        self.repo.add_message(1, "assistant", "answer", {"sources": []}, parent_id=5)
 
-        result = self.repo.get_recent_messages(conversation_id=1, limit=2)
+        stored = self.db.add.call_args.args[0]
+        assert (stored.conversation_id, stored.role, stored.parent_id) == (1, "assistant", 5)
 
-        assert result == [msg1, msg2]
+    def test_set_active_leaf_records_the_message_the_conversation_ends_on(self):
+        conv = MagicMock(spec=Conversation)
+
+        self.repo.set_active_leaf(conv, 12)
+
+        assert conv.active_leaf_id == 12
+        self.db.commit.assert_called_once()

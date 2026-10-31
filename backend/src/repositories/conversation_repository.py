@@ -17,9 +17,11 @@ class ConversationRepositoryProtocol(Protocol):
     def update_title(self, conv: Conversation, title: str) -> Conversation: ...
     def touch(self, conv: Conversation) -> None: ...
     def delete(self, conv: Conversation) -> None: ...
-    def add_message(self, conversation_id: int, role: str, content: str, meta: dict | None = None) -> Message: ...
+    def add_message(
+        self, conversation_id: int, role: str, content: str, meta: dict | None = None, parent_id: int | None = None
+    ) -> Message: ...
     def get_messages(self, conversation_id: int) -> list[Message]: ...
-    def get_recent_messages(self, conversation_id: int, limit: int = 10) -> list[Message]: ...
+    def set_active_leaf(self, conv: Conversation, message_id: int | None) -> None: ...
 
 
 class ConversationRepository(ConversationRepositoryProtocol):
@@ -82,8 +84,10 @@ class ConversationRepository(ConversationRepositoryProtocol):
         self.db.commit()
 
 
-    def add_message(self, conversation_id: int, role: str, content: str, meta: dict | None = None) -> Message:
-        msg = Message(conversation_id=conversation_id, role=role, content=content, meta=meta)
+    def add_message(
+        self, conversation_id: int, role: str, content: str, meta: dict | None = None, parent_id: int | None = None
+    ) -> Message:
+        msg = Message(conversation_id=conversation_id, role=role, content=content, meta=meta, parent_id=parent_id)
         self.db.add(msg)
         self.db.commit()
         self.db.refresh(msg)
@@ -93,15 +97,10 @@ class ConversationRepository(ConversationRepositoryProtocol):
         return (
             self.db.query(Message)
             .filter(Message.conversation_id == conversation_id)
-            .order_by(Message.created_at.asc())
+            .order_by(Message.id.asc())
             .all()
         )
 
-    def get_recent_messages(self, conversation_id: int, limit: int = 10) -> list[Message]:
-        return (
-            self.db.query(Message)
-            .filter(Message.conversation_id == conversation_id)
-            .order_by(Message.created_at.desc())
-            .limit(limit)
-            .all()[::-1]
-        )
+    def set_active_leaf(self, conv: Conversation, message_id: int | None) -> None:
+        conv.active_leaf_id = message_id
+        self.db.commit()

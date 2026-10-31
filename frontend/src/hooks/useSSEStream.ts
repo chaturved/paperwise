@@ -9,9 +9,22 @@ interface StreamState {
   meta: Meta | null;
   isStreaming: boolean;
   error: string | null;
+  errorDetail: string | null;
 }
 
-const INITIAL: StreamState = { content: "", meta: null, isStreaming: false, error: null };
+const INITIAL: StreamState = { content: "", meta: null, isStreaming: false, error: null, errorDetail: null };
+
+const FAILED = "AI response failed";
+
+/** The reason the server sent with an error event, if it sent one. */
+const errorReason = (data: string): string | null => {
+  try {
+    const message = JSON.parse(data)?.message;
+    return typeof message === "string" && message ? message : null;
+  } catch {
+    return null;
+  }
+};
 
 export function useSSEStream(onDone?: (content: string, meta: Meta | null) => void) {
   const [state, setState] = useState<StreamState>(INITIAL);
@@ -24,7 +37,7 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
       const controller = new AbortController();
       controllerRef.current = controller;
       accumulated.current = { content: "", meta: null };
-      setState({ content: "", meta: null, isStreaming: true, error: null });
+      setState({ content: "", meta: null, isStreaming: true, error: null, errorDetail: null });
 
       try {
         await sseClient(`/v1/conversations/${conversationId}/ask`, {
@@ -44,7 +57,7 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
             if (ev.event === "error") {
               controllerRef.current = null;
               controller.abort();
-              setState((prev) => ({ ...prev, isStreaming: false, error: "AI response failed" }));
+              setState((prev) => ({ ...prev, isStreaming: false, error: FAILED, errorDetail: errorReason(ev.data) }));
               return;
             }
             try {
@@ -66,12 +79,12 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
             controllerRef.current = null;
             controller.abort();
             const rateLimited = err instanceof Error && err.message === "HTTP 429";
-            setState((prev) => ({ ...prev, isStreaming: false, error: rateLimited ? "You're asking too fast. Please wait a moment." : "AI response failed" }));
+            setState((prev) => ({ ...prev, isStreaming: false, error: FAILED, errorDetail: rateLimited ? "You're asking too fast. Please wait a moment." : null }));
           },
         });
       } catch {
         if (controllerRef.current === controller) {
-          setState((prev) => ({ ...prev, isStreaming: false, error: "AI response failed" }));
+          setState((prev) => ({ ...prev, isStreaming: false, error: FAILED, errorDetail: null }));
         }
       } finally {
         if (controllerRef.current === controller) controllerRef.current = null;

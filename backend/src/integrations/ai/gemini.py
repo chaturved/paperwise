@@ -7,12 +7,14 @@ from dataclasses import dataclass
 import httpx
 
 from src.config import settings
+from src.core.exceptions import TooManyRequestsError
 from src.integrations.ai.base import AIProvider
 
 SYSTEM_PROMPT = "You are a helpful assistant."
 TIMEOUT = httpx.Timeout(60.0)
 EMBED_BATCH_SIZE = 100
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+AT_LIMIT_MESSAGE = "The AI service has reached its limit for now. Please try again later. This question was not counted."
 
 
 @dataclass(frozen=True)
@@ -90,6 +92,8 @@ class GeminiProvider(AIProvider):
             for attempt in range(1, policy.attempts + 1):
                 res = await client.post(url, headers=self._headers(), json=body)
                 if res.status_code not in RETRYABLE_STATUS or attempt == policy.attempts:
+                    if res.status_code == 429 and policy is QUICK:
+                        raise TooManyRequestsError(AT_LIMIT_MESSAGE)
                     res.raise_for_status()
                     return res.json()
                 await asyncio.sleep(min(max(self._retry_delay(res, attempt), 1.0), policy.max_wait_seconds))
@@ -124,6 +128,8 @@ class GeminiProvider(AIProvider):
             httpx.AsyncClient(timeout=TIMEOUT) as client,
             client.stream("POST", url, headers=self._headers(), json=body) as res,
         ):
+            if res.status_code == 429:
+                raise TooManyRequestsError(AT_LIMIT_MESSAGE)
             res.raise_for_status()
             async for line in res.aiter_lines():
                 if line.startswith("data:"):

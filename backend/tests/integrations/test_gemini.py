@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from src.integrations.ai.gemini import GeminiProvider
+from src.core.exceptions import TooManyRequestsError
+from src.integrations.ai.gemini import AT_LIMIT_MESSAGE, GeminiProvider
 
 
 def _provider_with(handler):
@@ -97,6 +98,14 @@ class TestGeminiProvider:
         finally:
             patcher.stop()
 
+    async def test_streaming_an_answer_at_the_quota_says_the_service_is_at_its_limit(self):
+        provider, patcher = _provider_with(lambda req: httpx.Response(429, json={"error": "quota"}))
+        try:
+            with pytest.raises(TooManyRequestsError):
+                [t async for t in provider.stream_chat("hello")]
+        finally:
+            patcher.stop()
+
     async def test_stream_chat_yields_tokens_in_order(self):
         sse = "".join(f"data: {json.dumps(_text_payload(t))}\n\n" for t in ["a", "b", "c"])
         provider, patcher = _provider_with(lambda req: httpx.Response(200, text=sse))
@@ -107,11 +116,12 @@ class TestGeminiProvider:
 
         assert tokens == ["a", "b", "c"]
 
-    async def test_http_error_is_raised(self, waits):
+    async def test_a_quota_error_on_an_answer_says_the_service_is_at_its_limit(self, waits):
         provider, patcher = _provider_with(lambda req: httpx.Response(429, json={"error": "quota"}))
         try:
-            with pytest.raises(httpx.HTTPStatusError):
+            with pytest.raises(TooManyRequestsError) as caught:
                 await provider.chat("hello")
+            assert caught.value.message == AT_LIMIT_MESSAGE
         finally:
             patcher.stop()
 
@@ -143,7 +153,7 @@ class TestGeminiProvider:
 
         provider, patcher = _provider_with(handler)
         try:
-            with pytest.raises(httpx.HTTPStatusError):
+            with pytest.raises(TooManyRequestsError):
                 await provider.chat("hello")
         finally:
             patcher.stop()

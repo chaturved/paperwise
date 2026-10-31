@@ -19,12 +19,13 @@ interface Props {
   streaming?: boolean;
   timestamp: string;
   question?: string | null;
+  failed?: boolean;
   onRewrite?: () => void;
 }
 
 const ACTION = "inline-flex h-7 items-center gap-1.5 rounded px-2 text-[13px] text-muted transition hover:bg-ink/[0.06] hover:text-ink";
 
-export function AIMessage({ messageId, content, meta, streaming, timestamp, question, onRewrite }: Props) {
+export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite }: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
   const [feedback, setFeedbackState] = useState<"up" | "down" | null>(null);
 
@@ -68,7 +69,12 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
           )}
         </div>
 
-        {streaming && !content ? (
+        {failed ? (
+          <div role="alert">
+            <p className="text-base leading-[1.7] text-ink/90">{content}</p>
+            {onRewrite && <button type="button" onClick={onRewrite} className="link-underline mt-2 text-[13px] font-medium">Try again</button>}
+          </div>
+        ) : streaming && !content ? (
           <div className="space-y-2.5 py-1">
             {[84, 68, 76].map((w, i) => (
               <div key={i} className="h-[11px] rounded-[3px] shimmer-line" style={{ width: `${w}%`, animationDelay: `${i * 100}ms` }} />
@@ -95,9 +101,9 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
           </div>
         )}
 
-        {!streaming && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} />}
+        {!streaming && !failed && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} />}
 
-        {!streaming && (
+        {!streaming && !failed && (
           <div className="mt-3 flex items-center gap-1">
             <button type="button" onClick={handleCopy} className={ACTION}><Copy size={14} /> Copy</button>
             <button type="button" onClick={handleExport} className={ACTION}><Download size={14} /> Export</button>

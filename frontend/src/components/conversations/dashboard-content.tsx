@@ -73,9 +73,14 @@ function DashboardInner() {
     setSidebarRefresh((v) => v + 1);
   }, []);
 
-  const { content: streamingContent, meta: streamingMeta, isStreaming, error: streamError, send: sendStream, reset: resetStream } = useSSEStream(onStreamDone);
+  const { content: streamingContent, meta: streamingMeta, isStreaming, error: streamError, errorDetail: streamErrorDetail, send: sendStream, reset: resetStream } = useSSEStream(onStreamDone);
 
-  useEffect(() => { if (streamError) toast.error(streamError); }, [streamError]);
+  useEffect(() => {
+    if (!streamError) return;
+    const detail = streamErrorDetail ?? "Something went wrong while answering. Please try again.";
+    toast.error(streamError, { description: detail });
+    setMessages((prev) => [...prev, { id: Date.now() + 2, role: "assistant", content: detail, meta: null, created_at: new Date().toISOString(), failed: true }]);
+  }, [streamError, streamErrorDetail]);
 
   useEffect(() => {
     const id = Number(params.get("conv"));
@@ -223,7 +228,7 @@ function DashboardInner() {
             {loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg, index) =>
               msg.role === "user"
                 ? <UserMessage key={msg.id} content={msg.content} />
-                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} onRewrite={msg.id === lastAssistantId && !isStreaming ? handleRewrite : undefined} />
+                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? handleRewrite : undefined} />
             )}
             {isStreaming && (
               <AIMessage content={streamingContent} meta={streamingMeta} streaming timestamp={new Date().toISOString()} />

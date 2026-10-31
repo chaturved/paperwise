@@ -1,4 +1,5 @@
 import { ArrowRight, FileText, Upload } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 
 interface ComposerProps { file: string; question: string }
 
@@ -43,7 +44,7 @@ export function UploadCard() {
     <div className="px-4 py-7 text-center">
       <Upload size={26} className="mx-auto text-ink/45" strokeWidth={1.5} />
       <h4 className="mb-3.5 mt-2.5 text-[17px] font-medium">Drag and drop your files</h4>
-      <span className="btn-primary !min-h-9 !px-3.5"><Upload size={14} /> Upload</span>
+      <span className={buttonVariants({ variant: "primary", size: "default", className: "min-h-9 px-3.5" })}><Upload size={14} /> Upload</span>
       <small className="mt-3 block text-ink/50">PDF, DOCX, TXT and Markdown.</small>
     </div>
   );

@@ -28,7 +28,7 @@ This is a resume-quality production project. It must feel like a real product an
 - React 19
 - TypeScript 5
 - Tailwind CSS v4
-- Radix UI (Dialog, Dropdown, Tabs)
+- Base UI (`@base-ui/react`: Dialog, Menu, Button) with class-variance-authority, clsx and tailwind-merge
 - React Hook Form + Zod
 - Lucide React
 - react-markdown + remark-gfm + rehype-highlight
@@ -316,7 +316,8 @@ Design system (Harvey-inspired, editorial):
 - **Painted surfaces:** product UI sits on grainy dark backdrops (`paint`, `paint-warm`, `bezel` in `globals.css`). Do not use blurred glow blobs.
 - **Borders:** hairline `border-line`. Inputs use `border-field`.
 - **Radius:** `rounded` (4px) for buttons and inputs on marketing pages, `rounded-lg` (8px) for cards and auth/app inputs.
-- **Buttons:** use `btn-primary`, `btn-secondary`, `btn-quiet`, `btn-light` and `btn-outline-light`; add `btn-lg` for 48px. `btn-danger` and `btn-danger-solid` are for destructive actions only.
+- **Buttons:** use `Button` or `buttonVariants` from `components/ui/button.tsx`. Variants: `primary`, `secondary`, `quiet`, `ghost`, `light`, `outlineLight`, `danger`, `dangerSolid`. Sizes: `xs`, `sm`, `md`, `default`, `lg` (48px), `icon`. Use `buttonVariants` on a `Link` or `a`. `danger` and `dangerSolid` are for destructive actions only.
+- **UI primitives:** `components/ui/` holds only generic, shadcn-style primitives built on Base UI (`Button`, `DropdownMenu`, `Dialog`, `Field`), styled with `cva` and `cn()` from `lib/utils.ts`. Anything tied to the app (theme, status pages) lives elsewhere, such as `components/layout/`.
 - **Forms:** inputs use the `field` class (48px, 4px radius, no leading icons) inside the `Field` component from `components/ui/field.tsx`, which supplies the label, error and hint. Errors and destructive text use `text-danger`, never raw red. Passwords use `PasswordInput` and `PasswordStrength` from `components/auth/`.
 - **Pages:** auth pages sit in `AuthShell` (`components/auth/auth-shell.tsx`), settings pages use `SettingsHeading` and `SettingsSection`, and error and 404 pages use `StatusPage`. A new page of those kinds reuses them instead of building its own layout.
 

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { requestDemo } from "@/lib/api/misc";
 import { rateLimitMessage } from "@/lib/api-error";
+import { Button } from "@/components/ui/button";
 
 const TEAM_SIZES = [
   { value: "solo", label: "Just me" },
@@ -97,9 +98,9 @@ export function DemoRequestForm() {
         <label htmlFor="demo-website">Leave this empty</label>
         <input id="demo-website" tabIndex={-1} autoComplete="off" {...register("website")} />
       </div>
-      <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full disabled:opacity-60 sm:w-auto">
+      <Button type="submit" disabled={isSubmitting} size="lg" className="w-full disabled:opacity-60 sm:w-auto">
         {isSubmitting ? "Sending…" : "Request a demo"}
-      </button>
+      </Button>
     </form>
   );
 }

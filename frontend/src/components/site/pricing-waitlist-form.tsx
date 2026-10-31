@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { joinWaitlist } from "@/lib/api/misc";
+import { Button } from "@/components/ui/button";
 
 const schema = z.object({ email: z.email("Enter a valid email address") });
 type WaitlistFormData = z.infer<typeof schema>;
@@ -41,9 +42,9 @@ export function PricingWaitlistForm() {
           {...register("email")}
           className="min-h-12 min-w-0 flex-1 rounded border border-white/60 bg-transparent px-4 text-base text-white outline-none placeholder:text-white/55 focus:border-white disabled:opacity-60"
         />
-        <button type="submit" disabled={isSubmitting || joined} className="btn-light disabled:opacity-60">
+        <Button type="submit" disabled={isSubmitting || joined} variant="light" size="lg" className="disabled:opacity-60">
           {joined ? "You're on the list" : isSubmitting ? "Joining…" : "Notify me"}
-        </button>
+        </Button>
       </div>
       {errors.email && <p id="waitlist-email-error" role="alert" className="mt-2 text-xs font-medium text-red-300">{errors.email.message}</p>}
     </form>

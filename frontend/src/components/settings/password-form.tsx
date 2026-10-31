@@ -8,6 +8,7 @@ import { changePassword } from "@/lib/api/users";
 import { Field } from "@/components/ui/field";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PasswordStrength } from "@/components/auth/password-strength";
+import { Button } from "@/components/ui/button";
 
 const schema = z.object({
   current_password: z.string().min(1, "Enter your current password"),
@@ -45,9 +46,9 @@ export function PasswordForm() {
       <Field id="confirm" label="Confirm new password" error={errors.confirm?.message}>
         <PasswordInput id="confirm" autoComplete="new-password" aria-invalid={Boolean(errors.confirm)} {...register("confirm")} />
       </Field>
-      <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg disabled:opacity-60">
+      <Button type="submit" disabled={isSubmitting} size="lg" className="disabled:opacity-60">
         {isSubmitting ? "Updating…" : "Update password"}
-      </button>
+      </Button>
     </form>
   );
 }

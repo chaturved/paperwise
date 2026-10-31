@@ -1,6 +1,7 @@
 import { ArrowRight, Check, FileText } from "lucide-react";
 import Link from "next/link";
 import { AuthActionLink } from "@/components/site/auth-action-link";
+import { buttonVariants } from "@/components/ui/button";
 
 const AUDIENCES = [
   {
@@ -37,7 +38,7 @@ export function AudienceTiles() {
         >
           <h3 className="pr-6 font-display text-[30px] font-normal leading-[1.05] tracking-[-0.01em] md:pr-7">{audience.title}</h3>
           <p className="mb-5 mt-3 max-w-[30ch] pr-6 text-[15.5px] leading-[1.35] text-white/85 md:pr-7">{audience.text}</p>
-          <span className="btn-outline-light self-start">Explore <ArrowRight size={15} /></span>
+          <span className={buttonVariants({ variant: "outlineLight", size: "md", className: "self-start" })}>Explore <ArrowRight size={15} /></span>
           <div className="ml-4 mt-auto rounded-tl-lg bg-surface p-4 text-ink shadow-[0_-4px_30px_rgba(0,0,0,0.18)]">
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-ink/45">Typical documents</p>
             {audience.files.map(([name, ext]) => (
@@ -77,7 +78,7 @@ export function PlansTeaser() {
           <p className="mt-3 max-w-[36ch] text-base leading-[1.35] text-white/85">Everything you need to try Paperwise on your own documents. No payment details.</p>
           <Points light items={["Ask questions of your documents", "Answers with numbered sources", "A library to keep your files"]} />
           <div className="mt-auto pt-8">
-            <AuthActionLink signedOutLabel="Get started free" signedInLabel="Open your workspace" arrow="right" className="btn-light" />
+            <AuthActionLink signedOutLabel="Get started free" signedInLabel="Open your workspace" arrow="right" className={buttonVariants({ variant: "light", size: "lg" })} />
           </div>
         </div>
         <div className="flex min-h-[340px] flex-col rounded-lg border border-line bg-surface p-7 md:p-9">
@@ -86,7 +87,7 @@ export function PlansTeaser() {
           <p className="mt-3 max-w-[36ch] text-base leading-[1.35] text-ink/65">For people who read more than a few documents. More room, larger files and your full history.</p>
           <Points items={["More documents and questions", "Larger files", "Full conversation history"]} />
           <div className="mt-auto pt-8">
-            <Link href="/pricing" className="btn-secondary">Join the waitlist</Link>
+            <Link href="/pricing" className={buttonVariants({ variant: "secondary", size: "default" })}>Join the waitlist</Link>
           </div>
         </div>
       </div>

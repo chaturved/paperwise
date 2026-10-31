@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { rateLimitMessage } from "@/lib/api-error";
 import { AuthHeading } from "./auth-shell";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   email: string;
@@ -36,12 +37,12 @@ export function CheckEmail({ email, lead, note, resend, onChangeEmail }: Props) 
         {email && <p className="mt-1 text-base font-medium text-ink">{email}</p>}
       </AuthHeading>
       <p className="mb-8 text-sm leading-relaxed text-muted">{note}</p>
-      <button type="button" onClick={handleResend} disabled={resending || !email} className="btn-secondary btn-lg w-full disabled:opacity-60">
+      <Button type="button" onClick={handleResend} disabled={resending || !email} variant="secondary" size="lg" className="w-full disabled:opacity-60">
         {resending ? "Sending…" : "Resend the email"}
-      </button>
+      </Button>
       <p className="mt-5 text-sm">
         {onChangeEmail
-          ? <button type="button" onClick={onChangeEmail} className="link-underline">Use a different email</button>
+          ? <Button type="button" onClick={onChangeEmail} variant="link" size="inline">Use a different email</Button>
           : <Link href="/login" className="link-underline">Back to sign in</Link>}
       </p>
     </div>

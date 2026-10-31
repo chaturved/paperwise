@@ -12,6 +12,7 @@ import { Field } from "@/components/ui/field";
 import { PasswordInput } from "./password-input";
 import { PasswordStrength } from "./password-strength";
 import { GoogleButton, OrDivider } from "./google-button";
+import { Button } from "@/components/ui/button";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Name must be at least 2 characters"),
@@ -48,9 +49,9 @@ export function SignUpDetailsForm({ email }: { email: string }) {
           <PasswordInput id="password" autoComplete="new-password" aria-invalid={Boolean(errors.password)} {...register("password")} />
           <PasswordStrength password={password} />
         </Field>
-        <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full disabled:opacity-60">
+        <Button type="submit" disabled={isSubmitting} size="lg" className="w-full disabled:opacity-60">
           {isSubmitting ? "Creating your account…" : "Create account"}
-        </button>
+        </Button>
       </form>
       <OrDivider />
       <GoogleButton />

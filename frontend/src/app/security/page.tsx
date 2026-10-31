@@ -5,6 +5,7 @@ import { AuthActionLink } from "@/components/site/auth-action-link";
 import { DetailRows, IconColumns, PageHero, SectionHead } from "@/components/site/page-sections";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Security — Paperwise",
@@ -32,7 +33,7 @@ export default function SecurityPage() {
       <main>
         <PageHero crumbs={[{ label: "Legal", href: "/legal" }, { label: "Security" }]} title="Your documents stay yours">
           <p>Straight answers to what people ask before they upload a contract or a client file.</p>
-          <AuthActionLink signedOutLabel="Get started" signedInLabel="Open your workspace" arrow="right" className="btn-primary btn-lg" />
+          <AuthActionLink signedOutLabel="Get started" signedInLabel="Open your workspace" arrow="right" className={buttonVariants({ variant: "primary", size: "lg" })} />
         </PageHero>
 
         <div className="page-w pb-24 pt-14">
@@ -45,9 +46,9 @@ export default function SecurityPage() {
         <div className="page-w pb-24 pt-24">
           <SectionHead title="Still have a question?" description="Email us and a person will answer. The privacy policy and terms cover the details." />
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href="mailto:hello@paperwise.ai" className="btn-primary btn-lg">Email us</a>
-            <Link href="/legal/ai" className="btn-secondary btn-lg">AI and your documents</Link>
-            <Link href="/legal" className="btn-secondary btn-lg">All legal documents</Link>
+            <a href="mailto:hello@paperwise.ai" className={buttonVariants({ variant: "primary", size: "lg" })}>Email us</a>
+            <Link href="/legal/ai" className={buttonVariants({ variant: "secondary", size: "lg" })}>AI and your documents</Link>
+            <Link href="/legal" className={buttonVariants({ variant: "secondary", size: "lg" })}>All legal documents</Link>
           </div>
         </div>
       </main>

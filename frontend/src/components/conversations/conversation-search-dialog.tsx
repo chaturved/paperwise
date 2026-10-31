@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { MessageSquare, Search, X } from "lucide-react";
 import { useConversationSearch } from "@/hooks/useConversationSearch";
 import type { Conversation, ConversationSearchResult } from "@/types";
@@ -43,16 +43,14 @@ export function ConversationSearchDialog({ open, onOpenChange, recentConversatio
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/45" />
-        <Dialog.Content className="fixed left-1/2 top-[12vh] z-[101] flex max-h-[70vh] w-[calc(100vw-2rem)] max-w-[620px] -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-ink/10 bg-workspace text-ink shadow-2xl focus:outline-none sm:top-[18vh]">
-          <Dialog.Title className="sr-only">Search chats</Dialog.Title>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="left-1/2 top-[12vh] flex max-h-[70vh] w-[calc(100vw-2rem)] max-w-[620px] -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-ink/10 bg-workspace text-ink shadow-2xl sm:top-[18vh]">
+          <DialogTitle className="sr-only">Search chats</DialogTitle>
           <div className="flex items-center gap-3 border-b border-ink/10 px-4">
             <Search size={19} className="shrink-0 text-ink/45" />
             <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search chats and messages" aria-label="Search chats and messages"
               className="h-14 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink/45" />
-            <Dialog.Close className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink" aria-label="Close search"><X size={17} /></Dialog.Close>
+            <DialogClose className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink" aria-label="Close search"><X size={17} /></DialogClose>
           </div>
           <div className="thin-scroll min-h-24 overflow-y-auto p-2">
             <p className="px-3 pb-2 pt-2 text-xs font-medium text-ink/45">{searching ? "Search results" : "Recent chats"}</p>
@@ -71,8 +69,7 @@ export function ConversationSearchDialog({ open, onOpenChange, recentConversatio
             ))}
           </div>
           <div className="border-t border-ink/10 px-4 py-2 text-[11px] text-ink/40">Press Esc to close</div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -10,6 +10,7 @@ import { AuthHeading } from "./auth-shell";
 import { EmailForm } from "./email-form";
 import { PasswordlessSignIn } from "./passwordless-sign-in";
 import { SignInPasswordForm } from "./sign-in-password-form";
+import { Button } from "@/components/ui/button";
 
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_link: "This sign-in link has expired or already been used.",
@@ -59,7 +60,7 @@ export function SignInFlow() {
     <>
       <AuthHeading title="Welcome back">
         Signing in as <span className="font-medium text-ink">{account.email}</span>{" "}
-        <button type="button" onClick={() => setAccount(null)} className="link-underline hover:text-ink">Change</button>
+        <Button type="button" onClick={() => setAccount(null)} variant="link" size="inline" className="hover:text-ink">Change</Button>
       </AuthHeading>
       {account.hasPassword ? <SignInPasswordForm email={account.email} /> : <PasswordlessSignIn email={account.email} />}
     </>

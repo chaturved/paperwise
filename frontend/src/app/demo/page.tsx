@@ -4,6 +4,7 @@ import { DemoRequestForm } from "@/components/site/demo-request-form";
 import { FeatureRows, PageHero } from "@/components/site/page-sections";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Request a demo — Paperwise",
@@ -31,7 +32,7 @@ export default function DemoPage() {
             ]} />
             <div className="mt-8 border-t border-line pt-6">
               <p className="mb-4 text-[15.5px] text-ink/60">Rather try it yourself first?</p>
-              <AuthActionLink signedOutLabel="Upload a file for free" signedInLabel="Open your workspace" arrow="right" className="btn-secondary" />
+              <AuthActionLink signedOutLabel="Upload a file for free" signedInLabel="Open your workspace" arrow="right" className={buttonVariants({ variant: "secondary", size: "default" })} />
             </div>
           </div>
         </div>

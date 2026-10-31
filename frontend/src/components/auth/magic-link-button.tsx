@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { sendMagicLink } from "@/lib/api/auth";
 import { rateLimitMessage } from "@/lib/api-error";
+import { Button } from "@/components/ui/button";
 
 export function MagicLinkButton({ email }: { email: string }) {
   const router = useRouter();
@@ -22,8 +23,8 @@ export function MagicLinkButton({ email }: { email: string }) {
   };
 
   return (
-    <button type="button" onClick={send} disabled={sending} className="btn-quiet w-full disabled:opacity-60">
+    <Button type="button" onClick={send} disabled={sending} variant="quiet" size="lg" className="w-full disabled:opacity-60">
       {sending ? "Sending…" : "Email me a sign-in link"}
-    </button>
+    </Button>
   );
 }

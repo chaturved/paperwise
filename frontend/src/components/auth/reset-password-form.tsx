@@ -12,6 +12,7 @@ import { Field } from "@/components/ui/field";
 import { AuthHeading } from "./auth-shell";
 import { PasswordInput } from "./password-input";
 import { PasswordStrength } from "./password-strength";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 const schema = z.object({
   new_password: z.string().min(8, "Password must be at least 8 characters"),
@@ -32,7 +33,7 @@ export function ResetPasswordForm() {
     return (
       <>
         <AuthHeading title="This link isn't valid">The reset link is missing or has expired. Request a new one to continue.</AuthHeading>
-        <Link href="/forgot-password" className="btn-primary btn-lg w-full">Request a new link</Link>
+        <Link href="/forgot-password" className={buttonVariants({ variant: "primary", size: "lg", className: "w-full" })}>Request a new link</Link>
       </>
     );
   }
@@ -58,9 +59,9 @@ export function ResetPasswordForm() {
         <Field id="confirm" label="Confirm new password" error={errors.confirm?.message}>
           <PasswordInput id="confirm" autoComplete="new-password" aria-invalid={Boolean(errors.confirm)} {...register("confirm")} />
         </Field>
-        <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full disabled:opacity-60">
+        <Button type="submit" disabled={isSubmitting} size="lg" className="w-full disabled:opacity-60">
           {isSubmitting ? "Updating…" : "Update password"}
-        </button>
+        </Button>
       </form>
     </>
   );

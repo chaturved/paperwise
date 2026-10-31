@@ -3,6 +3,7 @@ import { sourceNumber } from "@/lib/citations";
 import type { Source } from "@/types";
 import { CitationBadge } from "./citation-chip";
 import { SourceViewer } from "./source-viewer";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   messageKey: string;
@@ -42,9 +43,9 @@ export function SourcesPanel({ messageKey, sources, expanded, onToggle }: Props)
               <div className="flex items-center justify-between gap-3 px-4 pb-3.5">
                 <span className="truncate font-mono text-xs text-muted">{source.name}</span>
                 {canView(source) && (
-                  <button type="button" onClick={() => setViewing(source)} className="link-underline shrink-0 text-[13px] font-medium">
+                  <Button type="button" onClick={() => setViewing(source)} variant="link" size="inline" className="shrink-0 text-[13px] font-medium">
                     Open page
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

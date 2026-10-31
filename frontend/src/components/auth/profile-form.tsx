@@ -12,6 +12,7 @@ import { deleteAccount, updateProfile } from "@/lib/api/users";
 import { Field } from "@/components/ui/field";
 import { AppearanceSetting } from "@/components/settings/appearance-setting";
 import { SettingsHeading, SettingsSection } from "@/components/settings/settings-section";
+import { Button } from "@/components/ui/button";
 
 const schema = z.object({ full_name: z.string().trim().min(2, "Name must be at least 2 characters") });
 type FormData = z.infer<typeof schema>;
@@ -66,9 +67,9 @@ export function ProfileForm() {
             <input id="full_name" aria-invalid={Boolean(errors.full_name)} {...register("full_name")} className="field" />
             {errors.full_name && <p role="alert" className="field-error">{errors.full_name.message}</p>}
           </div>
-          <button type="submit" disabled={isSubmitting || !isDirty} className="btn-primary btn-lg disabled:opacity-40">
+          <Button type="submit" disabled={isSubmitting || !isDirty} size="lg" className="disabled:opacity-40">
             {isSubmitting ? "Saving…" : "Save"}
-          </button>
+          </Button>
         </form>
       </SettingsSection>
 
@@ -85,17 +86,17 @@ export function ProfileForm() {
 
       <SettingsSection title="Delete account" description="Removes your documents, conversations and data. This cannot be undone.">
         {!showDelete ? (
-          <button type="button" onClick={() => setShowDelete(true)} className="btn-danger">Delete my account</button>
+          <Button type="button" onClick={() => setShowDelete(true)} variant="danger">Delete my account</Button>
         ) : (
           <div className="max-w-sm space-y-3">
             <Field id="delete-confirm" label="Type DELETE to confirm">
               <input id="delete-confirm" value={deleteInput} onChange={(event) => setDeleteInput(event.target.value)} placeholder="DELETE" autoComplete="off" className="field" />
             </Field>
             <div className="flex gap-2">
-              <button type="button" onClick={() => { setShowDelete(false); setDeleteInput(""); }} className="btn-secondary">Cancel</button>
-              <button type="button" onClick={handleDelete} disabled={deleteInput !== "DELETE" || deleting} className="btn-danger-solid disabled:opacity-40">
+              <Button type="button" onClick={() => { setShowDelete(false); setDeleteInput(""); }} variant="secondary">Cancel</Button>
+              <Button type="button" onClick={handleDelete} disabled={deleteInput !== "DELETE" || deleting} variant="dangerSolid" className="disabled:opacity-40">
                 {deleting ? "Deleting…" : "Delete my account"}
-              </button>
+              </Button>
             </div>
           </div>
         )}

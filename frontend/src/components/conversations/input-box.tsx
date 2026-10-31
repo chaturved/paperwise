@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUp, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { LibraryDoc } from "@/types";
 import { AttachMenu } from "./attach-menu";
 
@@ -52,16 +53,15 @@ export function InputBox({ value, onChange, onSend, isStreaming, isUploading, on
           {scope && (
             <span className="inline-flex h-8 min-w-0 items-center gap-1.5 rounded border border-line bg-surface pl-3 pr-2 text-[13px] text-ink/75">
               <span className="truncate">{scope}</span>
-              <button type="button" onClick={() => onSelectDoc(null)} aria-label="Ask across all documents" className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink/55 hover:text-ink">
+              <Button variant="ghost" size="icon" onClick={() => onSelectDoc(null)} aria-label="Ask across all documents" className="h-5 w-5 shrink-0 text-ink/55 hover:bg-transparent hover:text-ink">
                 <X size={13} strokeWidth={2} />
-              </button>
+              </Button>
             </span>
           )}
         </div>
-        <button type="button" onClick={onSend} disabled={isStreaming || !value.trim()} aria-label="Send question"
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded bg-ink px-3 text-[13px] font-medium text-bg transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/40">
+        <Button size="sm" onClick={onSend} disabled={isStreaming || !value.trim()} aria-label="Send question" className="shrink-0 gap-1.5 disabled:border-transparent disabled:bg-ink/10 disabled:text-ink/40">
           {isStreaming ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg/30 border-t-bg" /> : <>Ask <ArrowUp size={16} strokeWidth={2.2} /></>}
-        </button>
+        </Button>
       </div>
     </div>
   );

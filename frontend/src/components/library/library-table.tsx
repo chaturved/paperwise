@@ -7,6 +7,7 @@ import { getDocumentFile } from "@/lib/api/documents";
 import { apiErrorMessage } from "@/lib/api-error";
 import { formatBytes, formatDate } from "@/lib/format";
 import type { LibraryDoc } from "@/types";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   documents: LibraryDoc[];
@@ -56,8 +57,8 @@ function RowActions({ document, onRetry, onDelete }: { document: LibraryDoc; onR
     return (
       <div className="flex items-center justify-end gap-3 text-sm">
         <span className="text-muted">Delete this file?</span>
-        <button type="button" onClick={() => run(() => onDelete(document.id), "Could not delete this file.")} disabled={busy} className="link-underline font-medium text-danger">Delete</button>
-        <button type="button" onClick={() => setConfirming(false)} className="link-underline">Cancel</button>
+        <Button type="button" onClick={() => run(() => onDelete(document.id), "Could not delete this file.")} disabled={busy} variant="link" size="inline" className="font-medium text-danger">Delete</Button>
+        <Button type="button" onClick={() => setConfirming(false)} variant="link" size="inline">Cancel</Button>
       </div>
     );
   }
@@ -65,9 +66,9 @@ function RowActions({ document, onRetry, onDelete }: { document: LibraryDoc; onR
   return (
     <div className="flex items-center justify-end gap-4 text-sm">
       {document.status === "ready" && <Link href={`/dashboard?doc=${document.id}`} className="link-underline font-medium">Ask</Link>}
-      {document.status === "ready" && <button type="button" onClick={open} disabled={busy} className="link-underline disabled:opacity-50">Open</button>}
-      {document.status === "failed" && <button type="button" onClick={() => run(() => onRetry(document.id), "Retry failed")} disabled={busy} className="link-underline font-medium disabled:opacity-50">Try again</button>}
-      <button type="button" onClick={() => setConfirming(true)} aria-label={`Delete ${document.name}`} className="link-underline text-muted hover:text-danger">Delete</button>
+      {document.status === "ready" && <Button type="button" onClick={open} disabled={busy} variant="link" size="inline" className="disabled:opacity-50">Open</Button>}
+      {document.status === "failed" && <Button type="button" onClick={() => run(() => onRetry(document.id), "Retry failed")} disabled={busy} variant="link" size="inline" className="font-medium disabled:opacity-50">Try again</Button>}
+      <Button type="button" onClick={() => setConfirming(true)} aria-label={`Delete ${document.name}`} variant="link" size="inline" className="text-muted hover:text-danger">Delete</Button>
     </div>
   );
 }

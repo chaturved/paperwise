@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { StatusPage } from "@/components/ui/status-page";
+import { StatusPage } from "@/components/layout/status-page";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -8,8 +9,8 @@ export default function NotFound() {
       title="This page could not be found."
       actions={
         <>
-          <Link href="/dashboard" className="btn-primary btn-lg px-6">Go to your workspace</Link>
-          <Link href="/" className="btn-secondary btn-lg px-6">Back to home</Link>
+          <Link href="/dashboard" className={buttonVariants({ variant: "primary", size: "lg", className: "px-6" })}>Go to your workspace</Link>
+          <Link href="/" className={buttonVariants({ variant: "secondary", size: "lg", className: "px-6" })}>Back to home</Link>
         </>
       }
     >

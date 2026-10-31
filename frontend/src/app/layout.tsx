@@ -2,7 +2,7 @@ import "../styles/globals.css";
 import { Geist_Mono, Instrument_Sans, Newsreader } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { ThemeToaster } from "@/components/ui/theme-toaster";
+import { ThemeToaster } from "@/components/layout/theme-toaster";
 
 const bodyFont = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
 const displayFont = Newsreader({ subsets: ["latin"], weight: ["400", "500"], style: ["normal", "italic"], variable: "--font-newsreader" });

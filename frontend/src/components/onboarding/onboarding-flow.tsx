@@ -10,7 +10,8 @@ import { completeOnboarding } from "@/lib/api/users";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
 import { useLibrary } from "@/hooks/useLibrary";
 import { apiErrorMessage } from "@/lib/api-error";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { Button } from "@/components/ui/button";
 
 const STEPS = ["Welcome", "Upload", "Ask"];
 
@@ -87,7 +88,7 @@ export function OnboardingFlow() {
       <header className="flex items-center justify-between">
         <Link href="/" className="font-display text-[26px] tracking-[-0.0125em]">Paperwise</Link>
         <div className="flex items-center gap-4">
-          <button type="button" onClick={() => finish("/dashboard")} className="link-underline text-sm text-muted hover:text-ink">Skip for now</button>
+          <Button type="button" onClick={() => finish("/dashboard")} variant="link" size="inline" className="text-sm text-muted hover:text-ink">Skip for now</Button>
           <ThemeToggle />
         </div>
       </header>
@@ -115,7 +116,7 @@ export function OnboardingFlow() {
                   </li>
                 ))}
               </ol>
-              <button type="button" onClick={() => setStep(2)} className="btn-primary btn-lg w-full">Get started</button>
+              <Button type="button" onClick={() => setStep(2)} size="lg" className="w-full">Get started</Button>
             </>
           )}
 
@@ -138,7 +139,7 @@ export function OnboardingFlow() {
                   </div>
                   {uploadedDoc.status === "ready" && <Check size={20} strokeWidth={2.2} className="shrink-0" />}
                   {failed && (
-                    <button type="button" onClick={() => retry(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Retry failed")))} className="link-underline shrink-0 text-sm font-medium">Try again</button>
+                    <Button type="button" onClick={() => retry(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Retry failed")))} variant="link" size="inline" className="shrink-0 text-sm font-medium">Try again</Button>
                   )}
                 </div>
               ) : (
@@ -156,7 +157,7 @@ export function OnboardingFlow() {
               {uploadedDoc && (
                 <p className="mb-8 text-sm text-muted">
                   Wrong file?{" "}
-                  <button type="button" onClick={() => remove(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Couldn't remove the file")))} className="link-underline font-medium text-ink">Use a different file</button>
+                  <Button type="button" onClick={() => remove(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Couldn't remove the file")))} variant="link" size="inline" className="font-medium text-ink">Use a different file</Button>
                 </p>
               )}
               {!uploadedDoc && <div className="mb-8" />}
@@ -164,8 +165,8 @@ export function OnboardingFlow() {
               <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden" aria-label="Choose a document" onChange={handleFileChange} />
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep(1)} className="btn-secondary btn-lg px-6">Back</button>
-                <button type="button" onClick={() => setStep(3)} disabled={uploadedDoc?.status !== "ready"} className="btn-primary btn-lg flex-1 disabled:opacity-40">Continue</button>
+                <Button type="button" onClick={() => setStep(1)} variant="secondary" size="lg" className="px-6">Back</Button>
+                <Button type="button" onClick={() => setStep(3)} disabled={uploadedDoc?.status !== "ready"} size="lg" className="flex-1 disabled:opacity-40">Continue</Button>
               </div>
             </>
           )}
@@ -196,8 +197,8 @@ export function OnboardingFlow() {
                 className="field mb-7"
               />
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep(2)} className="btn-secondary btn-lg px-6">Back</button>
-                <button type="button" onClick={startConversation} className="btn-primary btn-lg flex-1">Start conversation</button>
+                <Button type="button" onClick={() => setStep(2)} variant="secondary" size="lg" className="px-6">Back</Button>
+                <Button type="button" onClick={startConversation} size="lg" className="flex-1">Start conversation</Button>
               </div>
             </>
           )}

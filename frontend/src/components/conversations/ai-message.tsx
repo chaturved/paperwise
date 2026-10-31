@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { setFeedback } from "@/lib/api/analytics";
 import { CITATION_HREF_PREFIX, citedSources, linkCitations } from "@/lib/citations";
 import { answerToMarkdown, downloadText } from "@/lib/export-answer";
+import { Button } from "@/components/ui/button";
 import type { Meta } from "@/types";
 import { CitationChip } from "./citation-chip";
 import { SourcesPanel, sourceElementId } from "./sources-panel";
@@ -22,8 +23,6 @@ interface Props {
   failed?: boolean;
   onRewrite?: () => void;
 }
-
-const ACTION = "inline-flex h-7 items-center gap-1.5 rounded px-2 text-[13px] text-muted transition hover:bg-ink/[0.06] hover:text-ink";
 
 export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite }: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
@@ -72,7 +71,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
         {failed ? (
           <div role="alert">
             <p className="text-base leading-[1.7] text-ink/90">{content}</p>
-            {onRewrite && <button type="button" onClick={onRewrite} className="link-underline mt-2 text-[13px] font-medium">Try again</button>}
+            {onRewrite && <Button type="button" onClick={onRewrite} variant="link" size="inline" className="mt-2 text-[13px] font-medium">Try again</Button>}
           </div>
         ) : streaming && !content ? (
           <div className="space-y-2.5 py-1">
@@ -105,12 +104,12 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
 
         {!streaming && !failed && (
           <div className="mt-3 flex items-center gap-1">
-            <button type="button" onClick={handleCopy} className={ACTION}><Copy size={14} /> Copy</button>
-            <button type="button" onClick={handleExport} className={ACTION}><Download size={14} /> Export</button>
-            {onRewrite && <button type="button" onClick={onRewrite} className={ACTION}><RefreshCw size={14} /> Rewrite</button>}
+            <Button variant="ghost" size="xs" onClick={handleCopy}><Copy size={14} /> Copy</Button>
+            <Button variant="ghost" size="xs" onClick={handleExport}><Download size={14} /> Export</Button>
+            {onRewrite && <Button variant="ghost" size="xs" onClick={onRewrite}><RefreshCw size={14} /> Rewrite</Button>}
             <span className="flex-1" />
-            <button type="button" onClick={() => handleFeedback("up")} aria-pressed={feedback === "up"} aria-label="Helpful" className={`${ACTION} ${feedback === "up" ? "text-ink" : ""}`}><ThumbsUp size={14} fill={feedback === "up" ? "currentColor" : "none"} /></button>
-            <button type="button" onClick={() => handleFeedback("down")} aria-pressed={feedback === "down"} aria-label="Not helpful" className={`${ACTION} ${feedback === "down" ? "text-ink" : ""}`}><ThumbsDown size={14} fill={feedback === "down" ? "currentColor" : "none"} /></button>
+            <Button variant="ghost" size="xs" onClick={() => handleFeedback("up")} aria-pressed={feedback === "up"} aria-label="Helpful" className={feedback === "up" ? "text-ink" : ""}><ThumbsUp size={14} fill={feedback === "up" ? "currentColor" : "none"} /></Button>
+            <Button variant="ghost" size="xs" onClick={() => handleFeedback("down")} aria-pressed={feedback === "down"} aria-label="Not helpful" className={feedback === "down" ? "text-ink" : ""}><ThumbsDown size={14} fill={feedback === "down" ? "currentColor" : "none"} /></Button>
           </div>
         )}
       </div>

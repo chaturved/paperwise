@@ -14,6 +14,7 @@ import { Field } from "@/components/ui/field";
 import { PasswordInput } from "./password-input";
 import { GoogleButton, OrDivider } from "./google-button";
 import { MagicLinkButton } from "./magic-link-button";
+import { Button } from "@/components/ui/button";
 
 const schema = z.object({ password: z.string().min(1, "Enter your password") });
 type FormData = z.infer<typeof schema>;
@@ -49,9 +50,9 @@ export function SignInPasswordForm({ email }: { email: string }) {
         >
           <PasswordInput id="password" autoComplete="current-password" autoFocus aria-invalid={Boolean(errors.password)} {...register("password")} />
         </Field>
-        <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full disabled:opacity-60">
+        <Button type="submit" disabled={isSubmitting} size="lg" className="w-full disabled:opacity-60">
           {isSubmitting ? "Signing in…" : "Sign in"}
-        </button>
+        </Button>
       </form>
 
       <OrDivider />

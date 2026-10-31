@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 
 interface Crumb { label: string; href?: string }
 
@@ -88,7 +89,7 @@ export function DetailRows({ title, text, cta, rows }: { title: string; text: st
         <div>
           <h2 className="max-w-[14ch] text-[32px] font-medium leading-[1.1] tracking-[-0.01em]">{title}</h2>
           <p className="mb-7 mt-5 max-w-[26ch] text-xl leading-[1.3] text-[#cfccc5]">{text}</p>
-          <Link href={cta.href} className="btn-outline-light">{cta.label}</Link>
+          <Link href={cta.href} className={buttonVariants({ variant: "outlineLight", size: "md" })}>{cta.label}</Link>
         </div>
         <div className="border-b border-white/15">
           {rows.map(({ icon: Icon, label, detail }) => (
@@ -112,7 +113,7 @@ export function PaintedCard({ title, text, cta, tone = "paint", children }: { ti
     <div className={`paint ${tone === "warm" ? "paint-warm" : ""} flex min-h-[600px] flex-col rounded-lg px-5 pt-6 text-white md:px-8 md:pt-8`}>
       <h3 className="font-display text-[32px] font-normal tracking-[-0.01em]">{title}</h3>
       <p className="mb-5 mt-3 max-w-[34ch] text-base leading-[1.3] text-white/85">{text}</p>
-      <Link href={cta.href} className="btn-outline-light self-start">{cta.label}</Link>
+      <Link href={cta.href} className={buttonVariants({ variant: "outlineLight", size: "md", className: "self-start" })}>{cta.label}</Link>
       <div className="mt-auto ml-6 rounded-tl-lg bg-surface p-5 text-ink shadow-[0_-4px_30px_rgba(0,0,0,0.18)] md:ml-14">{children}</div>
     </div>
   );

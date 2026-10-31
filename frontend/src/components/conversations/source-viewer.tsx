@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { PdfPageView } from "@/components/pdf/pdf-page-view";
 import { useDocumentFileUrl } from "@/hooks/useDocumentFileUrl";
@@ -14,17 +14,14 @@ interface Props {
 
 export function SourceViewer({ source, onClose }: Props) {
   return (
-    <Dialog.Root open={source !== null} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/45" />
-        <Dialog.Content
-          aria-describedby={undefined}
-          className="fixed left-1/2 top-[4vh] z-[101] flex max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-[860px] -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-ink/10 bg-workspace text-ink shadow-2xl focus:outline-none"
-        >
-          {source && <Viewer key={`${source.doc_id}-${source.page}`} source={source} />}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <Dialog open={source !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        aria-describedby={undefined}
+        className="left-1/2 top-[4vh] flex max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-[860px] -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-ink/10 bg-workspace text-ink shadow-2xl "
+      >
+        {source && <Viewer key={`${source.doc_id}-${source.page}`} source={source} />}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -36,7 +33,7 @@ function Viewer({ source }: { source: Source }) {
   return (
     <>
       <div className="flex items-center gap-3 border-b border-ink/10 px-4 py-3">
-        <Dialog.Title className="min-w-0 flex-1 truncate text-[13px] font-medium">{source.name}</Dialog.Title>
+        <DialogTitle className="min-w-0 flex-1 truncate text-[13px] font-medium">{source.name}</DialogTitle>
         <div className="flex items-center gap-1 text-[12px] tabular-nums text-ink/60">
           <button
             type="button"
@@ -58,9 +55,9 @@ function Viewer({ source }: { source: Source }) {
             <ChevronRight size={16} />
           </button>
         </div>
-        <Dialog.Close aria-label="Close document" className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink">
+        <DialogClose aria-label="Close document" className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink">
           <X size={17} />
-        </Dialog.Close>
+        </DialogClose>
       </div>
       <div className="thin-scroll min-h-0 flex-1 overflow-y-auto bg-ink/[0.04] p-3">
         {error && <p className="p-6 text-sm text-ink/60">{error}</p>}

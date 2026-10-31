@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SettingsHeading, SettingsSection } from "@/components/settings/settings-section";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { Button } from "@/components/ui/button";
 
 type View = "overview" | "analytics";
 
@@ -91,7 +92,7 @@ export function AnalyticsContent() {
 
       {error && (
         <div role="alert" className="mb-8 flex items-center justify-between gap-4 rounded-lg border border-danger px-4 py-3 text-sm text-danger">
-          <span>{error}</span><button type="button" onClick={retry} className="link-underline font-semibold">Retry</button>
+          <span>{error}</span><Button type="button" onClick={retry} variant="link" size="inline" className="font-semibold">Retry</Button>
         </div>
       )}
 

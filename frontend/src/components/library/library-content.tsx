@@ -7,6 +7,7 @@ import { useAccountUsage } from "@/hooks/useAccountUsage";
 import { useAttachDocuments } from "@/hooks/useAttachDocuments";
 import { useLibrary } from "@/hooks/useLibrary";
 import { AddDocumentButton } from "@/components/conversations/add-document-button";
+import { Button } from "@/components/ui/button";
 import type { DocumentStatus } from "@/types";
 import { LibraryTable } from "./library-table";
 
@@ -126,8 +127,8 @@ export function LibraryContent() {
       {selected.size > 0 && (
         <div role="region" aria-label="Selected documents" className="absolute bottom-7 left-1/2 flex -translate-x-1/2 items-center gap-4 rounded-lg bg-ink py-2 pl-4 pr-2 text-[13px] text-bg shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
           <span>{selected.size} selected</span>
-          <button type="button" onClick={askAcrossSelected} className="h-8 rounded bg-bg px-3 font-medium text-ink transition hover:opacity-85">Ask across selected</button>
-          <button type="button" onClick={() => setSelected(new Set())} className="px-2 opacity-75 transition hover:opacity-100">Clear</button>
+          <Button size="sm" onClick={askAcrossSelected} className="border-bg bg-bg text-ink">Ask across selected</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="text-bg/75 hover:bg-transparent hover:text-bg">Clear</Button>
         </div>
       )}
     </main>

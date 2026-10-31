@@ -5,6 +5,7 @@ import { PageHero, PaintedCta, SectionHead } from "@/components/site/page-sectio
 import { PricingWaitlistForm } from "@/components/site/pricing-waitlist-form";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { buttonVariants } from "@/components/ui/button";
 
 const freeFeatures = [
   "5 documents in your library",
@@ -56,7 +57,7 @@ export default function PricingPage() {
               <p className="mt-1.5 text-base text-ink/65">A useful place to begin, with no payment required.</p>
               <div className="my-7 font-display text-[64px] leading-none tracking-[-0.02em]">$0<small className="ml-2 font-sans text-[15px] tracking-normal text-ink/50">forever</small></div>
               <FeatureList items={freeFeatures} />
-              <AuthActionLink signedOutLabel="Get started for free" signedInLabel="Open your workspace" arrow="right" className="btn-primary btn-lg" />
+              <AuthActionLink signedOutLabel="Get started for free" signedInLabel="Open your workspace" arrow="right" className={buttonVariants({ variant: "primary", size: "lg" })} />
             </article>
 
             <article className="paint paint-warm flex min-h-[560px] flex-col rounded-lg p-8 text-white">

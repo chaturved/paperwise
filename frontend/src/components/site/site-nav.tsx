@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Menu, X } from "lucide-react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { useAuth } from "@/context/AuthContext";
 import { PromoBar } from "@/components/site/promo-bar";
 import { megaMenus, navLinks, type MenuItem } from "@/components/site/nav-data";
+import { buttonVariants } from "@/components/ui/button";
 
 interface SiteNavProps {
   showLogin?: boolean;
@@ -71,14 +72,14 @@ export function SiteNav({ showLogin = true }: SiteNavProps) {
             <ThemeToggle />
             {loading ? <span className="h-8 w-20 animate-pulse rounded bg-ink/10 sm:w-40" aria-hidden="true" /> : user ? (
               <>
-                <Link href="/settings/profile" className="btn-secondary hidden sm:inline-flex !min-h-8 !px-3 !text-sm">Profile</Link>
-                <Link href="/dashboard" className="btn-primary !min-h-8 !px-3">Open workspace</Link>
+                <Link href="/settings/profile" className={buttonVariants({ variant: "secondary", size: "sm", className: "hidden sm:inline-flex" })}>Profile</Link>
+                <Link href="/dashboard" className={buttonVariants({ variant: "primary", size: "sm" })}>Open workspace</Link>
               </>
             ) : (
               <>
                 {showLogin && <Link href="/login" className="hidden px-2 text-[14.5px] font-medium text-ink/75 transition hover:text-ink sm:inline-flex">Log in</Link>}
-                <Link href="/demo" className="btn-secondary hidden xl:inline-flex !min-h-8 !px-3">Request a demo</Link>
-                <Link href="/signup" className="btn-primary !min-h-8 !px-3">Get started</Link>
+                <Link href="/demo" className={buttonVariants({ variant: "secondary", size: "sm", className: "hidden xl:inline-flex" })}>Request a demo</Link>
+                <Link href="/signup" className={buttonVariants({ variant: "primary", size: "sm" })}>Get started</Link>
               </>
             )}
             <button type="button" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)} className="grid h-8 w-9 place-items-center rounded border border-line lg:hidden">

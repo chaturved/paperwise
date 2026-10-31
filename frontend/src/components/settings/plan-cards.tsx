@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { buttonVariants } from "@/components/ui/button";
 
 const FREE_FEATURES = [
   "Up to 5 documents",
@@ -58,7 +59,7 @@ export function PlanCards() {
             {PRO_FEATURES.map((feature) => <Feature key={feature}>{feature}</Feature>)}
           </ul>
         </div>
-        <Link href="/pricing" className="btn-primary btn-lg mt-7 w-full">See Pro details <ArrowUpRight size={16} /></Link>
+        <Link href="/pricing" className={buttonVariants({ variant: "primary", size: "lg", className: "mt-7 w-full" })}>See Pro details <ArrowUpRight size={16} /></Link>
       </section>
     </div>
   );

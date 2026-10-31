@@ -27,5 +27,6 @@ class Conversation(Base):
 
     user: Mapped[User] = relationship("User", back_populates="conversations")
     messages: Mapped[list[Message]] = relationship(
-        "Message", back_populates="conversation", cascade="all, delete-orphan", foreign_keys="Message.conversation_id"
+        "Message", back_populates="conversation", cascade="all, delete-orphan", foreign_keys="Message.conversation_id",
+        passive_deletes=True,
     )

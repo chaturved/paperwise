@@ -4,7 +4,7 @@ import { isProtectedRoute, matchesRoute } from "@/lib/auth-routes";
 
 const AUTH_ONLY_PATHS = ["/login", "/signup"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("paperwise_access_token")?.value;
 

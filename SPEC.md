@@ -1840,6 +1840,10 @@ All under `/api/v1`.
 | `POST /auth/email-exists` | Whether an email already has an account, for the sign-up email step. Limited per address and per email. |
 | `POST /auth/methods` | Whether to ask for a password. Limited per address and per email; answers neutrally once the per-email limit is spent. |
 
-### 16.4 Still planned
+### 16.4 Platform
+
+The frontend now runs on Next.js 16 and Node 24 (LTS). Next.js 16 renames `middleware.ts` to `proxy.ts`, so the route protection described in section 15 lives in `frontend/src/proxy.ts`. Fonts are served from `frontend/src/app/fonts/` instead of being fetched from Google at build time.
+
+### 16.5 Still planned
 
 Pro checkout (Pro is a waitlist for now), tabular review across documents, comparing two documents, a clause and risk check, sharing a read-only link, Google Drive import, folders and named projects, and team workspaces. The Gemini free tier allows only 20 chat requests a day, so a paid plan is needed before launch.

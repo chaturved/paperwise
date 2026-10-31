@@ -24,7 +24,7 @@ This is a resume-quality production project. It must feel like a real product an
 ## Tech Stack
 
 **Frontend:**
-- Next.js 15 (App Router)
+- Next.js 16 (App Router)
 - React 19
 - TypeScript 5
 - Tailwind CSS v4
@@ -82,7 +82,7 @@ Services never import routes. Repositories never import services. Models know no
 They define the shape of data crossing layer boundaries. They are not optional. Every function that accepts or returns structured data must be typed.
 
 **4. Server Components by default.**
-In Next.js 15, all components are Server Components unless interaction requires otherwise. Add `"use client"` only at the boundary where user interaction or browser APIs begin — not at the top of a large tree.
+In Next.js 16, all components are Server Components unless interaction requires otherwise. Add `"use client"` only at the boundary where user interaction or browser APIs begin — not at the top of a large tree.
 
 **5. No secrets in the client.**
 All AI calls, token generation, and third-party secrets live in the backend. The frontend only holds a JWT.
@@ -279,7 +279,7 @@ frontend/src/
   types/
     index.ts                  ← All shared TypeScript types
 
-  middleware.ts               ← Route protection (reads cookie, redirects unauthenticated)
+  proxy.ts                    ← Route protection (Next.js 16's name for middleware): reads cookie, redirects unauthenticated
 ```
 
 ### Layer Rules
@@ -338,7 +338,7 @@ Extract repeated Tailwind class clusters into `@layer utilities` in `globals.css
 
 ## "use client" Rules
 
-Server Components are the default in Next.js 15. A component should only become a Client Component if it actually needs:
+Server Components are the default in Next.js 16. A component should only become a Client Component if it actually needs:
 - `useState` or `useReducer`
 - `useEffect`
 - Browser APIs (`window`, `document`, `localStorage`)
@@ -397,7 +397,7 @@ export default function DashboardPage() {
 
 - JWT stored as an `httponly` cookie, set by the backend on login/signup
 - `AuthContext.tsx` provides `user`, `loading`, and `refetchUser` to client components
-- `middleware.ts` protects authenticated routes — reads the cookie and redirects unauthenticated requests before the page renders
+- `proxy.ts` protects authenticated routes — reads the cookie and redirects unauthenticated requests before the page renders
 - The Axios client sends credentials with every request via `withCredentials: true` — no manual token attachment needed in components
 - Do not build a parallel auth system — extend the existing one
 

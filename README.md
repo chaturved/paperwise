@@ -115,7 +115,7 @@ A few decisions worth calling out, since they came from real bugs found and fixe
 
 ## Tech stack
 
-**Frontend** — Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, axios, `@microsoft/fetch-event-source` for SSE streaming.
+**Frontend** — Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, axios, `@microsoft/fetch-event-source` for SSE streaming.
 
 **Backend** — FastAPI, SQLAlchemy + Alembic, PostgreSQL with `pgvector` for embedding search, Authlib for Google OAuth, `boto3` for S3-compatible object storage, a pluggable AI provider adapter (`AI_PROVIDER`: Gemini or Hugging Face) for embeddings and chat completion.
 

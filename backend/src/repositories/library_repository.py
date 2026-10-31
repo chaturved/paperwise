@@ -69,7 +69,7 @@ class LibraryRepository(LibraryRepositoryProtocol):
             .group_by(LibraryChunk.library_id)
             .all()
         )
-        return {library_id: pages for library_id, pages in rows}
+        return {library_id: pages for library_id, pages in rows if pages is not None}
 
     def get(self, doc_id: int) -> Library | None:
         return self.db.get(Library, doc_id)

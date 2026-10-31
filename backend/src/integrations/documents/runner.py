@@ -41,6 +41,12 @@ class IsolatedExtractor:
         finally:
             slots.release()
 
+    @staticmethod
+    def _last_line(output: bytes) -> bytes:
+        """The worker's result is its last line; a library may print a warning before it."""
+        lines = output.strip().splitlines()
+        return lines[-1] if lines else b""
+
     async def _run_worker(self, contents: bytes, ext: str) -> list[Page]:
         process = await asyncio.create_subprocess_exec(
             sys.executable,
@@ -66,7 +72,7 @@ class IsolatedExtractor:
             raise BadRequestError(TOO_LARGE_MESSAGE)
 
         try:
-            result = json.loads(stdout)
+            result = json.loads(self._last_line(stdout))
         except json.JSONDecodeError:
             raise BadRequestError(UNREADABLE_FILE_MESSAGE) from None
 

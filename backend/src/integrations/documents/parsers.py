@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping
 
 import docx
-import fitz
+import pymupdf
 from docx.document import Document as DocxDocument
 from docx.table import Table
 from docx.text.paragraph import Paragraph
@@ -75,7 +75,7 @@ class PdfParser(FileParser):
         self.ocr = ocr
 
     def parse(self, contents: bytes) -> list[Page]:
-        with fitz.open(stream=contents, filetype="pdf") as doc:
+        with pymupdf.open(stream=contents, filetype="pdf") as doc:
             if doc.needs_pass:
                 raise BadRequestError(UNREADABLE_FILE_MESSAGE)
             if doc.page_count > settings.MAX_PDF_PAGES:
@@ -86,7 +86,7 @@ class PdfParser(FileParser):
                 texts, scanned = self._read_blank_pages(doc, texts, self.ocr)
             return [Page(number, text, number - 1 in scanned) for number, text in enumerate(texts, start=1)]
 
-    def _read_blank_pages(self, doc: fitz.Document, texts: list[str], ocr: PageOcr) -> tuple[list[str], set[int]]:
+    def _read_blank_pages(self, doc: pymupdf.Document, texts: list[str], ocr: PageOcr) -> tuple[list[str], set[int]]:
         blank = [index for index, text in enumerate(texts) if not text.strip()]
         if not blank:
             return texts, set()

@@ -4,7 +4,7 @@ import sys
 import zipfile
 
 import docx
-import fitz
+import pymupdf
 import pytest
 
 from src.config import settings
@@ -26,7 +26,7 @@ async def test_returns_text_from_the_worker_process():
 
 
 async def test_pdf_pages_keep_their_numbers_through_the_worker_process():
-    pdf = fitz.open()
+    pdf = pymupdf.open()
     for text in ("first page", "second page"):
         pdf.new_page().insert_text((72, 72), text)
 
@@ -171,3 +171,28 @@ async def test_worker_memory_limit_is_enforced(monkeypatch):
 
     with pytest.raises(BadRequestError):
         await IsolatedExtractor().extract(_docx_bytes("x" * 1000), "docx")
+
+
+def test_the_workers_result_is_its_last_line_so_a_library_warning_cannot_break_it():
+    output = b'warning: this API is deprecated\n{"ok": true}\n'
+
+    assert IsolatedExtractor._last_line(output) == b'{"ok": true}'
+
+
+def test_a_worker_that_printed_nothing_has_no_result_line():
+    assert IsolatedExtractor._last_line(b"  \n") == b""
+
+
+async def test_a_warning_printed_before_the_result_does_not_make_a_file_unreadable(monkeypatch):
+    class _Process:
+        returncode = 0
+
+        async def communicate(self, _contents):
+            return b'warning: the fitz API is deprecated\n{"ok": true, "pages": [{"number": null, "text": "hi"}]}', b""
+
+    async def start(*_args, **_kwargs):
+        return _Process()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", start)
+
+    assert await IsolatedExtractor().extract(b"hi", "txt") == [Page(None, "hi")]

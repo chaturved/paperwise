@@ -122,11 +122,15 @@ backend/src/
   services/             ← Business logic (one file per domain)
     auth_service.py
     user_service.py
-    conversation_service.py
+    conversation_service.py ← Conversations, message versions and branching
+    ask_service.py      ← Answers a question and suggests follow-ups
+    answer_export_service.py ← Exports an answer as Word
+    key_dates_service.py ← Dates and deadlines found in a document
     library_service.py
     token_service.py
     answer_generator.py ← Prompts the AI and streams the answer
     ingestion_service.py ← Background indexing of uploaded documents
+    key_date_extractor.py ← Asks the model for dates, each with its quoted sentence
     query_service.py
   repositories/         ← All DB queries (one file per domain)
     user_repository.py
@@ -242,18 +246,21 @@ frontend/src/
 
   components/                 ← All reusable UI components
     ui/                       ← Primitives (no app logic, no API calls, generic props)
-    auth/                     ← Auth-specific UI (AuthCard, AuthBackground, form fields)
-    conversations/            ← DashboardContent and chat sub-components
-    Header/                   ← Header with sub-components (Brand, Actions, UserDropdown)
-    LibrarySidebar/           ← Document library sidebar with sub-components
-    InsightsSidebar/          ← Insights panel with sub-components
-    Workspace/                ← Main chat workspace with sub-components
+    auth/                     ← Sign-in, sign-up and password flows, form fields
+    conversations/            ← DashboardContent, messages, answer actions, sources, version switcher
+    library/                  ← Library table, key dates dialog
+    settings/                 ← Plan cards, appearance, password, waitlist
+    site/                     ← Marketing pages: home sections, pricing, demo request, legal
+    layout/                   ← Status pages, theme toggle and toaster
+    pdf/                      ← PDF page viewer with passage highlighting
+    onboarding/, analytics/   ← First-run flow and usage screens
 
-  hooks/                      ← All custom React hooks
-    useAuth.ts
-    useLibrary.ts
-    useConversation.ts
-    useSSEStream.ts
+  hooks/                      ← All custom React hooks (tests sit beside them as *.test.ts)
+    useConversationChat.ts    ← Chat state: messages, send, edit, retry, new chat
+    useMessageVersions.ts     ← Switching versions and branching into a new chat
+    useSSEStream.ts           ← The streamed answer
+    useFollowUps.ts, useKeyDates.ts, useAnswerExport.ts, useSourceAside.ts
+    useLibrary.ts, useDocumentUpload.ts, useAttachDocuments.ts
 
   lib/
     api-client.ts             ← Axios base client — base URL, cookie auth, token refresh

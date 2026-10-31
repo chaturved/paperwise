@@ -2,6 +2,8 @@
 
 > "Chat with your documents. Instantly."
 
+> This document describes v1.0. What has changed since is summarised in [section 16](#16-changes-since-v10).
+
 ---
 
 ## Table of Contents
@@ -1532,7 +1534,7 @@ These features are deliberately out of scope for v1 but planned:
 | Stripe billing | Live payment processing for Pro tier |
 | Team workspaces | Share document libraries across a team |
 | Document folders | Organize library into folders/collections |
-| Chat export | Download conversation as PDF or Markdown |
+| Chat export | Download conversation as PDF or Markdown (an answer can already be exported as Markdown or Word; see section 16) |
 | Document annotations | Highlight and comment on source passages |
 | API access | Let Pro users query Paperwise programmatically |
 | Slack integration | Ask questions from Slack |
@@ -1791,3 +1793,53 @@ The product and infra are both in place. To run locally:
 
 *Spec version 1.3 — Paperwise*
 *Last updated: 2026-05-18*
+
+---
+
+## 16. Changes since v1.0
+
+The sections above still describe the original design. These are the differences.
+
+### 16.1 Product
+
+| Area | What changed |
+|---|---|
+| Answers | Every answer cites passages as `[n]` with the page, and the source viewer opens the PDF at that page with the passage highlighted. Only the sources an answer actually cites are kept. |
+| Scanned PDFs | Pages with no text layer are read with Tesseract OCR, and their sources are marked "read from a scan". |
+| Chat | Edit any question, retry an answer, switch versions with a `1/2` switcher, and continue from any answer in a new chat. Suggested follow-up questions appear after an answer, and a sources panel sits beside the chat on wide screens. |
+| Library | Per-document and multi-document questions, contract-focused prompts, and a Key dates list per document with an Add to calendar (.ics) download. |
+| Export | An answer can be exported as Markdown or as a Word document. |
+| Accounts | Sign-up says at the email step when an account already exists. |
+| Marketing | Solutions pages, a Request a demo flow, legal pages, and a pricing waitlist. |
+
+### 16.2 Data model
+
+| Table | Change |
+|---|---|
+| `messages` | `parent_id` (self reference, cascade). Messages form a tree, so an edited question or a retried answer is a sibling of the one it replaces. |
+| `conversations` | `active_leaf_id` (set null): the last message of the visible path. |
+| `library_chunks` | `page_number`, and `scanned` for text read with OCR. |
+| `libraries` | `status`, `error_message`, `status_updated_at`, `content_hash` (unique per user), and `key_dates` (JSON, the dates found in the document). |
+| `demo_requests` | New table for the Request a demo form. |
+
+Migrations `0007` to `0013` add these. `0012` backfills a straight line of messages for every existing conversation.
+
+### 16.3 API additions
+
+All under `/api/v1`.
+
+| Method and path | Purpose |
+|---|---|
+| `POST /conversations/{id}/ask` | Now also takes `edit_of` (store the question beside that one) or `retry_of` (answer that answer's question again), never both. |
+| `GET /conversations/{id}/messages` | Returns the visible path, each message with `version`, `versions` and `sibling_ids`. |
+| `POST /conversations/{id}/versions` | Switch to another version of a turn. Body: `{ "message_id": n }`. |
+| `POST /conversations/{id}/branch` | Copy the path up to a message into a new conversation. The copy keeps the original's date, so branching cannot extend Free plan history. |
+| `POST /conversations/{id}/follow-ups` | Up to three suggested next questions. Not charged to the daily limit. |
+| `POST /conversations/{id}/messages/{message_id}/export` | The answer, its question and its sources as a Word file. |
+| `POST /library/{id}/key-dates` | Dates and deadlines in a document, each with its quoted sentence and page. Only dates whose quote is in the document are kept, and a date whose year the quote does not state is flagged `year_assumed`. |
+| `POST /auth/email-exists` | Whether an email already has an account, for the sign-up email step. Limited per address and per email. |
+| `POST /auth/methods` | Whether to ask for a password. Limited per address and per email; answers neutrally once the per-email limit is spent. |
+
+### 16.4 Still planned
+
+Pro checkout (Pro is a waitlist for now), tabular review across documents, comparing two documents, a clause and risk check, sharing a read-only link, Google Drive import, folders and named projects, and team workspaces. The Gemini free tier allows only 20 chat requests a day, so a paid plan is needed before launch.

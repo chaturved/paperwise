@@ -11,38 +11,71 @@ Full-stack, production-shaped project: typed API contracts, layered backend arch
 ```mermaid
 flowchart LR
     subgraph Browser
-        UI[Next.js App]
+        UI["Next.js app<br/>chat, library, settings"]
     end
 
-    subgraph "nginx (single origin)"
-        Proxy["/api/* → backend<br/>/* → frontend"]
+    subgraph Edge["nginx (single origin)"]
+        Proxy["/api/* to backend<br/>everything else to frontend"]
     end
 
     subgraph Backend["FastAPI"]
-        Auth[Auth Service]
-        Library[Library Service]
-        Conv[Conversation Service]
-        Tier[Tier Service]
+        Auth["Auth service"]
+        Library["Library service<br/>uploads, status"]
+        Ingest["Ingestion job<br/>parse, OCR, chunk, embed"]
+        Ask["Ask service<br/>retrieve, answer, follow-ups"]
+        Conv["Conversation service<br/>history, versions, branches"]
+        Extras["Export and key dates"]
+        Tier["Tier service<br/>plan limits"]
     end
 
-    HF[("Hugging Face<br/>Inference API")]
-    PG[("PostgreSQL<br/>+ pgvector")]
+    AI[("AI provider<br/>Gemini or Hugging Face")]
+    PG[("PostgreSQL<br/>with pgvector")]
     S3[("S3-compatible<br/>storage")]
 
-    UI -->|HTTP + SSE| Proxy
+    UI -->|"HTTP and SSE"| Proxy
+    UI -->|"signed upload URL"| S3
     Proxy --> Auth
     Proxy --> Library
+    Proxy --> Ask
     Proxy --> Conv
+    Proxy --> Extras
     Auth --> PG
-    Library -->|extract, chunk, embed| HF
-    Library -->|store raw file| S3
-    Library -->|chunks + embeddings| PG
-    Conv -->|embed question| HF
-    Conv -->|cosine similarity top-k| PG
-    Conv -->|stream completion| HF
-    Conv --> Tier
+    Library --> S3
+    Library -->|"start job"| Ingest
+    Ingest -->|"read file"| S3
+    Ingest -->|"embed chunks"| AI
+    Ingest -->|"text, chunks, status"| PG
+    Ask -->|"embed question, stream answer"| AI
+    Ask -->|"nearest passages"| PG
+    Ask --> Tier
+    Conv --> PG
+    Extras -->|"read dates with the model"| AI
+    Extras --> PG
     Tier --> PG
 ```
+
+### Answering a question
+
+```mermaid
+flowchart TD
+    Q["Question typed, edited or retried"] --> Check["Check the plan: history window and daily questions"]
+    Check --> Docs{"Any ready documents?"}
+    Docs -->|no| General["Answer from general knowledge, no sources"]
+    Docs -->|yes| Embed["Embed the question"]
+    Embed --> Search["Find the nearest passages in pgvector"]
+    Search --> Number["Number the passages 1 to n"]
+    Number --> Stream["Model streams an answer that cites passages as [n]"]
+    General --> Stream
+    Stream --> Cited["Keep only the sources the answer actually cites"]
+    Cited --> Store["Store the answer as a child of the question"]
+    Store --> Browser["Browser shows citations, page and Open page"]
+    Store --> Next["Suggest follow-up questions"]
+    Check -->|over the limit| Refuse["Refuse with a clear message"]
+    Stream -->|fails before any text| Refund["Give the question back and keep a failed message"]
+```
+
+An edit stores your new question beside the old one, and a retry stores another answer to the same question, so nothing is lost and the `1/2` switcher moves between versions.
+
 
 **Ingestion**: the browser uploads each file straight to storage through a signed URL that fixes its exact size and type, then tells the API it arrived. A background job downloads it, hashes it (sha256) to reject duplicates, extracts its text in an isolated worker process (PyMuPDF for PDF, `python-docx` for Word; PDF pages with no text layer are read with Tesseract OCR and marked as scanned), splits it into ~500-character overlapping chunks, embeds them via the configured AI provider (Gemini or Hugging Face), and saves the text, chunks and `ready` status in one commit. A document moves `uploading → processing → ready` (or `failed`, which the user can retry), so a failed step never leaves a half-indexed document that counts against the plan quota.
 
@@ -94,21 +127,23 @@ A few decisions worth calling out, since they came from real bugs found and fixe
 backend/
   src/
     api/v1/          route handlers (auth, users, library, conversations, analytics, misc)
-    services/         business logic (auth, library, conversation, tier limits, waitlist)
+    services/         business logic (auth, library, ingestion, ask, conversation, answer export, key dates, tier limits, waitlist)
     repositories/      DB access layer
     models/            SQLAlchemy models
     schemas/            Pydantic request/response schemas
     core/               exceptions, exception handlers, shared enums, DI dependencies
-    utils/              JWT, password hashing, text chunking, chunk formatting
+    utils/              JWT, password hashing, text chunking, chunk formatting, message tree, Word writer, quote checking
+    integrations/       AI providers, storage, mailer, Google OAuth, safe document parsing and OCR
   alembic/             DB migrations
   tests/                pytest suite
 
 frontend/
   src/
     app/                Next.js routes: (auth), (workspace)/dashboard, (workspace)/settings (including usage), onboarding, pricing, product, security, use-cases, privacy, terms
-    components/          UI components (conversations, sidebar, settings, etc.)
-    hooks/                useSSEStream, useLibrary, etc.
+    components/          ui (Base UI primitives), conversations, library, settings, auth, site, pdf, layout
+    hooks/                useConversationChat, useSSEStream, useMessageVersions, useKeyDates, useLibrary, etc.
     lib/api/              typed API client functions
+    lib/                  citations, calendar (.ics) and Markdown export, formatting
     context/              AuthContext, AppLayoutContext
 
 nginx/                  reverse proxy config for the Docker setup

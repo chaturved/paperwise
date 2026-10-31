@@ -44,7 +44,10 @@ function Viewer({ source }: { source: Source }) {
           >
             <ChevronLeft size={16} />
           </button>
-          <span>Page {page}{pageCount ? ` of ${pageCount}` : ""}</span>
+          <span>
+            Page {page}
+            {pageCount ? ` of ${pageCount}` : ""}
+          </span>
           <button
             type="button"
             onClick={() => setPage((p) => (pageCount ? Math.min(pageCount, p + 1) : p + 1))}
@@ -55,7 +58,10 @@ function Viewer({ source }: { source: Source }) {
             <ChevronRight size={16} />
           </button>
         </div>
-        <DialogClose aria-label="Close document" className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink">
+        <DialogClose
+          aria-label="Close document"
+          className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink"
+        >
           <X size={17} />
         </DialogClose>
       </div>

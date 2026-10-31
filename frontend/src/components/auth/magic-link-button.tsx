@@ -23,7 +23,14 @@ export function MagicLinkButton({ email }: { email: string }) {
   };
 
   return (
-    <Button type="button" onClick={send} disabled={sending} variant="quiet" size="lg" className="w-full disabled:opacity-60">
+    <Button
+      type="button"
+      onClick={send}
+      disabled={sending}
+      variant="quiet"
+      size="lg"
+      className="w-full disabled:opacity-60"
+    >
       {sending ? "Sending…" : "Email me a sign-in link"}
     </Button>
   );

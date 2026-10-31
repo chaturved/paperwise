@@ -1,7 +1,12 @@
 "use client";
 
 import { Check, Laptop, Moon, Sun } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTheme, type ThemePreference } from "@/context/ThemeContext";
 
 const options: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
@@ -16,7 +21,10 @@ export function ThemeToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger aria-label={`Theme: ${preference}. Choose appearance`} className="inline-flex h-8 w-8 items-center justify-center rounded border border-line text-ink/70 transition hover:bg-ink/5 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+      <DropdownMenuTrigger
+        aria-label={`Theme: ${preference}. Choose appearance`}
+        className="inline-flex h-8 w-8 items-center justify-center rounded border border-line text-ink/70 transition hover:bg-ink/5 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
         <Icon size={18} strokeWidth={1.8} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="min-w-40 bg-bg shadow-xl">

@@ -25,7 +25,9 @@ export function useSourceAside(messages: Message[], resetKey: unknown) {
   }, []);
   const toggle = useCallback((n: number) => setExpanded((current) => (current === n ? null : n)), []);
 
-  const withSources = messages.filter((message) => message.role === "assistant" && !message.failed && citedSources(message.meta).length > 0);
+  const withSources = messages.filter(
+    (message) => message.role === "assistant" && !message.failed && citedSources(message.meta).length > 0,
+  );
   const shown = withSources.find((message) => message.id === citedMessageId) ?? withSources.at(-1);
   const aside: SourceAside | null = shown ? { messageId: shown.id, sources: citedSources(shown.meta), expanded } : null;
 

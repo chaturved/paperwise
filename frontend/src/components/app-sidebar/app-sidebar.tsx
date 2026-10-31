@@ -27,7 +27,14 @@ interface Props {
   refreshKey?: number;
 }
 
-export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, onNewChat, onConversationsChange, refreshKey }: Props) {
+export default function AppSidebar({
+  activeConvId,
+  onConvSelect,
+  onConvDelete,
+  onNewChat,
+  onConversationsChange,
+  refreshKey,
+}: Props) {
   const router = useRouter();
   const { conversations, refresh, remove, rename } = useConversations(onConversationsChange);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -69,12 +76,28 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
 
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden border-r border-line bg-rail text-ink">
-      <ConversationSearchDialog open={searchOpen} onOpenChange={setSearchOpen} recentConversations={conversations} onSelect={handleSelect} />
+      <ConversationSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        recentConversations={conversations}
+        onSelect={handleSelect}
+      />
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-5">
-        <Link href="/dashboard" className="font-display text-[23px] tracking-[-0.0125em]">Paperwise</Link>
+        <Link href="/dashboard" className="font-display text-[23px] tracking-[-0.0125em]">
+          Paperwise
+        </Link>
         <Tooltip>
           <TooltipTrigger
-            render={<Button variant="ghost" size="icon" aria-label="Search conversations" aria-expanded={searchOpen} onClick={() => setSearchOpen((open) => !open)} className="mr-7 text-ink/60 md:mr-0" />}
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Search conversations"
+                aria-expanded={searchOpen}
+                onClick={() => setSearchOpen((open) => !open)}
+                className="mr-7 text-ink/60 md:mr-0"
+              />
+            }
           >
             <Search size={17} strokeWidth={1.8} />
           </TooltipTrigger>
@@ -97,7 +120,13 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
         </Link>
       </nav>
 
-      <ConversationList conversations={conversations} activeId={activeConvId} onSelect={handleSelect} onRename={handleRename} onDelete={handleDelete} />
+      <ConversationList
+        conversations={conversations}
+        activeId={activeConvId}
+        onSelect={handleSelect}
+        onRename={handleRename}
+        onDelete={handleDelete}
+      />
 
       <div className="shrink-0 border-t border-line px-3 pt-3">
         <PlanMeter usage={usage} />

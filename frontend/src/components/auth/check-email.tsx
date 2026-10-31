@@ -37,13 +37,26 @@ export function CheckEmail({ email, lead, note, resend, onChangeEmail }: Props) 
         {email && <p className="mt-1 text-base font-medium text-ink">{email}</p>}
       </AuthHeading>
       <p className="mb-8 text-sm leading-relaxed text-muted">{note}</p>
-      <Button type="button" onClick={handleResend} disabled={resending || !email} variant="secondary" size="lg" className="w-full disabled:opacity-60">
+      <Button
+        type="button"
+        onClick={handleResend}
+        disabled={resending || !email}
+        variant="secondary"
+        size="lg"
+        className="w-full disabled:opacity-60"
+      >
         {resending ? "Sending…" : "Resend the email"}
       </Button>
       <p className="mt-5 text-sm">
-        {onChangeEmail
-          ? <Button type="button" onClick={onChangeEmail} variant="link" size="inline">Use a different email</Button>
-          : <Link href="/login" className="link-underline">Back to sign in</Link>}
+        {onChangeEmail ? (
+          <Button type="button" onClick={onChangeEmail} variant="link" size="inline">
+            Use a different email
+          </Button>
+        ) : (
+          <Link href="/login" className="link-underline">
+            Back to sign in
+          </Link>
+        )}
       </p>
     </div>
   );

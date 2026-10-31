@@ -27,7 +27,13 @@ export function ProWaitlist() {
 
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <Button type="button" onClick={join} disabled={joined || joining || !user} size="lg" className="disabled:opacity-60">
+      <Button
+        type="button"
+        onClick={join}
+        disabled={joined || joining || !user}
+        size="lg"
+        className="disabled:opacity-60"
+      >
         {joined ? "You're on the list" : joining ? "Joining…" : "Join the waitlist"}
       </Button>
       {user?.email && <span className="text-sm text-muted">We will email {user.email}.</span>}

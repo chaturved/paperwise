@@ -44,10 +44,22 @@ export function AnswerActions({ messageId, content, question, sources, switcher,
   return (
     <div className="mt-3 flex items-center gap-1">
       {switcher}
-      <Button variant="ghost" size="xs" onClick={copy}><Copy size={14} /> Copy</Button>
-      <Button variant="ghost" size="xs" onClick={exportAnswer}><Download size={14} /> Export</Button>
-      {onRewrite && <Button variant="ghost" size="xs" onClick={onRewrite}><RefreshCw size={14} /> Rewrite</Button>}
-      {onBranch && messageId !== undefined && <Button variant="ghost" size="xs" onClick={() => onBranch(messageId)}><GitBranch size={14} /> New chat from here</Button>}
+      <Button variant="ghost" size="xs" onClick={copy}>
+        <Copy size={14} /> Copy
+      </Button>
+      <Button variant="ghost" size="xs" onClick={exportAnswer}>
+        <Download size={14} /> Export
+      </Button>
+      {onRewrite && (
+        <Button variant="ghost" size="xs" onClick={onRewrite}>
+          <RefreshCw size={14} /> Rewrite
+        </Button>
+      )}
+      {onBranch && messageId !== undefined && (
+        <Button variant="ghost" size="xs" onClick={() => onBranch(messageId)}>
+          <GitBranch size={14} /> New chat from here
+        </Button>
+      )}
       <span className="flex-1" />
       <RatingButton value="up" rating={rating} onRate={rate} />
       <RatingButton value="down" rating={rating} onRate={rate} />
@@ -55,11 +67,26 @@ export function AnswerActions({ messageId, content, question, sources, switcher,
   );
 }
 
-function RatingButton({ value, rating, onRate }: { value: Rating; rating: Rating | null; onRate: (value: Rating) => void }) {
+function RatingButton({
+  value,
+  rating,
+  onRate,
+}: {
+  value: Rating;
+  rating: Rating | null;
+  onRate: (value: Rating) => void;
+}) {
   const Icon = value === "up" ? ThumbsUp : ThumbsDown;
   const selected = rating === value;
   return (
-    <Button variant="ghost" size="xs" onClick={() => onRate(value)} aria-pressed={selected} aria-label={value === "up" ? "Helpful" : "Not helpful"} className={selected ? "text-ink" : ""}>
+    <Button
+      variant="ghost"
+      size="xs"
+      onClick={() => onRate(value)}
+      aria-pressed={selected}
+      aria-label={value === "up" ? "Helpful" : "Not helpful"}
+      className={selected ? "text-ink" : ""}
+    >
       <Icon size={14} fill={selected ? "currentColor" : "none"} />
     </Button>
   );

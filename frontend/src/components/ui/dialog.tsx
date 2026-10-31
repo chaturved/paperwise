@@ -8,7 +8,10 @@ export function DialogContent({ className, ...props }: DialogPrimitive.Popup.Pro
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop className="fixed inset-0 z-[100] bg-black/45" />
-      <DialogPrimitive.Popup className={cn("fixed z-[101] focus:outline-none", className as string | undefined)} {...props} />
+      <DialogPrimitive.Popup
+        className={cn("fixed z-[101] focus:outline-none", className as string | undefined)}
+        {...props}
+      />
     </DialogPrimitive.Portal>
   );
 }

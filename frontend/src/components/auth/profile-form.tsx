@@ -25,7 +25,12 @@ export function ProfileForm() {
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { full_name: user?.full_name || "" },
   });
@@ -60,13 +65,22 @@ export function ProfileForm() {
 
       <SettingsSection title="Name" description="Shown in the sidebar and in emails from us.">
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-bg" aria-hidden="true">
+          <span
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-bg"
+            aria-hidden="true"
+          >
             {user?.avatar_initials || "??"}
           </span>
           <div className="min-w-0 flex-1">
-            <label htmlFor="full_name" className="sr-only">Full name</label>
+            <label htmlFor="full_name" className="sr-only">
+              Full name
+            </label>
             <Input id="full_name" aria-invalid={Boolean(errors.full_name)} {...register("full_name")} />
-            {errors.full_name && <p role="alert" className="field-error">{errors.full_name.message}</p>}
+            {errors.full_name && (
+              <p role="alert" className="field-error">
+                {errors.full_name.message}
+              </p>
+            )}
           </div>
           <Button type="submit" disabled={isSubmitting || !isDirty} size="lg" className="disabled:opacity-40">
             {isSubmitting ? "Saving…" : "Save"}
@@ -78,24 +92,52 @@ export function ProfileForm() {
         <Field id="email" label="Email address">
           <Input id="email" value={user?.email || ""} readOnly />
         </Field>
-        <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted"><Check size={14} strokeWidth={2.2} className="text-ink" /> Verified</p>
+        <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted">
+          <Check size={14} strokeWidth={2.2} className="text-ink" /> Verified
+        </p>
       </SettingsSection>
 
       <SettingsSection title="Appearance" description="Choose how Paperwise looks on this device.">
         <AppearanceSetting />
       </SettingsSection>
 
-      <SettingsSection title="Delete account" description="Removes your documents, conversations and data. This cannot be undone.">
+      <SettingsSection
+        title="Delete account"
+        description="Removes your documents, conversations and data. This cannot be undone."
+      >
         {!showDelete ? (
-          <Button type="button" onClick={() => setShowDelete(true)} variant="danger">Delete my account</Button>
+          <Button type="button" onClick={() => setShowDelete(true)} variant="danger">
+            Delete my account
+          </Button>
         ) : (
           <div className="max-w-sm space-y-3">
             <Field id="delete-confirm" label="Type DELETE to confirm">
-              <Input id="delete-confirm" value={deleteInput} onChange={(event) => setDeleteInput(event.target.value)} placeholder="DELETE" autoComplete="off" />
+              <Input
+                id="delete-confirm"
+                value={deleteInput}
+                onChange={(event) => setDeleteInput(event.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+              />
             </Field>
             <div className="flex gap-2">
-              <Button type="button" onClick={() => { setShowDelete(false); setDeleteInput(""); }} variant="secondary">Cancel</Button>
-              <Button type="button" onClick={handleDelete} disabled={deleteInput !== "DELETE" || deleting} variant="dangerSolid" className="disabled:opacity-40">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowDelete(false);
+                  setDeleteInput("");
+                }}
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteInput !== "DELETE" || deleting}
+                variant="dangerSolid"
+                className="disabled:opacity-40"
+              >
                 {deleting ? "Deleting…" : "Delete my account"}
               </Button>
             </div>

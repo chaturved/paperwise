@@ -18,35 +18,112 @@ const groups: FaqGroup[] = [
     id: "getting-started",
     title: "Getting started",
     items: [
-      { question: "What can I upload?", answer: "PDF, Word (.docx), plain text and Markdown files. The size limit for each file depends on your plan." },
-      { question: "Can I upload a scanned document?", answer: "Yes, for PDFs. Pages with no selectable text are read from the image, up to 25 pages in a fully scanned file. Reading from an image can misread a character, so sources from a scan are marked \"read from a scan\". Check figures against the original page." },
-      { question: "How many documents and questions do I get?", answer: <>It depends on your plan. <Link href="/pricing" className={link}>Pricing</Link> shows what Free and Pro include.</> },
+      {
+        question: "What can I upload?",
+        answer: "PDF, Word (.docx), plain text and Markdown files. The size limit for each file depends on your plan.",
+      },
+      {
+        question: "Can I upload a scanned document?",
+        answer:
+          'Yes, for PDFs. Pages with no selectable text are read from the image, up to 25 pages in a fully scanned file. Reading from an image can misread a character, so sources from a scan are marked "read from a scan". Check figures against the original page.',
+      },
+      {
+        question: "How many documents and questions do I get?",
+        answer: (
+          <>
+            It depends on your plan.{" "}
+            <Link href="/pricing" className={link}>
+              Pricing
+            </Link>{" "}
+            shows what Free and Pro include.
+          </>
+        ),
+      },
     ],
   },
   {
     id: "answers",
     title: "Checking an answer",
     items: [
-      { question: "How do I know an answer is right?", answer: "Every answer cites numbered passages from your documents. Open a source to read the passage, and for a PDF the page it came from is shown with the passage highlighted. AI can still misread or miss something, so check the source for anything that matters." },
-      { question: "What if the answer is not in my documents?", answer: "Paperwise says it could not find it, rather than guessing." },
-      { question: "Is this legal or professional advice?", answer: <>No. Paperwise helps you read faster. It is not a lawyer, accountant or other professional. See <Link href="/legal/ai" className={link}>AI and your documents</Link>.</> },
+      {
+        question: "How do I know an answer is right?",
+        answer:
+          "Every answer cites numbered passages from your documents. Open a source to read the passage, and for a PDF the page it came from is shown with the passage highlighted. AI can still misread or miss something, so check the source for anything that matters.",
+      },
+      {
+        question: "What if the answer is not in my documents?",
+        answer: "Paperwise says it could not find it, rather than guessing.",
+      },
+      {
+        question: "Is this legal or professional advice?",
+        answer: (
+          <>
+            No. Paperwise helps you read faster. It is not a lawyer, accountant or other professional. See{" "}
+            <Link href="/legal/ai" className={link}>
+              AI and your documents
+            </Link>
+            .
+          </>
+        ),
+      },
     ],
   },
   {
     id: "your-data",
     title: "Your data",
     items: [
-      { question: "Who can see my documents?", answer: "Only you. Your files are stored privately and no other Paperwise customer can open or search them." },
-      { question: "Does an AI service see my documents?", answer: <>Yes, because it has to read them to answer you. <Link href="/legal/ai" className={link}>AI and your documents</Link> explains exactly what is sent and when.</> },
-      { question: "How do I delete my data?", answer: "Delete a document from your library, or your whole account from Settings. Deleting an account removes your documents, files and conversations." },
+      {
+        question: "Who can see my documents?",
+        answer: "Only you. Your files are stored privately and no other Paperwise customer can open or search them.",
+      },
+      {
+        question: "Does an AI service see my documents?",
+        answer: (
+          <>
+            Yes, because it has to read them to answer you.{" "}
+            <Link href="/legal/ai" className={link}>
+              AI and your documents
+            </Link>{" "}
+            explains exactly what is sent and when.
+          </>
+        ),
+      },
+      {
+        question: "How do I delete my data?",
+        answer:
+          "Delete a document from your library, or your whole account from Settings. Deleting an account removes your documents, files and conversations.",
+      },
     ],
   },
   {
     id: "plans",
     title: "Plans and demos",
     items: [
-      { question: "Is Paperwise free?", answer: <>The Free plan is available now and needs no payment details. Pro, with unlimited documents and larger files, is coming soon. <Link href="/pricing" className={link}>Join the waitlist</Link>.</> },
-      { question: "Can I see a demo first?", answer: <>Yes. <Link href="/demo" className={link}>Request a demo</Link> and we will walk through Paperwise using a document you bring.</> },
+      {
+        question: "Is Paperwise free?",
+        answer: (
+          <>
+            The Free plan is available now and needs no payment details. Pro, with unlimited documents and larger files,
+            is coming soon.{" "}
+            <Link href="/pricing" className={link}>
+              Join the waitlist
+            </Link>
+            .
+          </>
+        ),
+      },
+      {
+        question: "Can I see a demo first?",
+        answer: (
+          <>
+            Yes.{" "}
+            <Link href="/demo" className={link}>
+              Request a demo
+            </Link>{" "}
+            and we will walk through Paperwise using a document you bring.
+          </>
+        ),
+      },
     ],
   },
 ];

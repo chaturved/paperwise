@@ -11,13 +11,23 @@ export const metadata: Metadata = {
 const groups = [
   {
     title: "Using Paperwise",
-    items: [{ label: "Terms of Service", text: "The rules for using Paperwise, including plans and limits.", href: "/terms" }],
+    items: [
+      { label: "Terms of Service", text: "The rules for using Paperwise, including plans and limits.", href: "/terms" },
+    ],
   },
   {
     title: "Your data",
     items: [
-      { label: "Privacy Policy", text: "What we collect, who we share it with, how long we keep it and how to delete it.", href: "/privacy" },
-      { label: "AI and your documents", text: "What is sent to the AI service when you upload a file or ask a question.", href: "/legal/ai" },
+      {
+        label: "Privacy Policy",
+        text: "What we collect, who we share it with, how long we keep it and how to delete it.",
+        href: "/privacy",
+      },
+      {
+        label: "AI and your documents",
+        text: "What is sent to the AI service when you upload a file or ask a question.",
+        href: "/legal/ai",
+      },
       { label: "Security", text: "How your account and files are protected, in plain language.", href: "/security" },
     ],
   },
@@ -28,7 +38,10 @@ export default function LegalPage() {
     <div className="min-h-screen overflow-x-hidden bg-bg text-ink">
       <SiteNav />
       <PageHero title="Legal">
-        <p>The documents that explain how Paperwise works with your files and what we expect of each other. We update them as the product changes.</p>
+        <p>
+          The documents that explain how Paperwise works with your files and what we expect of each other. We update
+          them as the product changes.
+        </p>
       </PageHero>
       <div className="page-w pb-24">
         {groups.map((group) => (

@@ -18,12 +18,14 @@ export const CONTRACT_PROMPTS: ContractPrompt[] = [
   {
     title: "Who owns the work",
     detail: "Ownership, licences and limits",
-    question: "Who owns the work or intellectual property, and are there any licences or restrictions on how it can be used?",
+    question:
+      "Who owns the work or intellectual property, and are there any licences or restrictions on how it can be used?",
   },
   {
     title: "Liability",
     detail: "Limits and who covers costs",
-    question: "What limits on liability or indemnities does the agreement set, and who has to cover costs if something goes wrong?",
+    question:
+      "What limits on liability or indemnities does the agreement set, and who has to cover costs if something goes wrong?",
   },
   {
     title: "Renewal and deadlines",

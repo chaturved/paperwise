@@ -19,7 +19,13 @@ export function SiteAccountLinks() {
 
   return (
     <>
-      {links.map((link) => <li key={link.href}><Link href={link.href} className="text-base text-white transition hover:text-white/70">{link.label}</Link></li>)}
+      {links.map((link) => (
+        <li key={link.href}>
+          <Link href={link.href} className="text-base text-white transition hover:text-white/70">
+            {link.label}
+          </Link>
+        </li>
+      ))}
     </>
   );
 }

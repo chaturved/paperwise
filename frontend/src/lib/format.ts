@@ -16,5 +16,5 @@ export const formatRelative = (iso: string): string => {
   return formatDate(iso);
 };
 
-export const formatDate =(iso: string): string =>
+export const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" });

@@ -15,7 +15,11 @@ export function AppearanceSetting() {
   return (
     <Tabs value={preference} onValueChange={(value) => setPreference(value as ThemePreference)}>
       <TabsList aria-label="Appearance">
-        {OPTIONS.map(({ value, label }) => <TabsTrigger key={value} value={value}>{label}</TabsTrigger>)}
+        {OPTIONS.map(({ value, label }) => (
+          <TabsTrigger key={value} value={value}>
+            {label}
+          </TabsTrigger>
+        ))}
       </TabsList>
     </Tabs>
   );

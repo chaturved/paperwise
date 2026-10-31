@@ -51,7 +51,11 @@ export function SignInFlow() {
       <>
         <AuthHeading title="Sign in to Paperwise" />
         <EmailForm submitLabel="Continue" busyLabel="Checking…" onSubmit={continueWith} />
-        <p className="mt-5 text-center text-sm"><Link href="/contact" className="link-underline">Need help?</Link></p>
+        <p className="mt-5 text-center text-sm">
+          <Link href="/contact" className="link-underline">
+            Need help?
+          </Link>
+        </p>
       </>
     );
   }
@@ -60,9 +64,15 @@ export function SignInFlow() {
     <>
       <AuthHeading title="Welcome back">
         Signing in as <span className="font-medium text-ink">{account.email}</span>{" "}
-        <Button type="button" onClick={() => setAccount(null)} variant="link" size="inline" className="hover:text-ink">Change</Button>
+        <Button type="button" onClick={() => setAccount(null)} variant="link" size="inline" className="hover:text-ink">
+          Change
+        </Button>
       </AuthHeading>
-      {account.hasPassword ? <SignInPasswordForm email={account.email} /> : <PasswordlessSignIn email={account.email} />}
+      {account.hasPassword ? (
+        <SignInPasswordForm email={account.email} />
+      ) : (
+        <PasswordlessSignIn email={account.email} />
+      )}
     </>
   );
 }

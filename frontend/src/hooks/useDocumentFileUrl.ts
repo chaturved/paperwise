@@ -15,7 +15,11 @@ export function useDocumentFileUrl(docId: number | null) {
     let cancelled = false;
     getDocumentFile(docId)
       .then((file) => !cancelled && setState({ url: file.url, error: null, forDocId: docId }))
-      .catch((err) => !cancelled && setState({ url: null, error: apiErrorMessage(err, "Could not open this document."), forDocId: docId }));
+      .catch(
+        (err) =>
+          !cancelled &&
+          setState({ url: null, error: apiErrorMessage(err, "Could not open this document."), forDocId: docId }),
+      );
     return () => {
       cancelled = true;
     };

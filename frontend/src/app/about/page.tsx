@@ -11,9 +11,21 @@ export const metadata: Metadata = {
 };
 
 const principles = [
-  { icon: FileSearch, title: "Show the source", text: "Every answer cites numbered passages, and for PDFs you can open the page they came from." },
-  { icon: MessageSquareText, title: "Plain language", text: "Ask the way you would ask a colleague. There is no query syntax and nothing to set up." },
-  { icon: Lock, title: "Private and honest", text: "Your files are yours alone. Text read from a scan can contain mistakes, AI can still be wrong, and we say so." },
+  {
+    icon: FileSearch,
+    title: "Show the source",
+    text: "Every answer cites numbered passages, and for PDFs you can open the page they came from.",
+  },
+  {
+    icon: MessageSquareText,
+    title: "Plain language",
+    text: "Ask the way you would ask a colleague. There is no query syntax and nothing to set up.",
+  },
+  {
+    icon: Lock,
+    title: "Private and honest",
+    text: "Your files are yours alone. Text read from a scan can contain mistakes, AI can still be wrong, and we say so.",
+  },
 ];
 
 export default function AboutPage() {
@@ -25,20 +37,43 @@ export default function AboutPage() {
           <p>Paperwise helps people read documents faster without taking an answer on faith.</p>
         </PageHero>
         <div className="page-w">
-          <Statement lead="A document assistant you can check." rest="Most tools give you an answer and ask you to trust it. Paperwise shows the passages behind every answer, so you can read the original words yourself." />
+          <Statement
+            lead="A document assistant you can check."
+            rest="Most tools give you an answer and ask you to trust it. Paperwise shows the passages behind every answer, so you can read the original words yourself."
+          />
           <section className="pb-20">
-            <SectionHead title="What we care about" description="Three ideas that decide what we build and what we leave out." />
+            <SectionHead
+              title="What we care about"
+              description="Three ideas that decide what we build and what we leave out."
+            />
             <IconColumns items={principles} />
           </section>
           <section className="pb-24">
-            <SectionHead title="Who it is for" description="Anyone who needs to read a document closely, starting with freelancers and small businesses." />
+            <SectionHead
+              title="Who it is for"
+              description="Anyone who needs to read a document closely, starting with freelancers and small businesses."
+            />
             <div className="mt-10 lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
               <span aria-hidden />
-              <LinkRows items={[
-                { label: "Freelancers", text: "Read a client agreement or brief before you sign or start.", href: "/for/freelancers" },
-                { label: "Small businesses", text: "Find the answer in leases, policies and supplier terms.", href: "/for/small-business" },
-                { label: "Researchers and students", text: "Ask a paper, textbook or manual a question and see the page it came from.", href: "/for/researchers-and-students" },
-              ]} />
+              <LinkRows
+                items={[
+                  {
+                    label: "Freelancers",
+                    text: "Read a client agreement or brief before you sign or start.",
+                    href: "/for/freelancers",
+                  },
+                  {
+                    label: "Small businesses",
+                    text: "Find the answer in leases, policies and supplier terms.",
+                    href: "/for/small-business",
+                  },
+                  {
+                    label: "Researchers and students",
+                    text: "Ask a paper, textbook or manual a question and see the page it came from.",
+                    href: "/for/researchers-and-students",
+                  },
+                ]}
+              />
             </div>
           </section>
         </div>

@@ -9,8 +9,12 @@ export default function NotFound() {
       title="This page could not be found."
       actions={
         <>
-          <Link href="/dashboard" className={buttonVariants({ variant: "primary", size: "lg", className: "px-6" })}>Go to your workspace</Link>
-          <Link href="/" className={buttonVariants({ variant: "secondary", size: "lg", className: "px-6" })}>Back to home</Link>
+          <Link href="/dashboard" className={buttonVariants({ variant: "primary", size: "lg", className: "px-6" })}>
+            Go to your workspace
+          </Link>
+          <Link href="/" className={buttonVariants({ variant: "secondary", size: "lg", className: "px-6" })}>
+            Back to home
+          </Link>
         </>
       }
     >

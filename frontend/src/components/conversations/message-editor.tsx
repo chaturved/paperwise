@@ -33,8 +33,12 @@ export function MessageEditor({ initial, onSave, onCancel }: Props) {
           className="h-auto w-full text-base"
         />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
-          <Button type="button" size="sm" onClick={save} disabled={!changed} className="disabled:opacity-60">Save and resend</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="button" size="sm" onClick={save} disabled={!changed} className="disabled:opacity-60">
+            Save and resend
+          </Button>
         </div>
       </div>
     </div>

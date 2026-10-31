@@ -16,8 +16,14 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
   return (
     <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-workspace text-ink md:flex-row">
-      <nav aria-label="Account settings" className="shrink-0 border-b border-line bg-rail px-3 pb-3 pt-4 md:w-[300px] md:border-b-0 md:border-r md:pb-4 md:pt-5">
-        <Link href="/dashboard" className="mb-3 flex h-10 items-center gap-3 rounded px-3 text-sm text-muted transition hover:bg-ink/[0.05] hover:text-ink md:mb-6">
+      <nav
+        aria-label="Account settings"
+        className="shrink-0 border-b border-line bg-rail px-3 pb-3 pt-4 md:w-[300px] md:border-b-0 md:border-r md:pb-4 md:pt-5"
+      >
+        <Link
+          href="/dashboard"
+          className="mb-3 flex h-10 items-center gap-3 rounded px-3 text-sm text-muted transition hover:bg-ink/[0.05] hover:text-ink md:mb-6"
+        >
           <ArrowLeft size={16} strokeWidth={1.8} /> Back to workspace
         </Link>
         <p className="mb-2 hidden px-3 text-xs font-medium text-muted md:block">Account</p>

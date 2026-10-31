@@ -19,12 +19,26 @@ export default function ContactPage() {
         <div className="page-w pb-24">
           <div className="lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-7">
             <span aria-hidden />
-            <LinkRows items={[
-              { label: "Request a demo", text: "A walkthrough using a document you bring.", href: "/demo" },
-              { label: "Email us", text: "hello@paperwise.ai for questions, feedback or a copy of your data.", href: "mailto:hello@paperwise.ai" },
-              { label: "Questions and answers", text: "What you can upload, what it costs and how your data is handled.", href: "/faq" },
-              { label: "Security and privacy", text: "How your files are kept private, and the policies that apply.", href: "/security" },
-            ]} />
+            <LinkRows
+              items={[
+                { label: "Request a demo", text: "A walkthrough using a document you bring.", href: "/demo" },
+                {
+                  label: "Email us",
+                  text: "hello@paperwise.ai for questions, feedback or a copy of your data.",
+                  href: "mailto:hello@paperwise.ai",
+                },
+                {
+                  label: "Questions and answers",
+                  text: "What you can upload, what it costs and how your data is handled.",
+                  href: "/faq",
+                },
+                {
+                  label: "Security and privacy",
+                  text: "How your files are kept private, and the policies that apply.",
+                  href: "/security",
+                },
+              ]}
+            />
           </div>
         </div>
       </main>

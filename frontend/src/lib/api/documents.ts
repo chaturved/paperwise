@@ -1,6 +1,13 @@
 import axios from "axios";
 import apiClient from "@/lib/api-client";
-import type { CreateUploadsResponse, DocumentFile, LibraryData, LibraryDoc, MessageResponse, UploadSlot } from "@/types";
+import type {
+  CreateUploadsResponse,
+  DocumentFile,
+  LibraryData,
+  LibraryDoc,
+  MessageResponse,
+  UploadSlot,
+} from "@/types";
 
 export const getLibrary = async (): Promise<LibraryData> => {
   const res = await apiClient.get("/v1/library");

@@ -24,7 +24,12 @@ type FormData = z.infer<typeof schema>;
 export function SignUpDetailsForm({ email }: { email: string }) {
   const router = useRouter();
   const { refetchUser } = useAuth();
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { full_name: "", password: "" },
   });
@@ -44,10 +49,21 @@ export function SignUpDetailsForm({ email }: { email: string }) {
     <>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-[18px]">
         <Field id="full_name" label="Full name" error={errors.full_name?.message}>
-          <Input id="full_name" autoComplete="name" autoFocus aria-invalid={Boolean(errors.full_name)} {...register("full_name")} />
+          <Input
+            id="full_name"
+            autoComplete="name"
+            autoFocus
+            aria-invalid={Boolean(errors.full_name)}
+            {...register("full_name")}
+          />
         </Field>
         <Field id="password" label="Password" error={errors.password?.message} hint="Use at least 8 characters.">
-          <PasswordInput id="password" autoComplete="new-password" aria-invalid={Boolean(errors.password)} {...register("password")} />
+          <PasswordInput
+            id="password"
+            autoComplete="new-password"
+            aria-invalid={Boolean(errors.password)}
+            {...register("password")}
+          />
           <PasswordStrength password={password} />
         </Field>
         <Button type="submit" disabled={isSubmitting} size="lg" className="w-full disabled:opacity-60">

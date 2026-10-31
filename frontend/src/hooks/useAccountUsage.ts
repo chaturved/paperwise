@@ -10,9 +10,15 @@ export function useAccountUsage(refreshKey = 0) {
   useEffect(() => {
     let active = true;
     getUsage()
-      .then((next) => { if (active) setUsage(next); })
-      .catch(() => { /* Keep the last numbers while the API recovers. */ });
-    return () => { active = false; };
+      .then((next) => {
+        if (active) setUsage(next);
+      })
+      .catch(() => {
+        /* Keep the last numbers while the API recovers. */
+      });
+    return () => {
+      active = false;
+    };
   }, [refreshKey]);
 
   return usage;

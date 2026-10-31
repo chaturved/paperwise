@@ -28,19 +28,39 @@ type FormData = z.infer<typeof schema>;
 
 const FIELD = "input-base min-h-12 w-full px-4 text-base";
 
-function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
+function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">{label}</label>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+        {label}
+      </label>
       {children}
-      {error && <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs font-medium text-danger">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs font-medium text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
 export function DemoRequestForm() {
   const [sent, setSent] = useState(false);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { team_size: "", website: "" },
   });
@@ -65,19 +85,39 @@ export function DemoRequestForm() {
     return (
       <div role="status" className="rounded-lg border border-line bg-surface p-8">
         <h2 className="font-display text-[28px] font-normal tracking-[-0.0125em]">Thanks, we have your request</h2>
-        <p className="mt-3 max-w-[44ch] text-base leading-relaxed text-ink/70">We will reply by email to arrange a time. If you would like to start before then, you can upload a file for free.</p>
+        <p className="mt-3 max-w-[44ch] text-base leading-relaxed text-ink/70">
+          We will reply by email to arrange a time. If you would like to start before then, you can upload a file for
+          free.
+        </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5 rounded-lg border border-line bg-surface p-6 md:p-8">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+      className="space-y-5 rounded-lg border border-line bg-surface p-6 md:p-8"
+    >
       <div className="grid gap-5 sm:grid-cols-2">
         <Field id="demo-name" label="Your name" error={errors.name?.message}>
-          <input id="demo-name" autoComplete="name" aria-invalid={Boolean(errors.name)} {...register("name")} className={FIELD} />
+          <input
+            id="demo-name"
+            autoComplete="name"
+            aria-invalid={Boolean(errors.name)}
+            {...register("name")}
+            className={FIELD}
+          />
         </Field>
         <Field id="demo-email" label="Work email" error={errors.email?.message}>
-          <input id="demo-email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register("email")} className={FIELD} />
+          <input
+            id="demo-email"
+            type="email"
+            autoComplete="email"
+            aria-invalid={Boolean(errors.email)}
+            {...register("email")}
+            className={FIELD}
+          />
         </Field>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -87,12 +127,22 @@ export function DemoRequestForm() {
         <Field id="demo-team" label="Team size (optional)">
           <select id="demo-team" {...register("team_size")} className={FIELD}>
             <option value="">Choose one</option>
-            {TEAM_SIZES.map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
+            {TEAM_SIZES.map((size) => (
+              <option key={size.value} value={size.value}>
+                {size.label}
+              </option>
+            ))}
           </select>
         </Field>
       </div>
       <Field id="demo-message" label="What would you like to see? (optional)" error={errors.message?.message}>
-        <textarea id="demo-message" rows={4} placeholder="For example: checking payment terms in client contracts" {...register("message")} className={`${FIELD} resize-y py-3`} />
+        <textarea
+          id="demo-message"
+          rows={4}
+          placeholder="For example: checking payment terms in client contracts"
+          {...register("message")}
+          className={`${FIELD} resize-y py-3`}
+        />
       </Field>
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="demo-website">Leave this empty</label>

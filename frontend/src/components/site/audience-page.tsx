@@ -11,12 +11,21 @@ export interface AudienceContent {
   title: string;
   intro: string;
   statement: { lead: string; rest: string };
-  split: { title: string; description: string; tone: "paint" | "warm"; card: ReactNode; rows: { title: string; text: string }[] };
+  split: {
+    title: string;
+    description: string;
+    tone: "paint" | "warm";
+    card: ReactNode;
+    rows: { title: string; text: string }[];
+  };
   questions: string[];
   cta: string;
 }
 
-export const audienceMetadata = (title: string, description: string): Metadata => ({ title: `${title} — Paperwise`, description });
+export const audienceMetadata = (title: string, description: string): Metadata => ({
+  title: `${title} — Paperwise`,
+  description,
+});
 
 export function AudiencePage({ content }: { content: AudienceContent }) {
   return (
@@ -37,19 +46,34 @@ export function AudiencePage({ content }: { content: AudienceContent }) {
           </section>
 
           <section className="pb-20">
-            <SectionHead title="Questions to start with" description="The kind of thing people ask first. Ask it your way." />
+            <SectionHead
+              title="Questions to start with"
+              description="The kind of thing people ask first. Ask it your way."
+            />
             <ul className="mt-10 grid gap-3 sm:grid-cols-2">
               {content.questions.map((question) => (
-                <li key={question} className="rounded-lg border border-line bg-surface px-5 py-4 text-[16px] leading-snug">{question}</li>
+                <li
+                  key={question}
+                  className="rounded-lg border border-line bg-surface px-5 py-4 text-[16px] leading-snug"
+                >
+                  {question}
+                </li>
               ))}
             </ul>
           </section>
 
           <section className="pb-24">
             <p className="max-w-[60ch] text-sm leading-relaxed text-ink/55">
-              Free to start: <Link href="/pricing" className="underline underline-offset-4">see what each plan includes</Link>. Paperwise helps you read faster.
-              It is not a lawyer or other professional, so for a decision that matters, check the source.{" "}
-              <Link href="/legal/ai" className="underline underline-offset-4">How AI is used</Link>.
+              Free to start:{" "}
+              <Link href="/pricing" className="underline underline-offset-4">
+                see what each plan includes
+              </Link>
+              . Paperwise helps you read faster. It is not a lawyer or other professional, so for a decision that
+              matters, check the source.{" "}
+              <Link href="/legal/ai" className="underline underline-offset-4">
+                How AI is used
+              </Link>
+              .
             </p>
           </section>
         </div>

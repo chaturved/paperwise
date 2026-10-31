@@ -15,11 +15,7 @@ const freeFeatures = [
   "7 days of conversation history",
 ];
 
-const proFeatures = [
-  "Unlimited documents and questions",
-  "50 MB per file",
-  "Full conversation history",
-];
+const proFeatures = ["Unlimited documents and questions", "50 MB per file", "Full conversation history"];
 
 const compareRows = [
   { label: "Documents", free: "5", pro: "Unlimited" },
@@ -33,7 +29,8 @@ function FeatureList({ items }: { items: string[] }) {
     <ul className="mb-8 flex-1">
       {items.map((item) => (
         <li key={item} className="flex gap-3 border-t border-current/15 py-3 text-[15.5px]">
-          <Check size={17} className="mt-0.5 shrink-0 opacity-70" />{item}
+          <Check size={17} className="mt-0.5 shrink-0 opacity-70" />
+          {item}
         </li>
       ))}
     </ul>
@@ -45,25 +42,41 @@ export default function PricingPage() {
     <div className="min-h-screen bg-bg text-ink">
       <SiteNav />
       <main>
-        <PageHero crumbs={[{ label: "Company" }, { label: "Pricing" }]} title="Start small. Keep asking better questions.">
+        <PageHero
+          crumbs={[{ label: "Company" }, { label: "Pricing" }]}
+          title="Start small. Keep asking better questions."
+        >
           <p>Paperwise is free to explore. When you need more room for your work, Pro is on the way.</p>
         </PageHero>
 
         <div className="page-w">
           <div className="grid gap-4 md:grid-cols-2">
             <article className="flex min-h-[560px] flex-col rounded-lg border border-line bg-surface p-8">
-              <span className="w-fit rounded border border-line px-2 py-0.5 text-xs font-medium text-ink/70">Available now</span>
+              <span className="w-fit rounded border border-line px-2 py-0.5 text-xs font-medium text-ink/70">
+                Available now
+              </span>
               <h2 className="mt-7 font-display text-[40px] font-normal leading-tight">Free</h2>
               <p className="mt-1.5 text-base text-ink/65">A useful place to begin, with no payment required.</p>
-              <div className="my-7 font-display text-[64px] leading-none tracking-[-0.02em]">$0<small className="ml-2 font-sans text-[15px] tracking-normal text-ink/50">forever</small></div>
+              <div className="my-7 font-display text-[64px] leading-none tracking-[-0.02em]">
+                $0<small className="ml-2 font-sans text-[15px] tracking-normal text-ink/50">forever</small>
+              </div>
               <FeatureList items={freeFeatures} />
-              <AuthActionLink signedOutLabel="Get started for free" signedInLabel="Open your workspace" arrow="right" className={buttonVariants({ variant: "primary", size: "lg" })} />
+              <AuthActionLink
+                signedOutLabel="Get started for free"
+                signedInLabel="Open your workspace"
+                arrow="right"
+                className={buttonVariants({ variant: "primary", size: "lg" })}
+              />
             </article>
 
             <article className="paint paint-warm flex min-h-[560px] flex-col rounded-lg p-8 text-white">
-              <span className="w-fit rounded border border-white/40 px-2 py-0.5 text-xs font-medium text-white/80">Coming soon</span>
+              <span className="w-fit rounded border border-white/40 px-2 py-0.5 text-xs font-medium text-white/80">
+                Coming soon
+              </span>
               <h2 className="mt-7 font-display text-[40px] font-normal leading-tight">Pro</h2>
-              <p className="mt-1.5 text-base text-white/80">More room for the documents and questions you work with every day.</p>
+              <p className="mt-1.5 text-base text-white/80">
+                More room for the documents and questions you work with every day.
+              </p>
               <div className="my-7">
                 <span className="font-display text-[40px] leading-none">Join the waitlist</span>
                 <p className="mt-2 text-[15px] text-white/65">Pricing will be shared before launch.</p>
@@ -76,12 +89,25 @@ export default function PricingPage() {
           <section className="mt-24">
             <SectionHead title="Compare plans" description="Everything that differs between Free and Pro." />
             <div className="mt-10 border-t border-line">
-              <div className="hidden grid-cols-[1fr_1fr_1fr] gap-7 border-b border-line py-3 text-sm text-ink/55 md:grid"><span /><span>Free</span><span>Pro (coming soon)</span></div>
+              <div className="hidden grid-cols-[1fr_1fr_1fr] gap-7 border-b border-line py-3 text-sm text-ink/55 md:grid">
+                <span />
+                <span>Free</span>
+                <span>Pro (coming soon)</span>
+              </div>
               {compareRows.map((row) => (
-                <div key={row.label} className="grid gap-1 border-b border-line py-5 text-base md:grid-cols-[1fr_1fr_1fr] md:gap-7">
+                <div
+                  key={row.label}
+                  className="grid gap-1 border-b border-line py-5 text-base md:grid-cols-[1fr_1fr_1fr] md:gap-7"
+                >
                   <span className="font-medium">{row.label}</span>
-                  <span><span className="text-ink/50 md:hidden">Free: </span>{row.free}</span>
-                  <span><span className="text-ink/50 md:hidden">Pro: </span>{row.pro}</span>
+                  <span>
+                    <span className="text-ink/50 md:hidden">Free: </span>
+                    {row.free}
+                  </span>
+                  <span>
+                    <span className="text-ink/50 md:hidden">Pro: </span>
+                    {row.pro}
+                  </span>
                 </div>
               ))}
             </div>

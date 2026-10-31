@@ -48,25 +48,48 @@ export function ConversationSearchDialog({ open, onOpenChange, recentConversatio
         <DialogTitle className="sr-only">Search chats</DialogTitle>
         <div className="flex items-center gap-3 border-b border-ink/10 px-4">
           <Search size={19} className="shrink-0 text-ink/45" />
-          <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search chats and messages" aria-label="Search chats and messages"
-            className="h-14 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink/45" />
-          <DialogClose className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink" aria-label="Close search"><X size={17} /></DialogClose>
+          <input
+            autoFocus
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search chats and messages"
+            aria-label="Search chats and messages"
+            className="h-14 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink/45"
+          />
+          <DialogClose
+            className="rounded-md p-1.5 text-ink/50 transition hover:bg-ink/[0.07] hover:text-ink"
+            aria-label="Close search"
+          >
+            <X size={17} />
+          </DialogClose>
         </div>
         <div className="thin-scroll min-h-24 overflow-y-auto p-2">
-          <p className="px-3 pb-2 pt-2 text-xs font-medium text-ink/45">{searching ? "Search results" : "Recent chats"}</p>
+          <p className="px-3 pb-2 pt-2 text-xs font-medium text-ink/45">
+            {searching ? "Search results" : "Recent chats"}
+          </p>
           {loading && <p className="px-3 py-5 text-sm text-ink/50">Searching…</p>}
           {error && <p className="px-3 py-5 text-sm text-danger">Search is unavailable right now.</p>}
-          {!loading && !error && items.length === 0 && <p className="px-3 py-5 text-sm text-ink/50">{searching ? "No matching chats" : "No chats yet"}</p>}
-          {!loading && !error && items.map((conversation) => (
-            <button key={conversation.id} type="button" onClick={() => handleSelect(conversation.id)}
-              className="flex w-full items-start gap-3 rounded-md px-3 py-3 text-left transition hover:bg-ink/[0.06] focus-visible:bg-ink/[0.06] focus-visible:outline-none">
-              <MessageSquare size={17} className="mt-0.5 shrink-0 text-ink/45" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-medium">{conversation.title}</span>
-                {conversation.match_excerpt && <span className="mt-1 block truncate text-[12px] text-ink/55">{conversation.match_excerpt}</span>}
-              </span>
-            </button>
-          ))}
+          {!loading && !error && items.length === 0 && (
+            <p className="px-3 py-5 text-sm text-ink/50">{searching ? "No matching chats" : "No chats yet"}</p>
+          )}
+          {!loading &&
+            !error &&
+            items.map((conversation) => (
+              <button
+                key={conversation.id}
+                type="button"
+                onClick={() => handleSelect(conversation.id)}
+                className="flex w-full items-start gap-3 rounded-md px-3 py-3 text-left transition hover:bg-ink/[0.06] focus-visible:bg-ink/[0.06] focus-visible:outline-none"
+              >
+                <MessageSquare size={17} className="mt-0.5 shrink-0 text-ink/45" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-medium">{conversation.title}</span>
+                  {conversation.match_excerpt && (
+                    <span className="mt-1 block truncate text-[12px] text-ink/55">{conversation.match_excerpt}</span>
+                  )}
+                </span>
+              </button>
+            ))}
         </div>
         <div className="border-t border-ink/10 px-4 py-2 text-[11px] text-ink/40">Press Esc to close</div>
       </DialogContent>

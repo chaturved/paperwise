@@ -13,9 +13,18 @@ export function PlanMeter({ usage }: { usage: Usage | null }) {
     <div className="px-3 pb-3">
       <div className="mb-1.5 flex justify-between text-xs text-muted">
         <span>Free plan</span>
-        <span>{used} of {limit} documents</span>
+        <span>
+          {used} of {limit} documents
+        </span>
       </div>
-      <div className="h-[3px] rounded-full bg-line" role="progressbar" aria-label="Documents used" aria-valuemin={0} aria-valuemax={limit} aria-valuenow={used}>
+      <div
+        className="h-[3px] rounded-full bg-line"
+        role="progressbar"
+        aria-label="Documents used"
+        aria-valuemin={0}
+        aria-valuemax={limit}
+        aria-valuenow={used}
+      >
         <div className="h-full rounded-full bg-ink" style={{ width: `${percent}%` }} />
       </div>
     </div>

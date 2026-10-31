@@ -22,7 +22,11 @@ type FormData = z.infer<typeof schema>;
 export function SignInPasswordForm({ email }: { email: string }) {
   const router = useRouter();
   const { refetchUser } = useAuth();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -33,9 +37,16 @@ export function SignInPasswordForm({ email }: { email: string }) {
       router.push("/dashboard");
     } catch (err) {
       const limited = rateLimitMessage(err);
-      if (limited) { toast.error(limited); return; }
+      if (limited) {
+        toast.error(limited);
+        return;
+      }
       const serverError = axios.isAxiosError(err) && (err.response?.status ?? 0) >= 500;
-      toast.error(serverError ? "Something went wrong on our end. Please try again." : apiErrorMessage(err, "Incorrect email or password"));
+      toast.error(
+        serverError
+          ? "Something went wrong on our end. Please try again."
+          : apiErrorMessage(err, "Incorrect email or password"),
+      );
     }
   };
 
@@ -46,9 +57,19 @@ export function SignInPasswordForm({ email }: { email: string }) {
           id="password"
           label="Password"
           error={errors.password?.message}
-          aside={<Link href="/forgot-password" className="link-underline text-[13px] text-muted hover:text-ink">Forgot password?</Link>}
+          aside={
+            <Link href="/forgot-password" className="link-underline text-[13px] text-muted hover:text-ink">
+              Forgot password?
+            </Link>
+          }
         >
-          <PasswordInput id="password" autoComplete="current-password" autoFocus aria-invalid={Boolean(errors.password)} {...register("password")} />
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            autoFocus
+            aria-invalid={Boolean(errors.password)}
+            {...register("password")}
+          />
         </Field>
         <Button type="submit" disabled={isSubmitting} size="lg" className="w-full disabled:opacity-60">
           {isSubmitting ? "Signing in…" : "Sign in"}

@@ -15,7 +15,13 @@ export default function LoginPage() {
       panel={PANEL}
       footer={
         <>
-          <p className="mb-1.5">New to Paperwise? <Link href="/signup" className="link-underline font-medium text-ink">Get started free</Link>, no card needed.</p>
+          <p className="mb-1.5">
+            New to Paperwise?{" "}
+            <Link href="/signup" className="link-underline font-medium text-ink">
+              Get started free
+            </Link>
+            , no card needed.
+          </p>
           <AuthTerms />
         </>
       }

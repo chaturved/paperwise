@@ -1,4 +1,5 @@
-const CHIP = "mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-accent/15 px-1.5 font-mono text-xs font-medium text-accent";
+const CHIP =
+  "mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-accent/15 px-1.5 font-mono text-xs font-medium text-accent";
 
 interface Props {
   n: number;

@@ -9,7 +9,9 @@ export const answerToMarkdown = (question: string | null, answer: string, source
     lines.push("", "### Sources", "");
     sources.forEach((source, index) => {
       const page = source.page ? `, page ${source.page}` : "";
-      lines.push(`${sourceNumber(source, index)}. ${source.name}${page}: "${source.quote.replace(/\s+/g, " ").trim()}"`);
+      lines.push(
+        `${sourceNumber(source, index)}. ${source.name}${page}: "${source.quote.replace(/\s+/g, " ").trim()}"`,
+      );
     });
   }
   return lines.join("\n") + "\n";

@@ -58,5 +58,7 @@ export function LegalBullets({ items }: { items: (ReactNode | [string, ReactNode
 }
 
 export const LegalMail = () => (
-  <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 transition hover:opacity-70">hello@paperwise.ai</a>
+  <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 transition hover:opacity-70">
+    hello@paperwise.ai
+  </a>
 );

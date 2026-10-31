@@ -22,12 +22,27 @@ export function useConversationSearch(query: string, enabled: boolean) {
     setError(false);
     const timer = window.setTimeout(() => {
       searchConversations(term)
-        .then((items) => { if (!cancelled) { setResults(items); setError(false); } })
-        .catch(() => { if (!cancelled) { setResults([]); setError(true); } })
-        .finally(() => { if (!cancelled) setLoading(false); });
+        .then((items) => {
+          if (!cancelled) {
+            setResults(items);
+            setError(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setResults([]);
+            setError(true);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
     }, 250);
 
-    return () => { cancelled = true; window.clearTimeout(timer); };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [query, enabled]);
 
   return { results, loading, error };

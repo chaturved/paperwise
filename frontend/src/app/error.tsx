@@ -16,8 +16,12 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       title="We hit a problem loading this page."
       actions={
         <>
-          <Button type="button" onClick={reset} size="lg" className="px-6">Try again</Button>
-          <Link href="/" className={buttonVariants({ variant: "secondary", size: "lg", className: "px-6" })}>Back to home</Link>
+          <Button type="button" onClick={reset} size="lg" className="px-6">
+            Try again
+          </Button>
+          <Link href="/" className={buttonVariants({ variant: "secondary", size: "lg", className: "px-6" })}>
+            Back to home
+          </Link>
         </>
       }
     >

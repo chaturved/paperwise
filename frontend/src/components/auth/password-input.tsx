@@ -13,7 +13,11 @@ export function PasswordInput({ className, ...props }: Props) {
 
   return (
     <div className="relative">
-      <Input {...props} type={visible ? "text" : "password"} className={cn("pr-12", typeof className === "string" ? className : undefined)} />
+      <Input
+        {...props}
+        type={visible ? "text" : "password"}
+        className={cn("pr-12", typeof className === "string" ? className : undefined)}
+      />
       <Button
         variant="ghost"
         size="icon"

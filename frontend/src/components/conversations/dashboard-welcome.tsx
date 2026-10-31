@@ -24,7 +24,20 @@ interface DashboardWelcomeProps {
   conversations: Conversation[];
 }
 
-export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, documents, docIds, onSelectDoc, scopeName, conversations }: DashboardWelcomeProps) {
+export function DashboardWelcome({
+  value,
+  onChange,
+  onSend,
+  isStreaming,
+  isUploading,
+  onAttach,
+  textareaRef,
+  documents,
+  docIds,
+  onSelectDoc,
+  scopeName,
+  conversations,
+}: DashboardWelcomeProps) {
   const hasDocuments = documents.some((document) => document.status === "ready");
   const recent = [...conversations].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, RECENT_COUNT);
 
@@ -59,13 +72,17 @@ export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploa
                 title={prompt.detail}
                 className="inline-flex h-9 items-center gap-2 rounded-lg border border-line bg-surface pl-2.5 pr-3.5 text-[13px] transition hover:border-field disabled:opacity-60"
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-composer text-ink/60"><FileText size={12} /></span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-composer text-ink/60">
+                  <FileText size={12} />
+                </span>
                 {prompt.title}
               </button>
             ))}
           </div>
         ) : (
-          <p className="mt-7 text-center text-sm text-muted">Ask anything, or add a PDF or Word file with the plus button to ask about it.</p>
+          <p className="mt-7 text-center text-sm text-muted">
+            Ask anything, or add a PDF or Word file with the plus button to ask about it.
+          </p>
         )}
 
         {recent.length > 0 && (
@@ -74,7 +91,10 @@ export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploa
             <ul>
               {recent.map((conversation) => (
                 <li key={conversation.id} className="border-b border-line text-sm">
-                  <Link href={`/dashboard?conv=${conversation.id}`} className="flex items-center gap-4 py-3 transition hover:text-ink/70">
+                  <Link
+                    href={`/dashboard?conv=${conversation.id}`}
+                    className="flex items-center gap-4 py-3 transition hover:text-ink/70"
+                  >
                     <span className="min-w-0 flex-1 truncate">{conversation.title}</span>
                     <span className="shrink-0 text-[12.5px] text-muted">{formatRelative(conversation.updated_at)}</span>
                   </Link>
@@ -84,7 +104,9 @@ export function DashboardWelcome({ value, onChange, onSend, isStreaming, isUploa
           </section>
         )}
 
-        <p className="mt-9 text-center text-[13px] text-muted">Answers that use your documents link to the passage they came from. Check them before you rely on them.</p>
+        <p className="mt-9 text-center text-[13px] text-muted">
+          Answers that use your documents link to the passage they came from. Check them before you rely on them.
+        </p>
       </div>
     </div>
   );

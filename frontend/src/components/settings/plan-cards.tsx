@@ -15,12 +15,7 @@ const FREE_FEATURES = [
   "7 days of conversation history",
 ];
 
-const PRO_FEATURES = [
-  "Unlimited documents",
-  "Unlimited queries",
-  "50 MB per file",
-  "Full conversation history",
-];
+const PRO_FEATURES = ["Unlimited documents", "Unlimited queries", "50 MB per file", "Full conversation history"];
 
 function Feature({ children }: { children: React.ReactNode }) {
   return (
@@ -41,10 +36,15 @@ export function PlanCards() {
           <h2 className="font-display text-[28px] tracking-[-0.0125em]">Free</h2>
           {isFree && <Badge variant="solid">Current plan</Badge>}
         </div>
-        <p className="mb-2"><span className="font-display text-[44px] tracking-[-0.0125em]">$0</span><span className="ml-2 text-sm text-muted">forever</span></p>
+        <p className="mb-2">
+          <span className="font-display text-[44px] tracking-[-0.0125em]">$0</span>
+          <span className="ml-2 text-sm text-muted">forever</span>
+        </p>
         <p className="mb-6 text-sm leading-relaxed text-muted">A useful place to begin, with no payment required.</p>
         <ul className="space-y-3 border-t border-line pt-5">
-          {FREE_FEATURES.map((feature) => <Feature key={feature}>{feature}</Feature>)}
+          {FREE_FEATURES.map((feature) => (
+            <Feature key={feature}>{feature}</Feature>
+          ))}
         </ul>
       </Card>
 
@@ -54,14 +54,20 @@ export function PlanCards() {
           <Badge>Coming soon</Badge>
         </div>
         <p className="mb-2 flex h-14 items-center text-[15px] text-muted">Pricing will be shared before launch.</p>
-        <p className="mb-6 text-sm leading-relaxed text-muted">More room for the documents and questions you work with every day.</p>
+        <p className="mb-6 text-sm leading-relaxed text-muted">
+          More room for the documents and questions you work with every day.
+        </p>
         <div className="flex-1 border-t border-line pt-5">
           <p className="mb-3 text-xs font-medium text-muted">Everything in Free, plus</p>
           <ul className="space-y-3">
-            {PRO_FEATURES.map((feature) => <Feature key={feature}>{feature}</Feature>)}
+            {PRO_FEATURES.map((feature) => (
+              <Feature key={feature}>{feature}</Feature>
+            ))}
           </ul>
         </div>
-        <Link href="/pricing" className={buttonVariants({ variant: "primary", size: "lg", className: "mt-7 w-full" })}>See Pro details <ArrowUpRight size={16} /></Link>
+        <Link href="/pricing" className={buttonVariants({ variant: "primary", size: "lg", className: "mt-7 w-full" })}>
+          See Pro details <ArrowUpRight size={16} />
+        </Link>
       </Card>
     </div>
   );

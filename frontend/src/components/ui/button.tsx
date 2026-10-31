@@ -40,5 +40,10 @@ export type ButtonVariants = VariantProps<typeof buttonVariants>;
 type Props = ButtonPrimitive.Props & ButtonVariants;
 
 export function Button({ variant, size, className, ...props }: Props) {
-  return <ButtonPrimitive className={cn(buttonVariants({ variant, size }), typeof className === "string" ? className : undefined)} {...props} />;
+  return (
+    <ButtonPrimitive
+      className={cn(buttonVariants({ variant, size }), typeof className === "string" ? className : undefined)}
+      {...props}
+    />
+  );
 }

@@ -43,7 +43,9 @@ export function SignUpFlow() {
     <>
       <AuthHeading title="Create your account">
         Using <span className="font-medium text-ink">{email}</span>{" "}
-        <Button type="button" onClick={() => setEmail(null)} variant="link" size="inline" className="hover:text-ink">Change</Button>
+        <Button type="button" onClick={() => setEmail(null)} variant="link" size="inline" className="hover:text-ink">
+          Change
+        </Button>
       </AuthHeading>
       <SignUpDetailsForm email={email} />
     </>

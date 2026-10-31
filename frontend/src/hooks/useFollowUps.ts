@@ -26,9 +26,13 @@ export function useFollowUps(convId: number | null, messages: Message[], isStrea
 
     let cancelled = false;
     getFollowUps(convId)
-      .then((items) => { if (!cancelled) setQuestions(items); })
+      .then((items) => {
+        if (!cancelled) setQuestions(items);
+      })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [convId, messages, isStreaming]);
 
   return questions;

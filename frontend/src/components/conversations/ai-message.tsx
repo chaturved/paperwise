@@ -27,9 +27,24 @@ interface Props {
   onBranch?: (messageId: number) => void;
 }
 
-export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite, onCite, versions, onSwitch, onBranch }: Props) {
+export function AIMessage({
+  messageId,
+  content,
+  meta,
+  streaming,
+  timestamp,
+  question,
+  failed,
+  onRewrite,
+  onCite,
+  versions,
+  onSwitch,
+  onBranch,
+}: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
-  const switcher = versions && onSwitch && <VersionSwitcher versions={versions} onSwitch={onSwitch} disabled={Boolean(streaming)} />;
+  const switcher = versions && onSwitch && (
+    <VersionSwitcher versions={versions} onSwitch={onSwitch} disabled={Boolean(streaming)} />
+  );
 
   const sources = citedSources(meta);
   const messageKey = String(messageId ?? "new");
@@ -49,7 +64,11 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
           {streaming ? (
             <div className="flex items-center gap-[3px]">
               {[0, 150, 300].map((d) => (
-                <span key={d} className="h-[4px] w-[4px] rounded-full bg-ink/30 shimmer-dot" style={{ animationDelay: `${d}ms` }} />
+                <span
+                  key={d}
+                  className="h-[4px] w-[4px] rounded-full bg-ink/30 shimmer-dot"
+                  style={{ animationDelay: `${d}ms` }}
+                />
               ))}
             </div>
           ) : (
@@ -63,7 +82,17 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
           <div role="alert">
             <p className="text-base leading-[1.7] text-ink/90">{content}</p>
             <div className="mt-2 flex items-center gap-3">
-              {onRewrite && <Button type="button" onClick={onRewrite} variant="link" size="inline" className="text-[13px] font-medium">Try again</Button>}
+              {onRewrite && (
+                <Button
+                  type="button"
+                  onClick={onRewrite}
+                  variant="link"
+                  size="inline"
+                  className="text-[13px] font-medium"
+                >
+                  Try again
+                </Button>
+              )}
               {switcher}
             </div>
           </div>
@@ -82,7 +111,9 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
                   href?.startsWith(CITATION_HREF_PREFIX) ? (
                     <CitationChip n={Number(href.slice(CITATION_HREF_PREFIX.length))} onSelect={showSource} />
                   ) : (
-                    <a href={href} target="_blank" rel="noreferrer">{children}</a>
+                    <a href={href} target="_blank" rel="noreferrer">
+                      {children}
+                    </a>
                   ),
               }}
             >
@@ -94,10 +125,26 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
           </div>
         )}
 
-        {!streaming && !failed && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} className={onCite && "xl:hidden"} />}
+        {!streaming && !failed && (
+          <SourcesPanel
+            messageKey={messageKey}
+            sources={sources}
+            expanded={expandedSource}
+            onToggle={toggleSource}
+            className={onCite && "xl:hidden"}
+          />
+        )}
 
         {!streaming && !failed && (
-          <AnswerActions messageId={messageId} content={content} question={question} sources={sources} switcher={switcher} onRewrite={onRewrite} onBranch={onBranch} />
+          <AnswerActions
+            messageId={messageId}
+            content={content}
+            question={question}
+            sources={sources}
+            switcher={switcher}
+            onRewrite={onRewrite}
+            onBranch={onBranch}
+          />
         )}
       </div>
     </div>

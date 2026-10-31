@@ -2,7 +2,15 @@
 
 import { useRef } from "react";
 import { Check, FileText, Plus, Upload } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { LibraryDoc } from "@/types";
 
 const MAX_LISTED = 8;
@@ -27,7 +35,11 @@ export function AttachMenu({ documents, docIds, uploading, onAttach, onSelectDoc
           aria-label="Add documents"
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-ink/65 transition hover:bg-ink/[0.07] hover:text-ink data-[popup-open]:bg-surface data-[popup-open]:text-ink disabled:opacity-40"
         >
-          {uploading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-ink" /> : <Plus size={16} strokeWidth={2} />}
+          {uploading ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-ink" />
+          ) : (
+            <Plus size={16} strokeWidth={2} />
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[280px]">
           <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>

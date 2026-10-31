@@ -53,7 +53,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
@@ -85,9 +85,7 @@ export const sseClient: FetchEventSourceFn = (path, init) => {
 
         if (res.status === 401) {
           if (isSseRefreshing) {
-            await new Promise<void>((resolve, reject) =>
-              sseFailedQueue.push({ resolve, reject })
-            );
+            await new Promise<void>((resolve, reject) => sseFailedQueue.push({ resolve, reject }));
             return attempt();
           }
 

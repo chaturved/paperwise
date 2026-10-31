@@ -16,11 +16,7 @@ import { Input } from "@/components/ui/input";
 
 const STEPS = ["Welcome", "Upload", "Ask"];
 
-const SUGGESTIONS = [
-  "What is this document about?",
-  "Summarize the key points",
-  "What are the main conclusions?",
-];
+const SUGGESTIONS = ["What is this document about?", "Summarize the key points", "What are the main conclusions?"];
 
 const OUTLINE = [
   { title: "Upload a document", detail: "A PDF, Word file, text or Markdown, up to 10 MB." },
@@ -31,7 +27,9 @@ const OUTLINE = [
 function Heading({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <>
-      <h1 className="mb-3 font-display text-[40px] font-normal leading-[1.05] tracking-[-0.0125em] sm:text-5xl">{title}</h1>
+      <h1 className="mb-3 font-display text-[40px] font-normal leading-[1.05] tracking-[-0.0125em] sm:text-5xl">
+        {title}
+      </h1>
       <p className="mb-7 text-[17px] leading-relaxed text-muted">{children}</p>
     </>
   );
@@ -54,14 +52,17 @@ export function OnboardingFlow() {
     if (uploadedDoc?.status === "ready") setStep(3);
   }, [loaded, uploadedDoc]);
 
-  const finish = useCallback(async (destination: string) => {
-    try {
-      await completeOnboarding();
-    } catch {
-      /* Not fatal: the user still goes on to the workspace. */
-    }
-    router.push(destination);
-  }, [router]);
+  const finish = useCallback(
+    async (destination: string) => {
+      try {
+        await completeOnboarding();
+      } catch {
+        /* Not fatal: the user still goes on to the workspace. */
+      }
+      router.push(destination);
+    },
+    [router],
+  );
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -87,25 +88,49 @@ export function OnboardingFlow() {
   return (
     <div className="flex min-h-dvh flex-col bg-bg px-5 py-6 text-ink sm:px-10 md:px-16 md:py-8">
       <header className="flex items-center justify-between">
-        <Link href="/" className="font-display text-[26px] tracking-[-0.0125em]">Paperwise</Link>
+        <Link href="/" className="font-display text-[26px] tracking-[-0.0125em]">
+          Paperwise
+        </Link>
         <div className="flex items-center gap-4">
-          <Button type="button" onClick={() => finish("/dashboard")} variant="link" size="inline" className="text-sm text-muted hover:text-ink">Skip for now</Button>
+          <Button
+            type="button"
+            onClick={() => finish("/dashboard")}
+            variant="link"
+            size="inline"
+            className="text-sm text-muted hover:text-ink"
+          >
+            Skip for now
+          </Button>
           <ThemeToggle />
         </div>
       </header>
 
       <main className="flex flex-1 items-center justify-center py-12">
         <div className="w-full max-w-[560px]">
-          <div className="mb-3 flex gap-2" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step} aria-label="Onboarding progress">
+          <div
+            className="mb-3 flex gap-2"
+            role="progressbar"
+            aria-valuemin={1}
+            aria-valuemax={STEPS.length}
+            aria-valuenow={step}
+            aria-label="Onboarding progress"
+          >
             {STEPS.map((label, index) => (
-              <div key={label} className={`h-[3px] flex-1 rounded-full transition-colors ${index < step ? "bg-ink" : "bg-line"}`} />
+              <div
+                key={label}
+                className={`h-[3px] flex-1 rounded-full transition-colors ${index < step ? "bg-ink" : "bg-line"}`}
+              />
             ))}
           </div>
-          <p className="mb-9 font-mono text-[13px] text-muted">Step {step} of {STEPS.length} · {STEPS[step - 1]}</p>
+          <p className="mb-9 font-mono text-[13px] text-muted">
+            Step {step} of {STEPS.length} · {STEPS[step - 1]}
+          </p>
 
           {step === 1 && (
             <>
-              <Heading title={`Welcome to Paperwise${firstName ? `, ${firstName}` : ""}`}>You are three steps from your first answer, with the source beside it.</Heading>
+              <Heading title={`Welcome to Paperwise${firstName ? `, ${firstName}` : ""}`}>
+                You are three steps from your first answer, with the source beside it.
+              </Heading>
               <ol className="mb-8 border-b border-line">
                 {OUTLINE.map((item, index) => (
                   <li key={item.title} className="flex items-center gap-5 border-t border-line py-5">
@@ -117,30 +142,52 @@ export function OnboardingFlow() {
                   </li>
                 ))}
               </ol>
-              <Button type="button" onClick={() => setStep(2)} size="lg" className="w-full">Get started</Button>
+              <Button type="button" onClick={() => setStep(2)} size="lg" className="w-full">
+                Get started
+              </Button>
             </>
           )}
 
           {step === 2 && (
             <>
-              <Heading title="Upload your first document">PDF, Word, text or Markdown, up to 10 MB. Contracts and reports work well.</Heading>
+              <Heading title="Upload your first document">
+                PDF, Word, text or Markdown, up to 10 MB. Contracts and reports work well.
+              </Heading>
 
               {uploadedDoc ? (
-                <div className={`mb-3 flex items-center gap-4 rounded-lg border bg-surface px-5 py-4 ${failed ? "border-danger" : "border-ink"}`}>
-                  {failed ? <TriangleAlert size={22} className="shrink-0 text-danger" />
-                    : uploadedDoc.status === "ready" ? <FileText size={22} strokeWidth={1.7} className="shrink-0" />
-                    : <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-line border-t-ink" />}
+                <div
+                  className={`mb-3 flex items-center gap-4 rounded-lg border bg-surface px-5 py-4 ${failed ? "border-danger" : "border-ink"}`}
+                >
+                  {failed ? (
+                    <TriangleAlert size={22} className="shrink-0 text-danger" />
+                  ) : uploadedDoc.status === "ready" ? (
+                    <FileText size={22} strokeWidth={1.7} className="shrink-0" />
+                  ) : (
+                    <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-line border-t-ink" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[15px] font-medium">{uploadedDoc.name}</p>
                     <p className={`mt-0.5 text-[13px] ${failed ? "text-danger" : "font-mono text-xs text-muted"}`}>
-                      {failed ? uploadedDoc.error_message
-                        : uploadedDoc.status === "ready" ? `${Math.max(1, Math.round(uploadedDoc.size / 1024))} KB · Ready`
-                        : "Reading your document…"}
+                      {failed
+                        ? uploadedDoc.error_message
+                        : uploadedDoc.status === "ready"
+                          ? `${Math.max(1, Math.round(uploadedDoc.size / 1024))} KB · Ready`
+                          : "Reading your document…"}
                     </p>
                   </div>
                   {uploadedDoc.status === "ready" && <Check size={20} strokeWidth={2.2} className="shrink-0" />}
                   {failed && (
-                    <Button type="button" onClick={() => retry(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Retry failed")))} variant="link" size="inline" className="shrink-0 text-sm font-medium">Try again</Button>
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        retry(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Retry failed")))
+                      }
+                      variant="link"
+                      size="inline"
+                      className="shrink-0 text-sm font-medium"
+                    >
+                      Try again
+                    </Button>
                   )}
                 </div>
               ) : (
@@ -158,23 +205,54 @@ export function OnboardingFlow() {
               {uploadedDoc && (
                 <p className="mb-8 text-sm text-muted">
                   Wrong file?{" "}
-                  <Button type="button" onClick={() => remove(uploadedDoc.id).catch((err) => toast.error(apiErrorMessage(err, "Couldn't remove the file")))} variant="link" size="inline" className="font-medium text-ink">Use a different file</Button>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      remove(uploadedDoc.id).catch((err) =>
+                        toast.error(apiErrorMessage(err, "Couldn't remove the file")),
+                      )
+                    }
+                    variant="link"
+                    size="inline"
+                    className="font-medium text-ink"
+                  >
+                    Use a different file
+                  </Button>
                 </p>
               )}
               {!uploadedDoc && <div className="mb-8" />}
 
-              <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden" aria-label="Choose a document" onChange={handleFileChange} />
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf,.docx,.txt,.md"
+                className="hidden"
+                aria-label="Choose a document"
+                onChange={handleFileChange}
+              />
 
               <div className="flex gap-3">
-                <Button type="button" onClick={() => setStep(1)} variant="secondary" size="lg" className="px-6">Back</Button>
-                <Button type="button" onClick={() => setStep(3)} disabled={uploadedDoc?.status !== "ready"} size="lg" className="flex-1 disabled:opacity-40">Continue</Button>
+                <Button type="button" onClick={() => setStep(1)} variant="secondary" size="lg" className="px-6">
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  disabled={uploadedDoc?.status !== "ready"}
+                  size="lg"
+                  className="flex-1 disabled:opacity-40"
+                >
+                  Continue
+                </Button>
               </div>
             </>
           )}
 
           {step === 3 && (
             <>
-              <Heading title="Ask something about it">Choose one of these, or write your own. You will see the passage each answer comes from.</Heading>
+              <Heading title="Ask something about it">
+                Choose one of these, or write your own. You will see the passage each answer comes from.
+              </Heading>
               <div className="mb-5 space-y-2">
                 {SUGGESTIONS.map((suggestion) => (
                   <button
@@ -188,18 +266,26 @@ export function OnboardingFlow() {
                   </button>
                 ))}
               </div>
-              <label htmlFor="own-question" className="sr-only">Your own question</label>
+              <label htmlFor="own-question" className="sr-only">
+                Your own question
+              </label>
               <Input
                 id="own-question"
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
-                onKeyDown={(event) => { if (event.key === "Enter" && question.trim()) startConversation(); }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && question.trim()) startConversation();
+                }}
                 placeholder="Or type your own question"
                 className="mb-7"
               />
               <div className="flex gap-3">
-                <Button type="button" onClick={() => setStep(2)} variant="secondary" size="lg" className="px-6">Back</Button>
-                <Button type="button" onClick={startConversation} size="lg" className="flex-1">Start conversation</Button>
+                <Button type="button" onClick={() => setStep(2)} variant="secondary" size="lg" className="px-6">
+                  Back
+                </Button>
+                <Button type="button" onClick={startConversation} size="lg" className="flex-1">
+                  Start conversation
+                </Button>
               </div>
             </>
           )}

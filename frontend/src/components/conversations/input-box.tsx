@@ -21,7 +21,21 @@ interface Props {
   tall?: boolean;
 }
 
-export function InputBox({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef, documents, docIds, onSelectDoc, placeholder, scope, tall }: Props) {
+export function InputBox({
+  value,
+  onChange,
+  onSend,
+  isStreaming,
+  isUploading,
+  onAttach,
+  textareaRef,
+  documents,
+  docIds,
+  onSelectDoc,
+  placeholder,
+  scope,
+  tall,
+}: Props) {
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
     event.target.style.height = "auto";
@@ -49,18 +63,42 @@ export function InputBox({ value, onChange, onSend, isStreaming, isUploading, on
       />
       <div className="mt-2 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <AttachMenu documents={documents} docIds={docIds} uploading={isUploading} onAttach={onAttach} onSelectDoc={onSelectDoc} />
+          <AttachMenu
+            documents={documents}
+            docIds={docIds}
+            uploading={isUploading}
+            onAttach={onAttach}
+            onSelectDoc={onSelectDoc}
+          />
           {scope && (
             <span className="inline-flex h-8 min-w-0 items-center gap-1.5 rounded border border-line bg-surface pl-3 pr-2 text-[13px] text-ink/75">
               <span className="truncate">{scope}</span>
-              <Button variant="ghost" size="icon" onClick={() => onSelectDoc(null)} aria-label="Ask across all documents" className="h-5 w-5 shrink-0 text-ink/55 hover:bg-transparent hover:text-ink">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onSelectDoc(null)}
+                aria-label="Ask across all documents"
+                className="h-5 w-5 shrink-0 text-ink/55 hover:bg-transparent hover:text-ink"
+              >
                 <X size={13} strokeWidth={2} />
               </Button>
             </span>
           )}
         </div>
-        <Button size="sm" onClick={onSend} disabled={isStreaming || !value.trim()} aria-label="Send question" className="shrink-0 gap-1.5 disabled:border-transparent disabled:bg-ink/10 disabled:text-ink/40">
-          {isStreaming ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg/30 border-t-bg" /> : <>Ask <ArrowUp size={16} strokeWidth={2.2} /></>}
+        <Button
+          size="sm"
+          onClick={onSend}
+          disabled={isStreaming || !value.trim()}
+          aria-label="Send question"
+          className="shrink-0 gap-1.5 disabled:border-transparent disabled:bg-ink/10 disabled:text-ink/40"
+        >
+          {isStreaming ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg/30 border-t-bg" />
+          ) : (
+            <>
+              Ask <ArrowUp size={16} strokeWidth={2.2} />
+            </>
+          )}
         </Button>
       </div>
     </div>

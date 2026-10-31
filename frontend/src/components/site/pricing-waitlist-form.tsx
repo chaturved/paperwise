@@ -13,7 +13,11 @@ type WaitlistFormData = z.infer<typeof schema>;
 
 export function PricingWaitlistForm() {
   const [joined, setJoined] = useState(false);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<WaitlistFormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<WaitlistFormData>({
     resolver: zodResolver(schema),
   });
 
@@ -30,7 +34,9 @@ export function PricingWaitlistForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <label htmlFor="waitlist-email" className="sr-only">Email address</label>
+        <label htmlFor="waitlist-email" className="sr-only">
+          Email address
+        </label>
         <input
           id="waitlist-email"
           type="email"
@@ -42,11 +48,21 @@ export function PricingWaitlistForm() {
           {...register("email")}
           className="min-h-12 min-w-0 flex-1 rounded border border-white/60 bg-transparent px-4 text-base text-white outline-none placeholder:text-white/55 focus:border-white disabled:opacity-60"
         />
-        <Button type="submit" disabled={isSubmitting || joined} variant="light" size="lg" className="disabled:opacity-60">
+        <Button
+          type="submit"
+          disabled={isSubmitting || joined}
+          variant="light"
+          size="lg"
+          className="disabled:opacity-60"
+        >
           {joined ? "You're on the list" : isSubmitting ? "Joining…" : "Notify me"}
         </Button>
       </div>
-      {errors.email && <p id="waitlist-email-error" role="alert" className="mt-2 text-xs font-medium text-red-300">{errors.email.message}</p>}
+      {errors.email && (
+        <p id="waitlist-email-error" role="alert" className="mt-2 text-xs font-medium text-red-300">
+          {errors.email.message}
+        </p>
+      )}
     </form>
   );
 }

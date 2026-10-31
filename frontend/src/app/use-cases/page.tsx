@@ -17,8 +17,18 @@ const useCases = [
     description: "Check a clause, a deadline or a requirement without reading the whole document.",
     tone: "paint" as const,
     file: "lease.docx",
-    questions: ["What notice do I need to give to end the lease?", "When is payment due?", "Does the agreement renew automatically?"],
-    tips: [{ title: "Ask about one clause at a time", text: "Narrow questions return a tighter passage you can check quickly." }, { title: "Follow up", text: "Ask what an exception means without restating the first question." }],
+    questions: [
+      "What notice do I need to give to end the lease?",
+      "When is payment due?",
+      "Does the agreement renew automatically?",
+    ],
+    tips: [
+      {
+        title: "Ask about one clause at a time",
+        text: "Narrow questions return a tighter passage you can check quickly.",
+      },
+      { title: "Follow up", text: "Ask what an exception means without restating the first question." },
+    ],
   },
   {
     id: "reports",
@@ -26,8 +36,15 @@ const useCases = [
     description: "Pull a figure or a finding out of a long report and see the passages it used.",
     tone: "warm" as const,
     file: "report.pdf",
-    questions: ["How much time do teams lose searching?", "What does the report recommend for next quarter?", "Which finding is the strongest?"],
-    tips: [{ title: "Ask for a number", text: "Specific figures are easy to verify against the passage." }, { title: "Summarize first", text: "Start with a summary, then ask about the parts that matter." }],
+    questions: [
+      "How much time do teams lose searching?",
+      "What does the report recommend for next quarter?",
+      "Which finding is the strongest?",
+    ],
+    tips: [
+      { title: "Ask for a number", text: "Specific figures are easy to verify against the passage." },
+      { title: "Summarize first", text: "Start with a summary, then ask about the parts that matter." },
+    ],
   },
   {
     id: "notes",
@@ -35,8 +52,15 @@ const useCases = [
     description: "Find who owns what and what was decided, even weeks later.",
     tone: "paint" as const,
     file: "notes.docx",
-    questions: ["Who owns the budget follow-up?", "What did we decide about the launch date?", "Which risks are still open?"],
-    tips: [{ title: "Keep notes in your library", text: "Add each meeting once and ask across time." }, { title: "Check the passage", text: "Confirm the wording before you share a decision." }],
+    questions: [
+      "Who owns the budget follow-up?",
+      "What did we decide about the launch date?",
+      "Which risks are still open?",
+    ],
+    tips: [
+      { title: "Keep notes in your library", text: "Add each meeting once and ask across time." },
+      { title: "Check the passage", text: "Confirm the wording before you share a decision." },
+    ],
   },
   {
     id: "study",
@@ -45,7 +69,10 @@ const useCases = [
     tone: "warm" as const,
     file: "paper.pdf",
     questions: ["What method did the authors use?", "How is this term defined?", "What are the stated limitations?"],
-    tips: [{ title: "Ask for definitions", text: "Get a term explained in the document's own words." }, { title: "Save the chat", text: "Come back to a conversation when you revise." }],
+    tips: [
+      { title: "Ask for definitions", text: "Get a term explained in the document's own words." },
+      { title: "Save the chat", text: "Come back to a conversation when you revise." },
+    ],
   },
 ];
 
@@ -54,7 +81,10 @@ export default function UseCasesPage() {
     <div className="min-h-screen bg-bg text-ink">
       <SiteNav />
       <main>
-        <PageHero crumbs={[{ label: "Product", href: "/product" }, { label: "Use cases" }]} title="Questions worth asking your files">
+        <PageHero
+          crumbs={[{ label: "Product", href: "/product" }, { label: "Use cases" }]}
+          title="Questions worth asking your files"
+        >
           <p>Examples of what people ask their contracts, reports, notes and study material.</p>
           <HeroCtas />
         </PageHero>
@@ -65,7 +95,12 @@ export default function UseCasesPage() {
               <SectionHead id={useCase.id} title={useCase.title} description={useCase.description} />
               <PaintedSplit
                 tone={useCase.tone}
-                card={<CitedRows title="Example questions" rows={useCase.questions.map((text) => ({ text, source: useCase.file }))} />}
+                card={
+                  <CitedRows
+                    title="Example questions"
+                    rows={useCase.questions.map((text) => ({ text, source: useCase.file }))}
+                  />
+                }
                 rows={useCase.tips}
               />
             </section>

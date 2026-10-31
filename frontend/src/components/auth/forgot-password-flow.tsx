@@ -35,9 +35,15 @@ export function ForgotPasswordFlow() {
 
   return (
     <>
-      <AuthHeading title="Reset your password">Enter the email you signed up with. We will send you a link to choose a new password.</AuthHeading>
+      <AuthHeading title="Reset your password">
+        Enter the email you signed up with. We will send you a link to choose a new password.
+      </AuthHeading>
       <EmailForm submitLabel="Send reset link" busyLabel="Sending…" onSubmit={send} />
-      <p className="mt-5 text-center text-sm"><Link href="/login" className="link-underline">Back to sign in</Link></p>
+      <p className="mt-5 text-center text-sm">
+        <Link href="/login" className="link-underline">
+          Back to sign in
+        </Link>
+      </p>
     </>
   );
 }

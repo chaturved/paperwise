@@ -48,7 +48,7 @@ function DashboardInner() {
   const scopeName = scopeLabel(docIds, documents);
   const selectDoc = useCallback((id: number | null) => setDocIds(id === null ? [] : [id]), []);
   const resetScope = useCallback(() => setDocIds([]), []);
-  const chatEndRef  = useRef<HTMLDivElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const clearComposer = useCallback(() => {
@@ -56,7 +56,12 @@ function DashboardInner() {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
   }, []);
 
-  const chat = useConversationChat({ docIds, onActivity: bumpSidebar, onResetScope: resetScope, onQuestionSent: clearComposer });
+  const chat = useConversationChat({
+    docIds,
+    onActivity: bumpSidebar,
+    onResetScope: resetScope,
+    onQuestionSent: clearComposer,
+  });
   const { activeConvId, messages, isStreaming, streamingContent } = chat;
   const followUps = useFollowUps(activeConvId, messages, isStreaming);
   const handleSend = useCallback((question?: string) => chat.send(question ?? inputValue), [chat, inputValue]);
@@ -84,12 +89,18 @@ function DashboardInner() {
   useEffect(() => () => setSidebarCallbacks({}), [setSidebarCallbacks]);
 
   const lastAssistantId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
-  const questionBefore = (index: number): string | null => messages.slice(0, index).reverse().find((message) => message.role === "user")?.content ?? null;
+  const questionBefore = (index: number): string | null =>
+    messages
+      .slice(0, index)
+      .reverse()
+      .find((message) => message.role === "user")?.content ?? null;
 
   const sourceAside = useSourceAside(messages, `${activeConvId}:${lastAssistantId}`);
 
   const inChat = messages.length > 0 || activeConvId !== null;
-  const title = inChat ? conversations.find((conversation) => conversation.id === activeConvId)?.title ?? "Conversation" : "New chat";
+  const title = inChat
+    ? (conversations.find((conversation) => conversation.id === activeConvId)?.title ?? "Conversation")
+    : "New chat";
 
   return (
     <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-workspace text-ink">
@@ -103,40 +114,72 @@ function DashboardInner() {
       ) : inChat ? (
         <div className="flex min-h-0 flex-1">
           <div className="flex min-w-0 flex-1 flex-col">
-          <div className="thin-scroll relative z-10 flex-1 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
-            <div className="mx-auto w-full max-w-[700px] space-y-9">
-            {chat.loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg, index) =>
-              msg.role === "user"
-                ? <UserMessage key={msg.id} messageId={msg.id} content={msg.content} versions={versionsOf(msg)} busy={isStreaming} onEdit={chat.edit} onSwitch={chat.switchVersion} />
-                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined} onCite={(n) => sourceAside.show(msg.id, n)} versions={versionsOf(msg)} onSwitch={chat.switchVersion} onBranch={isStreaming ? undefined : chat.branch} />
-            )}
-            {isStreaming && (
-              <AIMessage content={streamingContent} meta={chat.streamingMeta} streaming timestamp={new Date().toISOString()} />
-            )}
-            <div ref={chatEndRef} />
+            <div className="thin-scroll relative z-10 flex-1 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
+              <div className="mx-auto w-full max-w-[700px] space-y-9">
+                {chat.loadingConversation ? (
+                  <p className="text-sm text-muted">Loading conversation…</p>
+                ) : (
+                  messages.map((msg, index) =>
+                    msg.role === "user" ? (
+                      <UserMessage
+                        key={msg.id}
+                        messageId={msg.id}
+                        content={msg.content}
+                        versions={versionsOf(msg)}
+                        busy={isStreaming}
+                        onEdit={chat.edit}
+                        onSwitch={chat.switchVersion}
+                      />
+                    ) : (
+                      <AIMessage
+                        key={msg.id}
+                        messageId={msg.id}
+                        content={msg.content}
+                        meta={msg.meta}
+                        timestamp={msg.created_at}
+                        question={questionBefore(index)}
+                        failed={msg.failed || msg.meta?.failed}
+                        onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined}
+                        onCite={(n) => sourceAside.show(msg.id, n)}
+                        versions={versionsOf(msg)}
+                        onSwitch={chat.switchVersion}
+                        onBranch={isStreaming ? undefined : chat.branch}
+                      />
+                    ),
+                  )
+                )}
+                {isStreaming && (
+                  <AIMessage
+                    content={streamingContent}
+                    meta={chat.streamingMeta}
+                    streaming
+                    timestamp={new Date().toISOString()}
+                  />
+                )}
+                <div ref={chatEndRef} />
+              </div>
             </div>
-          </div>
 
-          <div className="relative z-10 w-full flex-shrink-0 bg-workspace px-5 pb-5 pt-3 sm:px-10 sm:pb-6">
-            <div className="mx-auto max-w-[700px]">
-            <FollowUpSuggestions questions={followUps} onPick={handleSend} />
-            <InputBox
-              value={inputValue}
-              onChange={setInputValue}
-              onSend={() => handleSend()}
-              isStreaming={isStreaming}
-              isUploading={isUploading}
-              onAttach={handleAttach}
-              textareaRef={textareaRef}
-              documents={documents}
-              docIds={docIds}
-              onSelectDoc={selectDoc}
-              placeholder="Ask a follow-up"
-              scope={scopeName ? `Asking in ${scopeName}` : undefined}
-            />
-            <p className="mt-2.5 text-center text-xs text-muted">Check sources before relying on an answer.</p>
+            <div className="relative z-10 w-full flex-shrink-0 bg-workspace px-5 pb-5 pt-3 sm:px-10 sm:pb-6">
+              <div className="mx-auto max-w-[700px]">
+                <FollowUpSuggestions questions={followUps} onPick={handleSend} />
+                <InputBox
+                  value={inputValue}
+                  onChange={setInputValue}
+                  onSend={() => handleSend()}
+                  isStreaming={isStreaming}
+                  isUploading={isUploading}
+                  onAttach={handleAttach}
+                  textareaRef={textareaRef}
+                  documents={documents}
+                  docIds={docIds}
+                  onSelectDoc={selectDoc}
+                  placeholder="Ask a follow-up"
+                  scope={scopeName ? `Asking in ${scopeName}` : undefined}
+                />
+                <p className="mt-2.5 text-center text-xs text-muted">Check sources before relying on an answer.</p>
+              </div>
             </div>
-          </div>
           </div>
           {sourceAside.aside && <SourcesAside {...sourceAside.aside} onToggle={sourceAside.toggle} />}
         </div>

@@ -73,9 +73,10 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
             }
             try {
               const parsed = JSON.parse(ev.data);
-              const meta: Meta | null = parsed.cited && accumulated.current.meta
-                ? { ...accumulated.current.meta, cited: parsed.cited }
-                : (parsed.meta ?? accumulated.current.meta);
+              const meta: Meta | null =
+                parsed.cited && accumulated.current.meta
+                  ? { ...accumulated.current.meta, cited: parsed.cited }
+                  : (parsed.meta ?? accumulated.current.meta);
               accumulated.current = {
                 meta,
                 content: parsed.token ? accumulated.current.content + parsed.token : accumulated.current.content,
@@ -90,7 +91,12 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
             controllerRef.current = null;
             controller.abort();
             const rateLimited = err instanceof Error && err.message === "HTTP 429";
-            setState((prev) => ({ ...prev, isStreaming: false, error: FAILED, errorDetail: rateLimited ? "You're asking too fast. Please wait a moment." : null }));
+            setState((prev) => ({
+              ...prev,
+              isStreaming: false,
+              error: FAILED,
+              errorDetail: rateLimited ? "You're asking too fast. Please wait a moment." : null,
+            }));
           },
         });
       } catch {
@@ -101,7 +107,7 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [onDone]
+    [onDone],
   );
 
   const reset = useCallback(() => {

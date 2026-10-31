@@ -66,7 +66,10 @@ export function PdfPageView({ url, pageNumber, passage, onLoad }: Props) {
       await render.promise;
 
       const items = (await page.getTextContent()).items.filter((item): item is TextItem => "str" in item);
-      const matched = matchPassage(items.map((item) => item.str), passage);
+      const matched = matchPassage(
+        items.map((item) => item.str),
+        passage,
+      );
       const found = [...matched].map((index) => {
         const item = items[index];
         const [, , , , x, y] = pdfjs.Util.transform(viewport.transform, item.transform);
@@ -87,14 +90,22 @@ export function PdfPageView({ url, pageNumber, passage, onLoad }: Props) {
     };
   }, [pdf, pageNumber, passage]);
 
-  if (failed) return <p className="p-6 text-sm text-ink/60">This page could not be shown. Try opening the document again.</p>;
+  if (failed)
+    return <p className="p-6 text-sm text-ink/60">This page could not be shown. Try opening the document again.</p>;
 
   return (
     <div ref={containerRef} className="w-full">
-      <div className="relative mx-auto bg-white shadow-sm" style={size ? { width: size.width, height: size.height } : undefined}>
+      <div
+        className="relative mx-auto bg-white shadow-sm"
+        style={size ? { width: size.width, height: size.height } : undefined}
+      >
         <canvas ref={canvasRef} className="block h-full w-full" />
         {boxes.map((box, i) => (
-          <span key={i} className="pointer-events-none absolute rounded-[2px] bg-accent/30 mix-blend-multiply" style={box} />
+          <span
+            key={i}
+            className="pointer-events-none absolute rounded-[2px] bg-accent/30 mix-blend-multiply"
+            style={box}
+          />
         ))}
       </div>
     </div>

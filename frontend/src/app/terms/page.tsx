@@ -87,8 +87,11 @@ export default function TermsPage() {
         </P>
         <P>
           If your account is terminated erroneously, contact{" "}
-          <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 hover:opacity-70 transition">
-            hello@paperwise.ai
+          <a
+            href="mailto:hello@paperwise.chaturved-sumanth-lakkaraju.com"
+            className="underline underline-offset-4 hover:opacity-70 transition"
+          >
+            hello@paperwise.chaturved-sumanth-lakkaraju.com
           </a>{" "}
           within 14 days.
         </P>
@@ -119,8 +122,11 @@ export default function TermsPage() {
       <Section title="Contact">
         <P>
           Questions about these terms? Email{" "}
-          <a href="mailto:hello@paperwise.ai" className="underline underline-offset-4 hover:opacity-70 transition">
-            hello@paperwise.ai
+          <a
+            href="mailto:hello@paperwise.chaturved-sumanth-lakkaraju.com"
+            className="underline underline-offset-4 hover:opacity-70 transition"
+          >
+            hello@paperwise.chaturved-sumanth-lakkaraju.com
           </a>{" "}
           — we aim to respond within 2 business days.
         </P>

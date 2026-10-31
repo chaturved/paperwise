@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_NAME: str = "Paperwise"
-    SMTP_FROM_EMAIL: str = "noreply@paperwise.ai"
+    SMTP_FROM_EMAIL: str = "noreply@paperwise.chaturved-sumanth-lakkaraju.com"
 
     APP_URL: str = "http://localhost:3000"
     DEMO_REQUEST_NOTIFY_EMAIL: str = ""

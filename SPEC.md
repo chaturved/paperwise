@@ -1465,7 +1465,7 @@ SMTP_PORT=587
 SMTP_USER=
 SMTP_PASSWORD=
 SMTP_FROM_NAME=Paperwise
-SMTP_FROM_EMAIL=noreply@paperwise.ai
+SMTP_FROM_EMAIL=noreply@paperwise.chaturved-sumanth-lakkaraju.com
 
 # Hugging Face
 HF_API_KEY=

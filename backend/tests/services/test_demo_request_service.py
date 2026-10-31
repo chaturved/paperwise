@@ -23,7 +23,7 @@ def _request(**overrides) -> DemoRequestCreate:
 class TestDemoRequestService:
     @pytest.fixture(autouse=True)
     def setup(self, monkeypatch) -> None:
-        monkeypatch.setattr(settings, "DEMO_REQUEST_NOTIFY_EMAIL", "team@paperwise.ai")
+        monkeypatch.setattr(settings, "DEMO_REQUEST_NOTIFY_EMAIL", "team@paperwise.chaturved-sumanth-lakkaraju.com")
         self.repo = MagicMock(spec_set=DemoRequestRepositoryProtocol)
         self.repo.exists_since.return_value = False
         self.repo.add.side_effect = lambda demo_request: demo_request
@@ -53,7 +53,7 @@ class TestDemoRequestService:
         self.svc.submit(_request())
 
         self.mailer.send_demo_request.assert_called_once()
-        assert self.mailer.send_demo_request.call_args.args[0] == "team@paperwise.ai"
+        assert self.mailer.send_demo_request.call_args.args[0] == "team@paperwise.chaturved-sumanth-lakkaraju.com"
 
     def test_only_saves_the_request_when_no_notification_address_is_set(self, monkeypatch):
         monkeypatch.setattr(settings, "DEMO_REQUEST_NOTIFY_EMAIL", "")

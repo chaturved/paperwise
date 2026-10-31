@@ -24,8 +24,8 @@ export default function ContactPage() {
                 { label: "Request a demo", text: "A walkthrough using a document you bring.", href: "/demo" },
                 {
                   label: "Email us",
-                  text: "hello@paperwise.ai for questions, feedback or a copy of your data.",
-                  href: "mailto:hello@paperwise.ai",
+                  text: "hello@paperwise.chaturved-sumanth-lakkaraju.com for questions, feedback or a copy of your data.",
+                  href: "mailto:hello@paperwise.chaturved-sumanth-lakkaraju.com",
                 },
                 {
                   label: "Questions and answers",

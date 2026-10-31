@@ -48,5 +48,14 @@ def test_the_key_dates_of_a_document_are_returned_as_json(client):
 
     assert response.status_code == 200
     assert response.json() == {
-        "dates": [{"label": "Lease ends", "date": "2027-12-31", "timing": None, "quote": "The lease ends.", "page": 2}]
+        "dates": [
+            {
+                "label": "Lease ends",
+                "date": "2027-12-31",
+                "timing": None,
+                "quote": "The lease ends.",
+                "page": 2,
+                "year_assumed": False,
+            }
+        ]
     }

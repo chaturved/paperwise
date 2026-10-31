@@ -3,6 +3,7 @@ import apiClient from "@/lib/api-client";
 import type {
   CreateUploadsResponse,
   DocumentFile,
+  KeyDate,
   LibraryData,
   LibraryDoc,
   MessageResponse,
@@ -59,4 +60,9 @@ export const deleteDocument = async (id: number): Promise<MessageResponse> => {
 export const clearLibrary = async (): Promise<MessageResponse> => {
   const res = await apiClient.delete("/v1/library/clear");
   return res.data;
+};
+
+export const getKeyDates = async (docId: number): Promise<KeyDate[]> => {
+  const res = await apiClient.post(`/v1/library/${docId}/key-dates`);
+  return res.data.dates;
 };

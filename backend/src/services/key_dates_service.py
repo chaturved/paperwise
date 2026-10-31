@@ -53,11 +53,16 @@ class KeyDatesService(KeyDatesServiceProtocol):
     def _checked(self, lib: Library, found: list[FoundDate]) -> list[KeyDate]:
         """Drop dates whose quote is not in the document, add the page, and put dated ones first in order."""
         locator = QuoteLocator(lib.extracted_text or "", self.repo.list_passages(lib.id))
-        dates = [
-            KeyDate(
-                label=item.label, date=item.date, timing=item.timing, quote=item.quote, page=locator.page_of(item.quote)
-            )
-            for item in found
-            if locator.contains(item.quote)
-        ]
+        dates = [self._key_date(item, locator) for item in found if locator.contains(item.quote)]
         return sorted(dates, key=lambda d: (d.date is None, d.date))
+
+    @staticmethod
+    def _key_date(item: FoundDate, locator: QuoteLocator) -> KeyDate:
+        return KeyDate(
+            label=item.label,
+            date=item.date,
+            timing=item.timing,
+            quote=item.quote,
+            page=locator.page_of(item.quote),
+            year_assumed=item.date is not None and not locator.shows_year(item.quote, item.date.year),
+        )

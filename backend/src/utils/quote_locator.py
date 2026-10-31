@@ -16,6 +16,11 @@ class QuoteLocator:
         squashed = _squash(quote)
         return bool(squashed) and squashed in self._text
 
+    @staticmethod
+    def shows_year(quote: str, year: int) -> bool:
+        """Whether the quoted sentence itself says the year, as 2027 or as the end of a numeric date like 3/1/27."""
+        return str(year) in quote or f"/{year % 100:02d}" in quote
+
     def page_of(self, quote: str) -> int | None:
         squashed = _squash(quote)
         return next((page for passage, page in self._passages if squashed in passage), None)

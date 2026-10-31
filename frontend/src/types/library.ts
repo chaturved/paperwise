@@ -37,3 +37,12 @@ export interface UploadSlot {
 export interface CreateUploadsResponse {
   uploads: UploadSlot[];
 }
+
+export interface KeyDate {
+  label: string;
+  date: string | null;
+  timing: string | null;
+  quote: string;
+  page: number | null;
+  year_assumed: boolean;
+}

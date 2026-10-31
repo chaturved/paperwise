@@ -18,3 +18,13 @@ export const formatRelative = (iso: string): string => {
 
 export const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" });
+
+export const formatCalendarDate = (isoDate: string): string => {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString([], {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};

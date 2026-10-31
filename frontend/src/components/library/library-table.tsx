@@ -9,6 +9,7 @@ import { formatBytes, formatDate } from "@/lib/format";
 import type { LibraryDoc } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { KeyDatesDialog } from "./key-dates-dialog";
 
 interface Props {
   documents: LibraryDoc[];
@@ -58,6 +59,7 @@ function RowActions({
 }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showingDates, setShowingDates] = useState(false);
 
   const run = async (action: () => Promise<void>, failure: string) => {
     setBusy(true);
@@ -104,6 +106,14 @@ function RowActions({
         <Link href={`/dashboard?doc=${document.id}`} className="link-underline font-medium">
           Ask
         </Link>
+      )}
+      {document.status === "ready" && (
+        <>
+          <Button type="button" onClick={() => setShowingDates(true)} variant="link" size="inline">
+            Key dates
+          </Button>
+          <KeyDatesDialog document={document} open={showingDates} onOpenChange={setShowingDates} />
+        </>
       )}
       {document.status === "ready" && (
         <Button

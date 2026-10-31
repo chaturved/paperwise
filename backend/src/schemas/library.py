@@ -23,6 +23,7 @@ class KeyDate(BaseModel):
     timing: str | None = None
     quote: str
     page: int | None = None
+    year_assumed: bool = False
 
 
 class KeyDatesResponse(BaseModel):

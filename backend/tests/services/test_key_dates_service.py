@@ -56,6 +56,18 @@ class TestKeyDatesService:
 
         assert [d.label for d in result.dates] == ["Real"]
 
+    async def test_a_date_whose_quote_does_not_say_the_year_is_marked_as_assumed(self):
+        self.extractor.extract = AsyncMock(
+            return_value=[
+                FoundDate("Stated", date(2027, 3, 1), None, "Rent is due on 1 March 2027."),
+                FoundDate("Assumed", date(2028, 1, 1), None, "The lease ends on 31 December"),
+            ]
+        )
+
+        result = await self.svc.key_dates(1, 4)
+
+        assert {d.label: d.year_assumed for d in result.dates} == {"Stated": False, "Assumed": True}
+
     async def test_the_dates_are_saved_on_the_document(self):
         await self.svc.key_dates(1, 4)
 
@@ -66,6 +78,7 @@ class TestKeyDatesService:
             "timing": None,
             "quote": "Rent is due on 1 March 2027.",
             "page": 2,
+            "year_assumed": False,
         }
 
     async def test_a_document_that_was_already_read_is_not_sent_to_the_model_again(self):

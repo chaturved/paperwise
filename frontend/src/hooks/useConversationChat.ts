@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useSSEStream } from "@/hooks/useSSEStream";
+import { useSSEStream, type TurnChange } from "@/hooks/useSSEStream";
 import { historyLimitReached } from "@/lib/api-error";
-import { createConversation, getMessages } from "@/lib/api/conversations";
+import { branchConversation, createConversation, getMessages, selectVersion } from "@/lib/api/conversations";
 import type { Message } from "@/types";
 
 interface Options {
@@ -33,13 +33,22 @@ export function useConversationChat({ docIds, onActivity, onResetScope, onQuesti
   const activeConvIdRef = useRef(activeConvId);
   activeConvIdRef.current = activeConvId;
 
+  const reload = useCallback(() => {
+    const id = activeConvIdRef.current;
+    if (!id) return;
+    getMessages(id)
+      .then((items) => { if (activeConvIdRef.current === id) setMessages(items); })
+      .catch(() => {});
+  }, []);
+
   const onStreamDone = useCallback((content: string, meta: Message["meta"]) => {
     setMessages((prev) => [
       ...prev,
       { id: Date.now() + 1, role: "assistant", content, meta, created_at: new Date().toISOString() },
     ]);
     onActivity();
-  }, [onActivity]);
+    reload();
+  }, [onActivity, reload]);
 
   const { content: streamingContent, meta: streamingMeta, isStreaming, error: streamError, errorDetail: streamErrorDetail, send: sendStream, reset: resetStream } = useSSEStream(onStreamDone);
 
@@ -48,7 +57,8 @@ export function useConversationChat({ docIds, onActivity, onResetScope, onQuesti
     const detail = streamErrorDetail ?? "Something went wrong while answering. Please try again.";
     toast.error(streamError, { description: detail });
     setMessages((prev) => [...prev, { id: Date.now() + 2, role: "assistant", content: detail, meta: null, created_at: new Date().toISOString(), failed: true }]);
-  }, [streamError, streamErrorDetail]);
+    reload();
+  }, [streamError, streamErrorDetail, reload]);
 
   useEffect(() => {
     const nextId = conversationIdFrom(params.get("conv"));
@@ -111,7 +121,7 @@ export function useConversationChat({ docIds, onActivity, onResetScope, onQuesti
     router.replace("/dashboard");
   }, [activeConvId, resetStream, router]);
 
-  const send = useCallback(async (question: string) => {
+  const send = useCallback(async (question: string, change: TurnChange = {}, keep: Message[] = messages) => {
     const text = question.trim();
     if (!text || isStreaming) return;
 
@@ -130,19 +140,44 @@ export function useConversationChat({ docIds, onActivity, onResetScope, onQuesti
       }
     }
 
-    setMessages((prev) => [
-      ...prev,
-      { id: Date.now(), role: "user", content: text, meta: null, created_at: new Date().toISOString() },
-    ]);
+    const asked: Message = { id: Date.now(), role: "user", content: text, meta: null, created_at: new Date().toISOString() };
+    setMessages(change.retryOf === undefined ? [...keep, asked] : keep);
     onQuestionSent();
 
-    await sendStream(convId, text, docIds);
-  }, [activeConvId, docIds, isStreaming, onActivity, onQuestionSent, router, sendStream]);
+    await sendStream(convId, text, docIds, change);
+  }, [activeConvId, docIds, isStreaming, messages, onActivity, onQuestionSent, router, sendStream]);
+
+  const edit = useCallback((messageId: number, text: string) => {
+    const index = messages.findIndex((message) => message.id === messageId);
+    if (index === -1) return;
+    send(text, { editOf: messageId }, messages.slice(0, index));
+  }, [messages, send]);
 
   const rewrite = useCallback(() => {
-    const last = [...messages].reverse().find((message) => message.role === "user");
-    if (last) send(last.content);
+    const index = messages.findLastIndex((message) => message.role === "assistant");
+    const question = messages.slice(0, index).findLast((message) => message.role === "user");
+    if (index === -1 || !question) return;
+    send(question.content, { retryOf: messages[index].id }, messages.slice(0, index));
   }, [messages, send]);
+
+  const switchVersion = useCallback((messageId: number) => {
+    if (!activeConvId || isStreaming) return;
+    selectVersion(activeConvId, messageId)
+      .then(setMessages)
+      .catch(() => toast.error("Could not switch versions"));
+  }, [activeConvId, isStreaming]);
+
+  const branch = useCallback(async (messageId: number) => {
+    if (!activeConvId) return;
+    try {
+      const created = await branchConversation(activeConvId, messageId);
+      onActivity();
+      select(created.id);
+      toast.success("Continuing in a new chat");
+    } catch {
+      toast.error("Could not start a new chat from here");
+    }
+  }, [activeConvId, onActivity, select]);
 
   const sendRef = useRef(send);
   sendRef.current = send;
@@ -165,7 +200,10 @@ export function useConversationChat({ docIds, onActivity, onResetScope, onQuesti
     streamingContent,
     streamingMeta,
     send,
+    edit,
     rewrite,
+    switchVersion,
+    branch,
     newChat,
     select,
     remove,

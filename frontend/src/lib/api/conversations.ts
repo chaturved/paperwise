@@ -30,6 +30,16 @@ export const getMessages = async (id: number): Promise<Message[]> => {
   return res.data;
 };
 
+export const selectVersion = async (id: number, messageId: number): Promise<Message[]> => {
+  const res = await apiClient.post(`/v1/conversations/${id}/versions`, { message_id: messageId });
+  return res.data;
+};
+
+export const branchConversation = async (id: number, messageId: number): Promise<Conversation> => {
+  const res = await apiClient.post(`/v1/conversations/${id}/branch`, { message_id: messageId });
+  return res.data;
+};
+
 export const getFollowUps = async (id: number): Promise<string[]> => {
   const res = await apiClient.post(`/v1/conversations/${id}/follow-ups`);
   return res.data.questions;

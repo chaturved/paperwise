@@ -16,6 +16,11 @@ const INITIAL: StreamState = { content: "", meta: null, isStreaming: false, erro
 
 const FAILED = "AI response failed";
 
+export interface TurnChange {
+  editOf?: number;
+  retryOf?: number;
+}
+
 /** The reason the server sent with an error event, if it sent one. */
 const errorReason = (data: string): string | null => {
   try {
@@ -32,7 +37,7 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
   const controllerRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    async (conversationId: number, question: string, docIds: number[] = []) => {
+    async (conversationId: number, question: string, docIds: number[] = [], change: TurnChange = {}) => {
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
@@ -44,7 +49,13 @@ export function useSSEStream(onDone?: (content: string, meta: Meta | null) => vo
           method: "POST",
           signal: controller.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, filters: docIds.length ? { doc_ids: docIds } : null, top_k: 5 }),
+          body: JSON.stringify({
+            question,
+            filters: docIds.length ? { doc_ids: docIds } : null,
+            top_k: 5,
+            edit_of: change.editOf ?? null,
+            retry_of: change.retryOf ?? null,
+          }),
           onmessage(ev) {
             if (controllerRef.current !== controller) return;
             if (ev.data === "[DONE]") {

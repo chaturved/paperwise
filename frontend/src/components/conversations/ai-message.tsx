@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Download, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Copy, Download, GitBranch, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { Meta } from "@/types";
 import { CitationChip } from "./citation-chip";
 import { SourcesPanel, sourceElementId } from "./sources-panel";
+import { VersionSwitcher } from "./version-switcher";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
@@ -24,9 +25,14 @@ interface Props {
   failed?: boolean;
   onRewrite?: () => void;
   onCite?: (n: number) => void;
+  version?: number;
+  versions?: number;
+  siblingIds?: number[];
+  onSwitch?: (messageId: number) => void;
+  onBranch?: (messageId: number) => void;
 }
 
-export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite, onCite }: Props) {
+export function AIMessage({ messageId, content, meta, streaming, timestamp, question, failed, onRewrite, onCite, version = 1, versions = 1, siblingIds = [], onSwitch, onBranch }: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
   const [feedback, setFeedbackState] = useState<"up" | "down" | null>(null);
 
@@ -40,6 +46,10 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
       try { await setFeedback(messageId, next); } catch { setFeedbackState(feedback); }
     }
   };
+
+  const switcher = onSwitch && messageId !== undefined && (
+    <VersionSwitcher version={version} versions={versions} siblingIds={siblingIds} onSwitch={onSwitch} disabled={Boolean(streaming)} />
+  );
 
   const sources = citedSources(meta);
   const handleExport = () => downloadText("paperwise-answer.md", answerToMarkdown(question ?? null, content, sources));
@@ -74,7 +84,10 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
         {failed ? (
           <div role="alert">
             <p className="text-base leading-[1.7] text-ink/90">{content}</p>
-            {onRewrite && <Button type="button" onClick={onRewrite} variant="link" size="inline" className="mt-2 text-[13px] font-medium">Try again</Button>}
+            <div className="mt-2 flex items-center gap-3">
+              {onRewrite && <Button type="button" onClick={onRewrite} variant="link" size="inline" className="text-[13px] font-medium">Try again</Button>}
+              {switcher}
+            </div>
           </div>
         ) : streaming && !content ? (
           <div className="space-y-2.5 py-1">
@@ -107,9 +120,11 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp, ques
 
         {!streaming && !failed && (
           <div className="mt-3 flex items-center gap-1">
+            {switcher}
             <Button variant="ghost" size="xs" onClick={handleCopy}><Copy size={14} /> Copy</Button>
             <Button variant="ghost" size="xs" onClick={handleExport}><Download size={14} /> Export</Button>
             {onRewrite && <Button variant="ghost" size="xs" onClick={onRewrite}><RefreshCw size={14} /> Rewrite</Button>}
+            {onBranch && messageId !== undefined && <Button variant="ghost" size="xs" onClick={() => onBranch(messageId)}><GitBranch size={14} /> New chat from here</Button>}
             <span className="flex-1" />
             <Button variant="ghost" size="xs" onClick={() => handleFeedback("up")} aria-pressed={feedback === "up"} aria-label="Helpful" className={feedback === "up" ? "text-ink" : ""}><ThumbsUp size={14} fill={feedback === "up" ? "currentColor" : "none"} /></Button>
             <Button variant="ghost" size="xs" onClick={() => handleFeedback("down")} aria-pressed={feedback === "down"} aria-label="Not helpful" className={feedback === "down" ? "text-ink" : ""}><ThumbsDown size={14} fill={feedback === "down" ? "currentColor" : "none"} /></Button>

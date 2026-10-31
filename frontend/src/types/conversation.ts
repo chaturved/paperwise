@@ -39,4 +39,7 @@ export interface Message {
   meta: Meta | null;
   created_at: string;
   failed?: boolean;
+  version?: number;
+  versions?: number;
+  sibling_ids?: number[];
 }

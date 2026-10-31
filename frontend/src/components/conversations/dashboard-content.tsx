@@ -118,8 +118,8 @@ function DashboardInner() {
             <div className="mx-auto w-full max-w-[700px] space-y-9">
             {chat.loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg, index) =>
               msg.role === "user"
-                ? <UserMessage key={msg.id} content={msg.content} />
-                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined} onCite={(n) => showInAside(msg.id, n)} />
+                ? <UserMessage key={msg.id} messageId={msg.id} content={msg.content} version={msg.version} versions={msg.versions} siblingIds={msg.sibling_ids} busy={isStreaming} onEdit={chat.edit} onSwitch={chat.switchVersion} />
+                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} failed={msg.failed || msg.meta?.failed} onRewrite={msg.id === lastAssistantId && !isStreaming ? chat.rewrite : undefined} onCite={(n) => showInAside(msg.id, n)} version={msg.version} versions={msg.versions} siblingIds={msg.sibling_ids} onSwitch={chat.switchVersion} onBranch={isStreaming ? undefined : chat.branch} />
             )}
             {isStreaming && (
               <AIMessage content={streamingContent} meta={chat.streamingMeta} streaming timestamp={new Date().toISOString()} />

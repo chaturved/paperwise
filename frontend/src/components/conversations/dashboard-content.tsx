@@ -5,10 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { useAppLayout } from "@/context/AppLayoutContext";
 import { useAttachDocuments } from "@/hooks/useAttachDocuments";
 import { useConversationChat } from "@/hooks/useConversationChat";
+import { useFollowUps } from "@/hooks/useFollowUps";
 import { useLibrary } from "@/hooks/useLibrary";
 import type { LibraryDoc } from "@/types";
 import { AddDocumentButton } from "./add-document-button";
 import { AIMessage } from "./ai-message";
+import { FollowUpSuggestions } from "./follow-up-suggestions";
 import { InputBox } from "./input-box";
 import { DashboardWelcome } from "./dashboard-welcome";
 import { HistoryLimitNotice } from "./history-limit-notice";
@@ -53,6 +55,7 @@ function DashboardInner() {
 
   const chat = useConversationChat({ docIds, onActivity: bumpSidebar, onResetScope: resetScope, onQuestionSent: clearComposer });
   const { activeConvId, messages, isStreaming, streamingContent } = chat;
+  const followUps = useFollowUps(activeConvId, messages, isStreaming);
   const handleSend = useCallback((question?: string) => chat.send(question ?? inputValue), [chat, inputValue]);
 
   useEffect(() => {
@@ -110,6 +113,7 @@ function DashboardInner() {
 
           <div className="relative z-10 w-full flex-shrink-0 bg-workspace px-5 pb-5 pt-3 sm:px-10 sm:pb-6">
             <div className="mx-auto max-w-[700px]">
+            <FollowUpSuggestions questions={followUps} onPick={handleSend} />
             <InputBox
               value={inputValue}
               onChange={setInputValue}

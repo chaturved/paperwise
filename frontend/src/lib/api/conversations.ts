@@ -29,3 +29,8 @@ export const getMessages = async (id: number): Promise<Message[]> => {
   const res = await apiClient.get(`/v1/conversations/${id}/messages`);
   return res.data;
 };
+
+export const getFollowUps = async (id: number): Promise<string[]> => {
+  const res = await apiClient.post(`/v1/conversations/${id}/follow-ups`);
+  return res.data.questions;
+};

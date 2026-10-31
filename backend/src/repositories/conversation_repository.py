@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Protocol
 
 from fastapi import Depends
@@ -10,7 +11,9 @@ from src.models.message import Message
 
 
 class ConversationRepositoryProtocol(Protocol):
-    def create(self, user_id: int, title: str = "New conversation") -> Conversation: ...
+    def create(
+        self, user_id: int, title: str = "New conversation", created_at: datetime | None = None
+    ) -> Conversation: ...
     def get_all(self, user_id: int) -> list[Conversation]: ...
     def search(self, user_id: int, query: str, limit: int = 25) -> list[tuple[Conversation, str | None]]: ...
     def get_by_id(self, conv_id: int, user_id: int) -> Conversation | None: ...
@@ -28,8 +31,8 @@ class ConversationRepository(ConversationRepositoryProtocol):
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
 
-    def create(self, user_id: int, title: str = "New conversation") -> Conversation:
-        conv = Conversation(user_id=user_id, title=title)
+    def create(self, user_id: int, title: str = "New conversation", created_at: datetime | None = None) -> Conversation:
+        conv = Conversation(user_id=user_id, title=title, created_at=created_at)
         self.db.add(conv)
         self.db.commit()
         self.db.refresh(conv)

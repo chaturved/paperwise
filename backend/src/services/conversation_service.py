@@ -143,7 +143,8 @@ class ConversationService(ConversationServiceProtocol):
         self.tier.check_history(plan, conv.created_at or datetime.now(UTC))
         tree = MessageTree(self.conv_repo.get_messages(conv.id))
         self._existing(tree, message_id)
-        branch = self.conv_repo.create(user_id, conv.title)
+        # The copy keeps the original's date, so branching cannot extend how long a Free plan can see old chats.
+        branch = self.conv_repo.create(user_id, conv.title, conv.created_at)
         parent_id: int | None = None
         for message in tree.path_to(message_id):
             parent_id = self.conv_repo.add_message(branch.id, message.role, message.content, message.meta, parent_id).id

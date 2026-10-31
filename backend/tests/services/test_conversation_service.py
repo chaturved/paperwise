@@ -705,7 +705,7 @@ class TestMessageVersions:
 
         result = self.svc.branch_conversation(1, 1, 5, Plan.FREE)
 
-        self.conv_repo.create.assert_called_once_with(1, "My chat")
+        self.conv_repo.create.assert_called_once_with(1, "My chat", self.conv.created_at)
         copied = [c.args[1:3] for c in self.conv_repo.add_message.call_args_list]
         assert copied == [("user", "Q1"), ("assistant", "A1"), ("user", "Q2 edited")]
         assert [c.args[4] for c in self.conv_repo.add_message.call_args_list] == [None, 100, 101]

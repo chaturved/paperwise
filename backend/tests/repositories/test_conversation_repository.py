@@ -144,3 +144,12 @@ class TestConversationRepository:
 
         assert conv.active_leaf_id == 12
         self.db.commit.assert_called_once()
+
+    def test_create_can_keep_the_date_of_the_conversation_it_was_copied_from(self):
+        from datetime import datetime
+
+        original = datetime(2026, 10, 1, 9, 0)
+
+        self.repo.create(1, "Copy", original)
+
+        assert self.db.add.call_args.args[0].created_at == original

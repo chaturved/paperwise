@@ -102,7 +102,10 @@ export default function SecurityPage() {
             description="Email us and a person will answer. The privacy policy and terms cover the details."
           />
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href="mailto:hello@paperwise.ai" className={buttonVariants({ variant: "primary", size: "lg" })}>
+            <a
+              href="mailto:hello@paperwise.chaturved-sumanth-lakkaraju.com"
+              className={buttonVariants({ variant: "primary", size: "lg" })}
+            >
               Email us
             </a>
             <Link href="/legal/ai" className={buttonVariants({ variant: "secondary", size: "lg" })}>

@@ -3,6 +3,10 @@
   "private": true,
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && uvicorn src.main:app --reload --port 8000"
+    "dev:backend": "cd backend && uvicorn src.main:app --reload --port 8000",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "lefthook": "2.2.2"
   }
 }

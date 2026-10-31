@@ -105,7 +105,7 @@ export function AIMessage({
             ))}
           </div>
         ) : (
-          <div className="prose max-w-none text-base leading-[1.7] text-ink/90">
+          <div className="markdown max-w-none text-base leading-[1.7] text-ink/90">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -117,6 +117,11 @@ export function AIMessage({
                       {children}
                     </a>
                   ),
+                table: ({ children }) => (
+                  <div className="my-4 overflow-x-auto">
+                    <table>{children}</table>
+                  </div>
+                ),
               }}
             >
               {linkCitations(content, sources)}

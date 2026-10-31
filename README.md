@@ -154,7 +154,7 @@ docker-compose.yml
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 24 (LTS)
 - Python 3.11+
 - A PostgreSQL database with the `pgvector` extension (e.g. [Supabase](https://supabase.com))
 - An S3-compatible bucket (e.g. Supabase Storage)

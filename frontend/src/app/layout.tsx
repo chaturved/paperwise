@@ -1,29 +1,17 @@
 import "../styles/globals.css";
-import localFont from "next/font/local";
+import { Geist_Mono, Instrument_Sans, Newsreader } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ThemeToaster } from "@/components/layout/theme-toaster";
 
-const bodyFont = localFont({
-  src: "./fonts/instrument-sans.woff2",
-  weight: "400 600",
-  variable: "--font-body",
-  display: "swap",
-});
-const displayFont = localFont({
-  src: [
-    { path: "./fonts/newsreader.woff2", weight: "400 500", style: "normal" },
-    { path: "./fonts/newsreader-italic.woff2", weight: "400 500", style: "italic" },
-  ],
+const bodyFont = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
+const displayFont = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
   variable: "--font-newsreader",
-  display: "swap",
 });
-const monoFont = localFont({
-  src: "./fonts/geist-mono.woff2",
-  weight: "400 500",
-  variable: "--font-geist-mono",
-  display: "swap",
-});
+const monoFont = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-geist-mono" });
 
 const themeScript = `try {
   const saved = localStorage.getItem("paperwise-theme");

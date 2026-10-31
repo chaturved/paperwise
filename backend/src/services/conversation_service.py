@@ -141,9 +141,19 @@ class ConversationService(ConversationServiceProtocol):
                 self.tier.refund_ask(log_id)
             raise
 
+    @staticmethod
+    def _scope(filters: AskFilters | None) -> list[int] | None:
+        """The documents the user picked on purpose, or None to search everything."""
+        if not filters:
+            return None
+        ids = list(filters.doc_ids or [])
+        if filters.doc_id and filters.doc_id not in ids:
+            ids.append(filters.doc_id)
+        return ids or None
+
     def _has_documents(self, user_id: int, filters: AskFilters | None) -> bool:
         """Whether there is anything to search: a document picked on purpose, or any document that is ready."""
-        if filters and filters.doc_id:
+        if self._scope(filters):
             return True
         return any(lib.status == DocumentStatus.READY for lib in self.lib_repo.get_all(user_id))
 
@@ -162,8 +172,7 @@ class ConversationService(ConversationServiceProtocol):
 
         if documents:
             query_vector = await self.ai.get_embedding(question)
-            doc_id = filters.doc_id if filters else None
-            results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
+            results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, self._scope(filters))
             chunks = self.formatter.from_results(results)
             sources = self.formatter.sources(chunks)
             meta = {"description": "", "badges": [], "sources": sources}

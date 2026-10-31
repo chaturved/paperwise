@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 DEFAULT_CONVERSATION_TITLE = "New conversation"
 
@@ -39,6 +39,7 @@ class MessageOut(BaseModel):
 
 class AskFilters(BaseModel):
     doc_id: int | None = None
+    doc_ids: list[int] | None = Field(default=None, max_length=20)
 
 
 class AskRequest(BaseModel):

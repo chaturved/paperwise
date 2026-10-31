@@ -38,7 +38,7 @@ class LibraryRepositoryProtocol(Protocol):
         user_id: int,
         query_vector: list[float],
         top_k: int,
-        doc_id: int | None,
+        doc_ids: list[int] | None,
     ) -> list: ...
 
 
@@ -169,13 +169,13 @@ class LibraryRepository(LibraryRepositoryProtocol):
         user_id: int,
         query_vector: list[float],
         top_k: int = 5,
-        doc_id: int | None = None,
+        doc_ids: list[int] | None = None,
     ) -> list:
         q = (
             self.db.query(LibraryChunk, Library)
             .join(Library, LibraryChunk.library_id == Library.id)
             .filter(Library.user_id == user_id)
         )
-        if doc_id:
-            q = q.filter(Library.id == doc_id)
+        if doc_ids:
+            q = q.filter(Library.id.in_(doc_ids))
         return q.order_by(LibraryChunk.embedding.cosine_distance(query_vector)).limit(top_k).all()

@@ -102,7 +102,7 @@ class TestLibraryRepository:
 
         assert result == expected
 
-    def test_get_top_k_chunks_with_doc_id_filter(self):
+    def test_get_top_k_chunks_with_doc_ids_filter(self):
         expected = [MagicMock()]
         (
             self.db.query.return_value
@@ -114,7 +114,7 @@ class TestLibraryRepository:
             .all.return_value
         ) = expected
 
-        result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1], top_k=1, doc_id=5)
+        result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1], top_k=1, doc_ids=[5])
 
         assert result == expected
 

@@ -8,13 +8,16 @@ from src.schemas.library import (
     CreateUploadsRequest,
     CreateUploadsResponse,
     DocumentFileResponse,
+    KeyDatesResponse,
     LibraryDocResponse,
 )
+from src.services.key_dates_service import KeyDatesService, KeyDatesServiceProtocol
 from src.services.library_service import LibraryService, LibraryServiceProtocol
 
 router = APIRouter(prefix="/library", tags=["Library"])
 
 upload_limit = UserRateLimit("upload", "20/minute")
+key_dates_limit = UserRateLimit("key-dates", "10/minute")
 
 
 @router.get("")
@@ -86,3 +89,12 @@ def delete_doc(
     service: LibraryServiceProtocol = Depends(LibraryService),
 ):
     return service.delete_document(doc_id, user_id)
+
+
+@router.post("/{doc_id}/key-dates", response_model=KeyDatesResponse, dependencies=[Depends(key_dates_limit)])
+async def key_dates(
+    doc_id: int,
+    user_id: int = Depends(get_current_user_id),
+    service: KeyDatesServiceProtocol = Depends(KeyDatesService),
+) -> KeyDatesResponse:
+    return await service.key_dates(user_id, doc_id)

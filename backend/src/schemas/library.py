@@ -1,3 +1,4 @@
+from datetime import date as CalendarDate
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -14,6 +15,18 @@ class LibraryDocResponse(BaseModel):
     pages: int | None = None
 
     model_config = {"from_attributes": True}
+
+
+class KeyDate(BaseModel):
+    label: str
+    date: CalendarDate | None = None
+    timing: str | None = None
+    quote: str
+    page: int | None = None
+
+
+class KeyDatesResponse(BaseModel):
+    dates: list[KeyDate]
 
 
 class LibraryResponse(BaseModel):

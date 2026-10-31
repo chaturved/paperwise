@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..core.enums import DocumentStatus
@@ -26,6 +27,7 @@ class Library(Base):
     path: Mapped[str | None] = mapped_column(String, nullable=True)
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    key_dates: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     status: Mapped[str] = mapped_column(
         String(20), default=DocumentStatus.READY, server_default=DocumentStatus.READY.value

@@ -200,3 +200,19 @@ class TestLibraryStatusMethods:
         result = self.repo.list_stale([DocumentStatus.UPLOADING], datetime(2026, 1, 1))
 
         assert result == expected
+
+    def test_list_passages_returns_each_chunks_text_and_page_in_order(self):
+        (self.db.query.return_value.filter.return_value.order_by.return_value.all.return_value) = [
+            ("first", 1),
+            ("second", None),
+        ]
+
+        assert self.repo.list_passages(4) == [("first", 1), ("second", None)]
+
+    def test_set_key_dates_saves_them_on_the_document(self):
+        lib = MagicMock(spec=Library)
+
+        self.repo.set_key_dates(lib, [{"label": "x"}])
+
+        assert lib.key_dates == [{"label": "x"}]
+        self.db.commit.assert_called_once()

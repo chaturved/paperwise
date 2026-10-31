@@ -7,6 +7,7 @@ from fastapi import Depends
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
 from src.utils.chunk_formatter import ChunkFormatter
+from src.utils.json_reply import parse_json_reply
 
 NOT_FOUND_MESSAGE = "I couldn't find that in your documents."
 HISTORY_CHARS_PER_MESSAGE = 1500
@@ -138,11 +139,7 @@ Example response:
 
     @staticmethod
     def _parse_questions(output: str, asked: str) -> list[str]:
-        text = output.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        try:
-            items = json.loads(text)
-        except json.JSONDecodeError:
-            return []
+        items = parse_json_reply(output)
         if not isinstance(items, list):
             return []
         questions: list[str] = []

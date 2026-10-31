@@ -27,6 +27,8 @@ class LibraryRepositoryProtocol(Protocol):
     def set_status(self, lib: Library, status: DocumentStatus, error_message: str | None = None) -> None: ...
     def finish_processing(self, lib: Library, text: str, content_hash: str, chunks: list[LibraryChunk]) -> None: ...
     def list_missing_page_numbers(self) -> list[Library]: ...
+    def list_passages(self, library_id: int) -> list[tuple[str, int | None]]: ...
+    def set_key_dates(self, lib: Library, key_dates: list[dict]) -> None: ...
     def rollback(self) -> None: ...
     def list_stale(self, statuses: list[DocumentStatus], cutoff: datetime) -> list[Library]: ...
     def get_chunks_after(self, chunk_id: int, limit: int) -> list[LibraryChunk]: ...
@@ -124,6 +126,20 @@ class LibraryRepository(LibraryRepositoryProtocol):
 
     def rollback(self) -> None:
         self.db.rollback()
+
+    def list_passages(self, library_id: int) -> list[tuple[str, int | None]]:
+        """The text and page of every chunk of a document, in reading order, without the embeddings."""
+        rows = (
+            self.db.query(LibraryChunk.chunk_text, LibraryChunk.page_number)
+            .filter(LibraryChunk.library_id == library_id)
+            .order_by(LibraryChunk.chunk_index)
+            .all()
+        )
+        return [(text, page) for text, page in rows]
+
+    def set_key_dates(self, lib: Library, key_dates: list[dict]) -> None:
+        lib.key_dates = key_dates
+        self.db.commit()
 
     def list_missing_page_numbers(self) -> list[Library]:
         """Ready PDFs that were indexed before chunks recorded their page."""

@@ -33,7 +33,7 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium">{label}</label>
       {children}
-      {error && <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs font-medium text-danger">{error}</p>}
     </div>
   );
 }

@@ -37,6 +37,5 @@ export interface Message {
   content: string;
   meta: Meta | null;
   created_at: string;
-  /** Set on a notice the browser adds when an answer fails; it is never stored. */
   failed?: boolean;
 }

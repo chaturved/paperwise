@@ -1,10 +1,13 @@
 from types import SimpleNamespace
 
+import pytest
+
+from src.core.exceptions import NotFoundError
 from src.utils.message_tree import MessageTree
 
 
-def _message(id: int, parent_id: int | None) -> SimpleNamespace:
-    return SimpleNamespace(id=id, parent_id=parent_id)
+def _message(id: int, parent_id: int | None, role: str = "user") -> SimpleNamespace:
+    return SimpleNamespace(id=id, parent_id=parent_id, role=role)
 
 
 def _two_versions_of_the_second_question() -> MessageTree:
@@ -45,3 +48,27 @@ def test_first_messages_are_versions_of_each_other():
 
 def test_an_empty_conversation_has_an_empty_path():
     assert MessageTree([]).path_to(None) == []
+
+
+def test_require_returns_the_message_with_that_id():
+    assert _two_versions_of_the_second_question().require(2).id == 2
+
+
+def test_require_refuses_an_unknown_id():
+    with pytest.raises(NotFoundError):
+        _two_versions_of_the_second_question().require(99)
+
+
+def test_require_refuses_a_message_with_another_role():
+    tree = MessageTree([_message(1, None, "user"), _message(2, 1, "assistant")])
+
+    assert tree.require(2, "assistant").id == 2
+    with pytest.raises(NotFoundError):
+        tree.require(1, "assistant")
+
+
+def test_the_parent_of_a_message_is_the_one_it_follows():
+    tree = _two_versions_of_the_second_question()
+
+    assert tree.parent_of(tree.by_id[3]).id == 2
+    assert tree.parent_of(tree.by_id[1]) is None

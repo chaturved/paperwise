@@ -2,6 +2,8 @@ from collections import defaultdict
 from collections.abc import Iterable
 from typing import Generic, Protocol, TypeVar
 
+from src.core.exceptions import NotFoundError
+
 
 class TreeMessage(Protocol):
     id: int
@@ -20,6 +22,16 @@ class MessageTree(Generic[M]):
         self._children: dict[int | None, list[M]] = defaultdict(list)
         for message in sorted(self.by_id.values(), key=lambda m: m.id):
             self._children[message.parent_id].append(message)
+
+    def require(self, message_id: int, role: str | None = None) -> M:
+        """The message with this id, optionally only if it has this role. Raises NotFoundError otherwise."""
+        message = self.by_id.get(message_id)
+        if message is None or (role is not None and getattr(message, "role", role) != role):
+            raise NotFoundError("Message not found")
+        return message
+
+    def parent_of(self, message: M) -> M | None:
+        return self.by_id.get(message.parent_id) if message.parent_id is not None else None
 
     def path_to(self, leaf_id: int | None) -> list[M]:
         """The messages from the first one down to `leaf_id`. With no usable leaf, the newest message ends the path."""

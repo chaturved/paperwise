@@ -7,7 +7,7 @@ from src.core.dependencies import get_current_user, get_current_user_id
 from src.core.enums import Plan
 from src.core.exceptions import BadRequestError
 from src.main import app
-from src.services.conversation_service import ConversationService
+from src.services.ask_service import AskService
 
 
 class _FailingService:
@@ -28,7 +28,7 @@ def client():
 
 
 def _ask(client: TestClient, error: Exception) -> str:
-    app.dependency_overrides[ConversationService] = lambda: _FailingService(error)
+    app.dependency_overrides[AskService] = lambda: _FailingService(error)
     return client.post("/api/v1/conversations/1/ask", json={"question": "hi"}).text
 
 
@@ -54,7 +54,7 @@ def test_the_cited_sources_are_sent_after_the_answer(client):
             yield "token", "Rent is due monthly [1]."
             yield "cited", [1]
 
-    app.dependency_overrides[ConversationService] = lambda: _Service()
+    app.dependency_overrides[AskService] = lambda: _Service()
     body = client.post("/api/v1/conversations/1/ask", json={"question": "hi"}).text
 
     assert 'data: {"cited": [1]}' in body

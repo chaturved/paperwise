@@ -16,7 +16,8 @@ from src.schemas.conversation import (
     FollowUpsResponse,
     MessageRef,
 )
-from src.services.conversation_service import FAILED_MESSAGE, ConversationService, ConversationServiceProtocol
+from src.services.ask_service import FAILED_MESSAGE, AskService, AskServiceProtocol
+from src.services.conversation_service import ConversationService, ConversationServiceProtocol
 
 _log = logging.getLogger(__name__)
 
@@ -25,6 +26,14 @@ router = APIRouter(prefix="/conversations", tags=["Conversations"])
 ask_address_limit = RateLimit("ask-address", "90/minute")
 ask_user_limit = UserRateLimit("ask-user", "30/minute")
 follow_ups_limit = UserRateLimit("follow-ups", "30/minute")
+
+
+def _data(payload: dict) -> str:
+    return f"data: {json.dumps(payload)}\n\n"
+
+
+def _error(message: str) -> str:
+    return f"event: error\ndata: {json.dumps({'message': message})}\n\n"
 
 
 @router.get("")
@@ -105,7 +114,7 @@ def branch_conversation(
 async def follow_ups(
     conv_id: int,
     user_id: int = Depends(get_current_user_id),
-    service: ConversationServiceProtocol = Depends(ConversationService),
+    service: AskServiceProtocol = Depends(AskService),
 ) -> FollowUpsResponse:
     return await service.follow_ups(conv_id, user_id)
 
@@ -115,24 +124,19 @@ async def ask_question(
     conv_id: int,
     body: AskRequest,
     user: User = Depends(get_current_user),
-    service: ConversationServiceProtocol = Depends(ConversationService),
+    service: AskServiceProtocol = Depends(AskService),
 ):
     async def streamer():
         try:
             async for event_type, data in service.ask(
                 conv_id, user.id, body.question, body.filters, body.top_k, user.plan, body.edit_of, body.retry_of
             ):
-                if event_type == "meta":
-                    yield f"data: {json.dumps({'meta': data})}\n\n"
-                elif event_type == "token":
-                    yield f"data: {json.dumps({'token': data})}\n\n"
-                elif event_type == "cited":
-                    yield f"data: {json.dumps({'cited': data})}\n\n"
+                yield _data({event_type: data})
         except AppError as e:
-            yield f"event: error\ndata: {json.dumps({'message': e.message})}\n\n"
+            yield _error(e.message)
         except Exception:  # noqa: BLE001 - the stream is already open, so the error has to travel as an event
             _log.exception("Failed to answer question in conversation %s", conv_id)
-            yield f"event: error\ndata: {json.dumps({'message': FAILED_MESSAGE})}\n\n"
+            yield _error(FAILED_MESSAGE)
         finally:
             yield "data: [DONE]\n\n"
 

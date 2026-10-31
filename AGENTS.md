@@ -28,6 +28,7 @@ This is a resume-quality production project. It must feel like a real product an
 - React 19
 - TypeScript 5
 - Tailwind CSS v4
+- Prettier (`npm run format`, 120 columns; long JSX tags put one prop per line)
 - Base UI (`@base-ui/react`: Dialog, Menu, Button) with class-variance-authority, clsx and tailwind-merge
 - React Hook Form + Zod
 - Lucide React
@@ -416,7 +417,7 @@ When building any feature:
 4. Build downward on the backend: `schema → repository → service → route`
 5. Build inward on the frontend: `types → lib/api/ function → hook → component → page`
 6. Ensure the feature works end-to-end before closing
-7. Run `npm run lint`, `npm run typecheck`, and `ruff check .` — fix all errors
+7. Run `npm run format`, `npm run lint`, `npm run typecheck`, and `ruff check .` — fix all errors
 
 ---
 

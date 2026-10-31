@@ -14,17 +14,20 @@ interface Props {
   submitLabel: string;
   busyLabel?: string;
   defaultEmail?: string;
-  onSubmit: (email: string) => void | Promise<void>;
+  onSubmit: (email: string) => string | void | Promise<string | void>;
 }
 
 export function EmailForm({ submitLabel, busyLabel = "Please wait…", defaultEmail = "", onSubmit }: Props) {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: defaultEmail },
   });
 
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data.email))} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit(async (data) => {
+      const message = await onSubmit(data.email);
+      if (message) setError("email", { message });
+    })} noValidate className="space-y-4">
       <Field id="email" label="Email" error={errors.email?.message}>
         <Input
           id="email"

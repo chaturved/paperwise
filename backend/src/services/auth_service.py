@@ -16,6 +16,7 @@ from src.integrations.mailer import SmtpMailer
 from src.repositories.user_repository import UserRepository, UserRepositoryProtocol
 from src.schemas.user import (
     AuthResponse,
+    EmailExistsResponse,
     MessageResponse,
     SignInMethodsResponse,
     TokenResponse,
@@ -33,6 +34,7 @@ class AuthServiceProtocol(Protocol):
     def signup(self, user_in: UserCreate, response: Response) -> AuthResponse: ...
     def login(self, response: Response, form_data: OAuth2PasswordRequestForm) -> AuthResponse: ...
     def sign_in_methods(self, email: str) -> SignInMethodsResponse: ...
+    def email_exists(self, email: str) -> EmailExistsResponse: ...
     def authorize_token(self, form_data: OAuth2PasswordRequestForm) -> TokenResponse: ...
     def refresh(self, request: Request, response: Response) -> MessageResponse: ...
     def logout(self, response: Response) -> MessageResponse: ...
@@ -93,6 +95,11 @@ class AuthService(AuthServiceProtocol):
         password (it signs in with Google) looks different from the rest."""
         user = self.repo.get_by_email(email)
         return SignInMethodsResponse(has_password=user is None or bool(user.hashed_password))
+
+    def email_exists(self, email: str) -> EmailExistsResponse:
+        """Lets sign-up say so at the email step. Sign-up already answers 'already registered' to the same
+        question, so this adds no new disclosure, only an earlier answer."""
+        return EmailExistsResponse(exists=self.repo.get_by_email(email) is not None)
 
     def authorize_token(self, form_data: OAuth2PasswordRequestForm) -> TokenResponse:
         user =self.repo.get_by_email(form_data.username)

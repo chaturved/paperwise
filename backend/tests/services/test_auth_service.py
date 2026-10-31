@@ -113,6 +113,16 @@ class TestAuthService:
 
         assert self.svc.sign_in_methods("nobody@example.com").has_password is True
 
+    def test_email_exists_is_true_for_a_registered_email(self):
+        self.mock_repo.get_by_email.return_value = _make_user()
+
+        assert self.svc.email_exists("user@example.com").exists is True
+
+    def test_email_exists_is_false_for_an_unknown_email(self):
+        self.mock_repo.get_by_email.return_value = None
+
+        assert self.svc.email_exists("nobody@example.com").exists is False
+
     def test_login_raises_when_user_not_found(self):
         self.mock_repo.get_by_email.return_value = None
 

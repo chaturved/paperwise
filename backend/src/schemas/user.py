@@ -36,6 +36,10 @@ class SignInMethodsResponse(BaseModel):
     has_password: bool
 
 
+class EmailExistsResponse(BaseModel):
+    exists: bool
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

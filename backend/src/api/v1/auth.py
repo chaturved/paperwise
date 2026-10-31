@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from src.core.dependencies import get_current_user_id
 from src.core.rate_limit import RateLimit
 from src.schemas.user import (
+    EmailExistsResponse,
     ForgotPasswordRequest,
     MagicLinkRequest,
     ResetPasswordRequest,
@@ -34,6 +35,11 @@ def login_route(
     service: AuthServiceProtocol = Depends(AuthService),
 ):
     return service.login(response, form_data)
+
+
+@router.post("/email-exists", response_model=EmailExistsResponse, dependencies=[Depends(methods_limit)])
+def email_exists_route(body: SignInMethodsRequest, service: AuthServiceProtocol = Depends(AuthService)):
+    return service.email_exists(body.email)
 
 
 @router.post("/methods", response_model=SignInMethodsResponse, dependencies=[Depends(methods_limit)])

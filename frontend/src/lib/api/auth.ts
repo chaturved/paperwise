@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { MessageResponse, SignInMethods, User } from "@/types";
+import type { EmailExists, MessageResponse, SignInMethods, User } from "@/types";
 
 export const getMe = async (): Promise<User> => {
   const res = await apiClient.get("/v1/auth/me");
@@ -16,6 +16,11 @@ export const login = async (email: string, password: string): Promise<User> => {
 
 export const getSignInMethods = async (email: string): Promise<SignInMethods> => {
   const res = await apiClient.post("/v1/auth/methods", { email });
+  return res.data;
+};
+
+export const emailExists = async (email: string): Promise<EmailExists> => {
+  const res = await apiClient.post("/v1/auth/email-exists", { email });
   return res.data;
 };
 

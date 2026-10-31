@@ -11,6 +11,10 @@ export interface SignInMethods {
   has_password: boolean;
 }
 
+export interface EmailExists {
+  exists: boolean;
+}
+
 export interface UsageItem {
   used: number;
   limit: number | null;

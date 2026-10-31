@@ -198,7 +198,7 @@ npm install            # at the repo root: installs lefthook and its git hook
 
 | Check | Backend (`cd backend`) | Frontend (`cd frontend`) |
 |---|---|---|
-| Tests | `pytest` | none yet |
+| Tests | `pytest` | `npm test` (Vitest) |
 | Lint | `ruff check .` | `npm run lint` |
 | Format | `ruff format .` | `npm run format` (check with `npm run format:check`) |
 | Types | `pyright backend/src` from the repo root | `npm run typecheck` |

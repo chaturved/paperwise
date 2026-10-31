@@ -4,7 +4,10 @@ An AI document assistant with retrieval-augmented generation (RAG) chat. Upload 
 
 Full-stack, production-shaped project: typed API contracts, layered backend architecture, JWT + OAuth + magic-link auth, tiered usage limits enforced server-side, and a containerized deployment behind an nginx reverse proxy.
 
-![Paperwise landing page and document chat preview](docs/images/app-preview.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/app-preview-dark.png">
+  <img alt="Paperwise landing page with a cited answer to a question about a document" src="docs/images/app-preview.png">
+</picture>
 
 ## How it works
 

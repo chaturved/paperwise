@@ -12,7 +12,9 @@ class PerLoopSemaphore:
 
     def __init__(self, limit: Callable[[], int]) -> None:
         self._limit = limit
-        self._by_loop: weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.Semaphore] = weakref.WeakKeyDictionary()
+        self._by_loop: weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.Semaphore] = (
+            weakref.WeakKeyDictionary()
+        )
 
     def get(self) -> asyncio.Semaphore:
         loop = asyncio.get_running_loop()

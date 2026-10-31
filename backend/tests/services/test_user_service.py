@@ -30,7 +30,6 @@ class TestUserService:
         self.mock_library = MagicMock(spec_set=LibraryServiceProtocol)
         self.svc = UserService(repo=self.mock_repo, hasher=self.mock_hasher, library=self.mock_library)
 
-
     def test_create_user_hashes_password(self):
         user_in = UserCreate(email="a@b.com", password="secret123", full_name="John Doe")
         self.mock_repo.add.return_value = _make_user(email="a@b.com", full_name="John Doe")
@@ -43,7 +42,6 @@ class TestUserService:
         added = self.mock_repo.add.call_args[0][0]
         assert added.hashed_password == "hashed"
 
-
     def test_create_user_oauth_sets_no_password(self):
         self.mock_repo.add.return_value = _make_user()
 
@@ -51,7 +49,6 @@ class TestUserService:
 
         added = self.mock_repo.add.call_args[0][0]
         assert added.hashed_password is None
-
 
     def test_update_profile_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -68,7 +65,6 @@ class TestUserService:
 
         assert user.full_name == "Jane Smith"
         self.mock_repo.update.assert_called_once_with(user)
-
 
     def test_change_password_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -110,7 +106,6 @@ class TestUserService:
         self.mock_repo.update.assert_called_once_with(user)
         assert result.message == "Password updated"
 
-
     def test_set_password_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
 
@@ -132,7 +127,6 @@ class TestUserService:
 
         assert user.hashed_password == "hashed_new"
         assert result.message == "Password set"
-
 
     def test_remove_account_raises_on_wrong_confirmation(self):
         with pytest.raises(BadRequestError):
@@ -171,7 +165,6 @@ class TestUserService:
 
         self.mock_library.clear_all.assert_not_called()
 
-
     def test_complete_onboarding_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
 
@@ -188,7 +181,6 @@ class TestUserService:
         assert user.onboarding_completed is True
         self.mock_repo.update.assert_called_once_with(user)
         assert result.message == "Onboarding complete"
-
 
     def test_get_usage_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None

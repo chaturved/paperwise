@@ -45,7 +45,10 @@ class ExtractionWorker:
 
         try:
             pages = self.parser.parse(contents, ext)
-            result: dict[str, object] = {"ok": True, "pages": [{"number": p.number, "text": p.text, "scanned": p.scanned} for p in pages]}
+            result: dict[str, object] = {
+                "ok": True,
+                "pages": [{"number": p.number, "text": p.text, "scanned": p.scanned} for p in pages],
+            }
         except BadRequestError as exc:
             result = {"ok": False, "message": exc.message}
         except MemoryError:
@@ -55,4 +58,6 @@ class ExtractionWorker:
 
 
 if __name__ == "__main__":
-    ExtractionWorker(DocumentParser(), ResourceLimits(), ExtractionTimeout()).run(sys.argv[1] if len(sys.argv) > 1 else "")
+    ExtractionWorker(DocumentParser(), ResourceLimits(), ExtractionTimeout()).run(
+        sys.argv[1] if len(sys.argv) > 1 else ""
+    )

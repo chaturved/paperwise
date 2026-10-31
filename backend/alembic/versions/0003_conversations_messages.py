@@ -5,6 +5,7 @@ Revises: 0002_auth_tables
 Create Date: 2026-05-18 00:02:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -30,7 +31,9 @@ def upgrade() -> None:
     op.create_table(
         "messages",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("conversation_id", sa.Integer(), sa.ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "conversation_id", sa.Integer(), sa.ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("role", sa.String(20), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("meta", JSONB(), nullable=True),

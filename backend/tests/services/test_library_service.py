@@ -40,8 +40,9 @@ class TestLibraryService:
         self.mock_repo.page_counts.return_value = {}
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_storage = MagicMock(spec_set=S3Storage)
-        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes())
-
+        self.svc = LibraryService(
+            repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes()
+        )
 
     def test_get_library_data_aggregates_size_and_count(self):
         lib1 = _make_lib(id=1, size=100)
@@ -71,7 +72,6 @@ class TestLibraryService:
         assert result.total_size_bytes == 0
         assert result.sections == []
 
-
     def test_delete_document_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
 
@@ -96,7 +96,6 @@ class TestLibraryService:
 
         self.mock_storage.delete_file.assert_not_called()
         self.mock_repo.delete.assert_called_once_with(lib)
-
 
     def test_clear_all_deletes_all_files_and_clears_repo(self):
         libs = [_make_lib(id=1, path="/tmp/a.pdf"), _make_lib(id=2, path="/tmp/b.pdf")]
@@ -139,7 +138,9 @@ class TestDirectUploads:
         self.mock_storage.public_url.return_value = "https://s/object/library/7/id/contract.pdf"
         self.mock_storage.key_from_path.return_value = "7/id/contract.pdf"
         self.mock_storage.create_upload_url.return_value = "https://signed.example/put"
-        self.svc = LibraryService(repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes())
+        self.svc = LibraryService(
+            repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes()
+        )
 
     @staticmethod
     def _assign_id(library):
@@ -151,7 +152,6 @@ class TestDirectUploads:
         lib = _make_lib(id=11, name="contract.pdf", size=size)
         lib.status = status
         return lib
-
 
     def test_create_uploads_checks_plan_limits_against_active_documents(self):
         request = CreateUploadsRequest(files=[UploadFileRequest(name="contract.pdf", size=500)])
@@ -173,7 +173,11 @@ class TestDirectUploads:
         assert library.path == "https://s/object/library/7/id/contract.pdf"
         self.mock_storage.create_upload_url.assert_called_once_with("7/id/contract.pdf", 500, "application/pdf")
         slot = result.uploads[0]
-        assert (slot.id, slot.upload_url, slot.headers) == (11, "https://signed.example/put", {"Content-Type": "application/pdf"})
+        assert (slot.id, slot.upload_url, slot.headers) == (
+            11,
+            "https://signed.example/put",
+            {"Content-Type": "application/pdf"},
+        )
 
     @pytest.mark.parametrize(
         ("name", "expected"),
@@ -193,7 +197,9 @@ class TestDirectUploads:
 
     def test_create_uploads_ignores_a_content_type_chosen_by_the_browser(self):
         # A file labelled text/html would be served as a web page. The type is never taken from the request.
-        request = CreateUploadsRequest.model_validate({"files": [{"name": "a.pdf", "size": 5, "content_type": "text/html"}]})
+        request = CreateUploadsRequest.model_validate(
+            {"files": [{"name": "a.pdf", "size": 5, "content_type": "text/html"}]}
+        )
 
         result = self.svc.create_uploads(7, Plan.FREE, request)
 
@@ -218,7 +224,6 @@ class TestDirectUploads:
         self.mock_repo.add.assert_not_called()
         self.mock_storage.create_upload_url.assert_not_called()
 
-
     def test_complete_upload_starts_processing_once_the_file_is_stored(self):
         self.mock_repo.get_by_id.return_value = self._doc("uploading")
         self.mock_storage.object_size.return_value = 500
@@ -227,7 +232,9 @@ class TestDirectUploads:
         doc, started = self.svc.complete_upload(7, 11)
 
         assert started is True and doc.id == 11
-        self.mock_repo.transition_status.assert_called_once_with(11, DocumentStatus.UPLOADING, DocumentStatus.PROCESSING)
+        self.mock_repo.transition_status.assert_called_once_with(
+            11, DocumentStatus.UPLOADING, DocumentStatus.PROCESSING
+        )
 
     def test_complete_upload_does_not_schedule_twice_if_another_call_won(self):
         self.mock_repo.get_by_id.return_value = self._doc("uploading")
@@ -276,7 +283,6 @@ class TestDirectUploads:
 
         self.mock_repo.get_by_id.assert_called_once_with(99, 7)
 
-
     def test_retry_restarts_a_failed_document_whose_file_is_still_stored(self):
         self.mock_repo.get_by_id.return_value = self._doc("failed")
         self.mock_storage.object_size.return_value = 500
@@ -312,7 +318,6 @@ class TestDirectUploads:
 
         with pytest.raises(BadRequestError, match="upload it again"):
             self.svc.retry_processing(7, Plan.FREE, 11)
-
 
     def test_file_url_is_a_signed_link_for_a_ready_document(self):
         self.mock_repo.get_by_id.return_value = self._doc("ready")

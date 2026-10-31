@@ -60,5 +60,7 @@ def usage(user_id: int = Depends(get_current_user_id), service: UserServiceProto
 
 
 @router.post("/me/onboarding-complete")
-def onboarding_complete(user_id: int = Depends(get_current_user_id), service: UserServiceProtocol = Depends(UserService)):
+def onboarding_complete(
+    user_id: int = Depends(get_current_user_id), service: UserServiceProtocol = Depends(UserService)
+):
     return service.complete_onboarding(user_id)

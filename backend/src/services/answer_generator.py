@@ -16,7 +16,9 @@ FOLLOW_UP_MAX_CHARS = 120
 
 class AnswerGeneratorProtocol(Protocol):
     async def describe(self, chunks: list[dict], question: str) -> tuple[str, list[dict]]: ...
-    def stream(self, chunks: list[dict], question: str, history: list[tuple[str, str]] | None = None) -> AsyncGenerator[str, None]: ...
+    def stream(
+        self, chunks: list[dict], question: str, history: list[tuple[str, str]] | None = None
+    ) -> AsyncGenerator[str, None]: ...
     def stream_general(self, question: str, history: list[tuple[str, str]]) -> AsyncGenerator[str, None]: ...
     async def follow_ups(self, question: str, answer: str) -> list[str]: ...
 
@@ -89,7 +91,6 @@ Example response:
                 {"label": "From your documents", "icon": "book"},
             ]
 
-
     async def stream(
         self, chunks: list[dict], question: str, history: list[tuple[str, str]] | None = None
     ) -> AsyncGenerator[str, None]:
@@ -147,7 +148,12 @@ Example response:
         questions: list[str] = []
         for item in items:
             question = item.strip() if isinstance(item, str) else ""
-            if question and len(question) <= FOLLOW_UP_MAX_CHARS and question != asked.strip() and question not in questions:
+            if (
+                question
+                and len(question) <= FOLLOW_UP_MAX_CHARS
+                and question != asked.strip()
+                and question not in questions
+            ):
                 questions.append(question)
         return questions[:FOLLOW_UP_COUNT]
 
@@ -156,7 +162,8 @@ Example response:
         if not history:
             return ""
         lines = "\n".join(
-            f"{'User' if role == 'user' else 'Assistant'}: {content[:HISTORY_CHARS_PER_MESSAGE]}" for role, content in history
+            f"{'User' if role == 'user' else 'Assistant'}: {content[:HISTORY_CHARS_PER_MESSAGE]}"
+            for role, content in history
         )
         return f"Conversation so far:\n{lines}\n\n"
 

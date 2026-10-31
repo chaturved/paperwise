@@ -30,14 +30,25 @@ def _chain(*turns: tuple[str, str] | tuple[str, str, dict | None]) -> list[Simpl
     messages = []
     for index, (role, content, *meta) in enumerate(turns, start=1):
         messages.append(
-            SimpleNamespace(id=index, parent_id=index - 1 if index > 1 else None, role=role, content=content, meta=meta[0] if meta else None)
+            SimpleNamespace(
+                id=index,
+                parent_id=index - 1 if index > 1 else None,
+                role=role,
+                content=content,
+                meta=meta[0] if meta else None,
+            )
         )
     return messages
 
 
 def _node(id: int, parent_id: int | None, role: str, content: str = "", meta: dict | None = None) -> SimpleNamespace:
     return SimpleNamespace(
-        id=id, parent_id=parent_id, role=role, content=content or f"{role} {id}", meta=meta, conversation_id=1,
+        id=id,
+        parent_id=parent_id,
+        role=role,
+        content=content or f"{role} {id}",
+        meta=meta,
+        conversation_id=1,
         created_at=datetime.now(UTC),
     )
 
@@ -184,7 +195,10 @@ class TestAskService:
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
         self.mock_conv_repo.get_messages.side_effect = lambda *a, **k: (order.append("history"), _chain(*history))[1]
         self.mock_conv_repo.get_by_id.return_value.active_leaf_id = len(history) or None
-        self.mock_conv_repo.add_message.side_effect = lambda *a, **k: (order.append(f"add:{a[1]}"), SimpleNamespace(id=next(self.stored_ids)))[1]
+        self.mock_conv_repo.add_message.side_effect = lambda *a, **k: (
+            order.append(f"add:{a[1]}"),
+            SimpleNamespace(id=next(self.stored_ids)),
+        )[1]
         seen = {}
 
         async def fake_general(question, previous):
@@ -337,8 +351,10 @@ class TestAskService:
     async def _ask_with_passages(self, answer: str):
         self.mock_conv_repo.get_by_id.return_value = _make_conv(title="My chat")
         passages = [
-            (SimpleNamespace(chunk_index=i, page_number=i + 1, scanned=False, chunk_text=f"passage {i + 1}"),
-             SimpleNamespace(id=7, name="lease.pdf", type="pdf", path="/lease.pdf"))
+            (
+                SimpleNamespace(chunk_index=i, page_number=i + 1, scanned=False, chunk_text=f"passage {i + 1}"),
+                SimpleNamespace(id=7, name="lease.pdf", type="pdf", path="/lease.pdf"),
+            )
             for i in range(3)
         ]
         self.mock_lib_repo.get_top_k_chunks.return_value = passages
@@ -357,7 +373,15 @@ class TestAskService:
 
         sources = events[0][1]["sources"]
         assert [s["n"] for s in sources] == [1, 2, 3]
-        assert sources[1] == {"n": 2, "doc_id": 7, "name": "lease.pdf", "page": 2, "scanned": False, "quote": "passage 2", "icon": "pdf"}
+        assert sources[1] == {
+            "n": 2,
+            "doc_id": 7,
+            "name": "lease.pdf",
+            "page": 2,
+            "scanned": False,
+            "quote": "passage 2",
+            "icon": "pdf",
+        }
 
     async def test_ask_reports_only_citations_that_match_a_real_source(self):
         events = await self._ask_with_passages("Rent is due monthly [2], plus a late fee [9].")
@@ -445,8 +469,12 @@ class TestAskVersions:
         self.conv = _make_conv(title="My chat")
         self.conv_repo.get_by_id.return_value = self.conv
         self.ids = iter(range(100, 1000))
-        self.conv_repo.set_active_leaf.side_effect = lambda conv, message_id: setattr(conv, "active_leaf_id", message_id)
-        self.conv_repo.add_message.side_effect = lambda *a, **k: _node(next(self.ids), a[4] if len(a) > 4 else k.get("parent_id"), a[1], a[2], a[3])
+        self.conv_repo.set_active_leaf.side_effect = lambda conv, message_id: setattr(
+            conv, "active_leaf_id", message_id
+        )
+        self.conv_repo.add_message.side_effect = lambda *a, **k: _node(
+            next(self.ids), a[4] if len(a) > 4 else k.get("parent_id"), a[1], a[2], a[3]
+        )
         self.svc = AskService(
             conv_repo=self.conv_repo,
             lib_repo=self.lib_repo,
@@ -464,6 +492,7 @@ class TestAskVersions:
             yield "new answer"
 
         self.answers.stream_general = general
+
     def _tree(self) -> list[SimpleNamespace]:
         """1 Q1 -> 2 A1 -> 3 Q2 -> 4 A2, with 5 an edited Q2 -> 6 its answer, and 7 a retried A1."""
         return [
@@ -478,6 +507,7 @@ class TestAskVersions:
 
     async def _ask(self, question="next", edit_of=None, retry_of=None):
         return [e async for e in self.svc.ask(1, 1, question, None, 5, Plan.FREE, edit_of, retry_of)]
+
     async def test_a_new_question_is_stored_after_the_last_message_and_becomes_the_end_of_the_conversation(self):
         self.conv.active_leaf_id = 4
         self.conv_repo.get_messages.return_value = self._tree()

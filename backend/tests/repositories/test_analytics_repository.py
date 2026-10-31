@@ -15,7 +15,6 @@ class TestAnalyticsRepository:
         self.db = MagicMock(spec_set=Session)
         self.repo = AnalyticsRepository(db=self.db)
 
-
     def test_get_overview_returns_expected_keys(self):
         self.db.query.return_value.filter.return_value.scalar.return_value = 5
         self.db.query.return_value.join.return_value.filter.return_value.scalar.return_value = 10
@@ -49,9 +48,7 @@ class TestAnalyticsRepository:
         up_row.__getitem__ = lambda self, i: "up" if i == 0 else 3
         down_row = MagicMock()
         down_row.__getitem__ = lambda self, i: "down" if i == 0 else 1
-        self.db.query.return_value.filter.return_value.group_by.return_value.all.return_value = [
-            ("up", 3), ("down", 1)
-        ]
+        self.db.query.return_value.filter.return_value.group_by.return_value.all.return_value = [("up", 3), ("down", 1)]
 
         result = self.repo.get_overview(user_id=1)
 
@@ -59,17 +56,12 @@ class TestAnalyticsRepository:
         assert result["thumbs_down"] == 1
         assert result["quality_pct"] == 75
 
-
     def test_get_query_volume_returns_list_of_dicts(self):
         row = MagicMock()
         row.day = "2024-01-01"
         row.count = 5
         (
-            self.db.query.return_value
-            .filter.return_value
-            .group_by.return_value
-            .order_by.return_value
-            .all.return_value
+            self.db.query.return_value.filter.return_value.group_by.return_value.order_by.return_value.all.return_value
         ) = [row]
 
         result = self.repo.get_query_volume(user_id=1, days=30)
@@ -78,17 +70,12 @@ class TestAnalyticsRepository:
 
     def test_get_query_volume_empty(self):
         (
-            self.db.query.return_value
-            .filter.return_value
-            .group_by.return_value
-            .order_by.return_value
-            .all.return_value
+            self.db.query.return_value.filter.return_value.group_by.return_value.order_by.return_value.all.return_value
         ) = []
 
         result = self.repo.get_query_volume(user_id=1, days=7)
 
         assert result == []
-
 
     def test_upsert_feedback_updates_existing(self):
         existing = MagicMock(spec=MessageFeedback)
@@ -113,7 +100,6 @@ class TestAnalyticsRepository:
         assert isinstance(added, MessageFeedback)
         assert added.message_id == 1
         assert added.value == "up"
-
 
     def test_get_user_feedbacks_returns_empty_dict_for_no_ids(self):
         result = self.repo.get_user_feedbacks(user_id=1, message_ids=[])
@@ -143,12 +129,14 @@ class TestQuestionsAreCountedFromTheAskLog:
         QueryUsageLog.__table__.create(engine)
         with Session(engine) as session:
             now = datetime.now(UTC).replace(tzinfo=None)
-            session.add_all([
-                QueryUsageLog(user_id=1, created_at=now),
-                QueryUsageLog(user_id=1, created_at=now),
-                QueryUsageLog(user_id=1, created_at=now - timedelta(days=40)),
-                QueryUsageLog(user_id=2, created_at=now),
-            ])
+            session.add_all(
+                [
+                    QueryUsageLog(user_id=1, created_at=now),
+                    QueryUsageLog(user_id=1, created_at=now),
+                    QueryUsageLog(user_id=1, created_at=now - timedelta(days=40)),
+                    QueryUsageLog(user_id=2, created_at=now),
+                ]
+            )
             session.commit()
             yield AnalyticsRepository(db=session)
 

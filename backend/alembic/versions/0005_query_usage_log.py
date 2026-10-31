@@ -4,6 +4,7 @@ Revision ID: 0005
 Revises: 0004_waitlist
 Create Date: 2026-05-21
 """
+
 import sqlalchemy as sa
 
 from alembic import op

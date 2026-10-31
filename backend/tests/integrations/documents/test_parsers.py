@@ -40,7 +40,9 @@ class TestExtractDocx:
         assert page.text.splitlines() == ["Payment terms", "Due | 30 days", "Late fee | 2%", "Termination"]
 
     def test_empty_document_has_no_readable_text(self):
-        assert [TextChunker().clean(p.text) for p in DocumentParser().parse(_docx_bytes(lambda d: None), "docx")] == [""]
+        assert [TextChunker().clean(p.text) for p in DocumentParser().parse(_docx_bytes(lambda d: None), "docx")] == [
+            ""
+        ]
 
 
 def _zip_bytes(members: dict[str, bytes]) -> bytes:

@@ -42,7 +42,6 @@ class PlanLimitError(AppError):
         self.limit = limit
 
 
-
 class TooManyRequestsError(AppError):
     def __init__(self, message: str = "Too many requests. Please wait a moment and try again."):
         super().__init__(message, "RATE_LIMITED", 429)

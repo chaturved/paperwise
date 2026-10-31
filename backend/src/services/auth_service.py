@@ -72,8 +72,20 @@ class AuthService(AuthServiceProtocol):
             _log.warning("Failed to send %s to %s", description, recipient, exc_info=True)
 
     def _set_auth_cookies(self, response: Response, user_id: int) -> None:
-        response.set_cookie(settings.ACCESS_TOKEN_KEY, self.tokens.create_access_token(user_id), httponly=True, secure=True, samesite="lax")
-        response.set_cookie(settings.REFRESH_TOKEN_KEY, self.tokens.create_refresh_token(user_id), httponly=True, secure=True, samesite="lax")
+        response.set_cookie(
+            settings.ACCESS_TOKEN_KEY,
+            self.tokens.create_access_token(user_id),
+            httponly=True,
+            secure=True,
+            samesite="lax",
+        )
+        response.set_cookie(
+            settings.REFRESH_TOKEN_KEY,
+            self.tokens.create_refresh_token(user_id),
+            httponly=True,
+            secure=True,
+            samesite="lax",
+        )
 
     def signup(self, user_in: UserCreate, response: Response) -> AuthResponse:
         if self.repo.get_by_email(user_in.email):
@@ -102,7 +114,7 @@ class AuthService(AuthServiceProtocol):
         return EmailExistsResponse(exists=self.repo.get_by_email(email) is not None)
 
     def authorize_token(self, form_data: OAuth2PasswordRequestForm) -> TokenResponse:
-        user =self.repo.get_by_email(form_data.username)
+        user = self.repo.get_by_email(form_data.username)
         if not user or not user.hashed_password or not self.hasher.verify(form_data.password, user.hashed_password):
             raise UnauthorizedError("Incorrect email or password")
         return TokenResponse(access_token=self.tokens.create_access_token(user.id))
@@ -112,7 +124,13 @@ class AuthService(AuthServiceProtocol):
         if not token:
             raise UnauthorizedError("Missing refresh token")
         user_id = self.tokens.validate_refresh_token(token)
-        response.set_cookie(settings.ACCESS_TOKEN_KEY, self.tokens.create_access_token(user_id), httponly=True, secure=True, samesite="lax")
+        response.set_cookie(
+            settings.ACCESS_TOKEN_KEY,
+            self.tokens.create_access_token(user_id),
+            httponly=True,
+            secure=True,
+            samesite="lax",
+        )
         return MessageResponse(message="Token refreshed")
 
     def logout(self, response: Response) -> MessageResponse:
@@ -125,7 +143,6 @@ class AuthService(AuthServiceProtocol):
         if not user:
             raise NotFoundError("User not found")
         return UserResponse.model_validate(user)
-
 
     async def google_redirect(self, request: Request):
         return await self.google.authorize_redirect(request)
@@ -156,7 +173,6 @@ class AuthService(AuthServiceProtocol):
             _log.exception("Unexpected error in google_callback")
             return RedirectResponse(settings.APP_URL + "/login?error=oauth_failed")
 
-
     def send_magic_link(self, email: str) -> MessageResponse:
         raw_token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
@@ -180,7 +196,6 @@ class AuthService(AuthServiceProtocol):
         self.repo.mark_magic_token_used(mt)
         self._set_auth_cookies(response, user.id)
         return RedirectResponse(settings.APP_URL + "/dashboard")
-
 
     def forgot_password(self, email: str) -> MessageResponse:
         user = self.repo.get_by_email(email)

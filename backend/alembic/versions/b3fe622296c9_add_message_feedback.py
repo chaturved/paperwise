@@ -5,6 +5,7 @@ Revises: 0004_waitlist
 Create Date: 2026-05-19
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa

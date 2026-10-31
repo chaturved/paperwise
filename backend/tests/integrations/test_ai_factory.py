@@ -7,11 +7,14 @@ from src.integrations.ai.huggingface import HuggingFaceProvider
 
 
 class TestAIProviderFactory:
-    @pytest.mark.parametrize("name, expected", [
-        ("gemini", GeminiProvider),
-        ("GEMINI", GeminiProvider),
-        ("huggingface", HuggingFaceProvider),
-    ])
+    @pytest.mark.parametrize(
+        "name, expected",
+        [
+            ("gemini", GeminiProvider),
+            ("GEMINI", GeminiProvider),
+            ("huggingface", HuggingFaceProvider),
+        ],
+    )
     def test_create_returns_configured_provider(self, monkeypatch, name, expected):
         monkeypatch.setattr("src.integrations.ai.factory.settings.AI_PROVIDER", name)
 

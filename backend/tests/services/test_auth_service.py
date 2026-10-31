@@ -13,8 +13,14 @@ from src.services.user_service import UserServiceProtocol
 from src.utils.security import PasswordHasher
 
 
-def _make_user(id=1, email="user@example.com", full_name="Test User", plan="free",
-               hashed_password="hashed", onboarding_completed=False):
+def _make_user(
+    id=1,
+    email="user@example.com",
+    full_name="Test User",
+    plan="free",
+    hashed_password="hashed",
+    onboarding_completed=False,
+):
     user = MagicMock()
     user.id = id
     user.email = email
@@ -52,11 +58,11 @@ class TestAuthService:
         self.response = MagicMock()
         self.request = MagicMock()
 
-
     def test_signup_raises_when_email_already_exists(self):
         self.mock_repo.get_by_email.return_value = _make_user()
 
         from src.schemas.user import UserCreate
+
         user_in = UserCreate(email="user@example.com", password="pass123", full_name="Test")
 
         with pytest.raises(BadRequestError):
@@ -68,6 +74,7 @@ class TestAuthService:
         self.mock_user_svc.create_user.return_value = user
 
         from src.schemas.user import UserCreate
+
         user_in = UserCreate(email="new@example.com", password="pass123", full_name="New User")
 
         with (
@@ -87,6 +94,7 @@ class TestAuthService:
         self.mock_mailer.send_welcome.side_effect = Exception("smtp down")
 
         from src.schemas.user import UserCreate
+
         user_in = UserCreate(email="new@example.com", password="pass123", full_name="New User")
 
         with (
@@ -96,7 +104,6 @@ class TestAuthService:
             result = self.svc.signup(user_in, self.response)
 
         assert result.user.email == "user@example.com"
-
 
     def test_sign_in_methods_asks_for_a_password_when_the_account_has_one(self):
         self.mock_repo.get_by_email.return_value = _make_user(hashed_password="hashed")
@@ -152,7 +159,6 @@ class TestAuthService:
         self.response.set_cookie.assert_called()
         assert result.user.id == 1
 
-
     def test_authorize_token_raises_when_credentials_wrong(self):
         self.mock_repo.get_by_email.return_value = None
 
@@ -169,7 +175,6 @@ class TestAuthService:
             result = self.svc.authorize_token(_make_form())
 
         assert result.access_token == "tok123"
-
 
     def test_refresh_raises_when_cookie_missing(self):
         self.request.cookies.get.return_value = None
@@ -189,13 +194,11 @@ class TestAuthService:
         self.response.set_cookie.assert_called_once()
         assert result.message == "Token refreshed"
 
-
     def test_logout_clears_both_cookies(self):
         result = self.svc.logout(self.response)
 
         assert self.response.delete_cookie.call_count == 2
         assert result.message == "Logged out"
-
 
     def test_get_me_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -210,7 +213,6 @@ class TestAuthService:
 
         assert result.email == "user@example.com"
 
-
     def test_send_magic_link_invalidates_old_and_creates_new(self):
         result = self.svc.send_magic_link("user@example.com")
 
@@ -224,7 +226,6 @@ class TestAuthService:
         result = self.svc.send_magic_link("user@example.com")
 
         assert result.message is not None
-
 
     def test_verify_magic_link_redirects_when_token_not_found(self):
         self.mock_repo.get_magic_token.return_value = None
@@ -273,7 +274,6 @@ class TestAuthService:
         self.mock_repo.mark_magic_token_used.assert_called_once_with(mt)
         assert "dashboard" in result.headers["location"]
 
-
     def test_forgot_password_returns_generic_message_when_no_account(self):
         self.mock_repo.get_by_email.return_value = None
 
@@ -291,7 +291,6 @@ class TestAuthService:
         self.mock_repo.invalidate_reset_tokens.assert_called_once_with(1)
         self.mock_repo.create_reset_token.assert_called_once()
         assert result.message is not None
-
 
     def test_reset_password_raises_when_token_not_found(self):
         self.mock_repo.get_reset_token.return_value = None
@@ -371,8 +370,10 @@ class TestAuthServiceGoogle:
         self.mock_repo.get_oauth_account.return_value = MagicMock(user_id=1)
         self.mock_repo.get_by_id.return_value = user
 
-        with patch.object(self.mock_tokens, "create_access_token", return_value="a"), \
-             patch.object(self.mock_tokens, "create_refresh_token", return_value="r"):
+        with (
+            patch.object(self.mock_tokens, "create_access_token", return_value="a"),
+            patch.object(self.mock_tokens, "create_refresh_token", return_value="r"),
+        ):
             response = await self.svc.google_callback(MagicMock(), MagicMock())
 
         assert response.headers["location"].endswith("/dashboard")
@@ -384,8 +385,10 @@ class TestAuthServiceGoogle:
         self.mock_repo.get_by_email.return_value = None
         self.mock_user_svc.create_user_oauth.return_value = _make_user(onboarding_completed=False)
 
-        with patch.object(self.mock_tokens, "create_access_token", return_value="a"), \
-             patch.object(self.mock_tokens, "create_refresh_token", return_value="r"):
+        with (
+            patch.object(self.mock_tokens, "create_access_token", return_value="a"),
+            patch.object(self.mock_tokens, "create_refresh_token", return_value="r"),
+        ):
             response = await self.svc.google_callback(MagicMock(), MagicMock())
 
         self.mock_user_svc.create_user_oauth.assert_called_once_with("g@example.com", "Goo Gle")

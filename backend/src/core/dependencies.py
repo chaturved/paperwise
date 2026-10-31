@@ -30,4 +30,3 @@ def get_current_user(
     if not user:
         raise UnauthorizedError()
     return user
-

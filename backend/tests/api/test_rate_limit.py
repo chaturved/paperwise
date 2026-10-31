@@ -65,7 +65,10 @@ def test_the_login_route_is_limited():
     app.dependency_overrides[AuthService] = lambda: _Auth()
     try:
         client = TestClient(app)
-        statuses = [client.post("/api/v1/auth/login", data={"username": "a@b.co", "password": "x"}).status_code for _ in range(11)]
+        statuses = [
+            client.post("/api/v1/auth/login", data={"username": "a@b.co", "password": "x"}).status_code
+            for _ in range(11)
+        ]
     finally:
         app.dependency_overrides.clear()
 
@@ -158,4 +161,6 @@ def test_the_email_exists_route_goes_neutral_for_one_email_after_ten_asks(monkey
     responses = _post_repeatedly("/api/v1/auth/email-exists", {"email": "a@b.co"}, _Taken(), 12)
 
     assert [r.json()["exists"] for r in responses] == [True] * 10 + [False] * 2
-    assert _post_repeatedly("/api/v1/auth/email-exists", {"email": "other@b.co"}, _Taken(), 1)[0].json() == {"exists": True}
+    assert _post_repeatedly("/api/v1/auth/email-exists", {"email": "other@b.co"}, _Taken(), 1)[0].json() == {
+        "exists": True
+    }

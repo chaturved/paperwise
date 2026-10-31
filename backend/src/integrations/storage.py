@@ -42,7 +42,12 @@ class S3Storage:
         """A short-lived URL the browser can PUT one file to. Its exact size and type are part of the signature."""
         return self.client.generate_presigned_url(
             "put_object",
-            Params={"Bucket": settings.S3_LIBRARY_BUCKET, "Key": key, "ContentLength": size, "ContentType": content_type},
+            Params={
+                "Bucket": settings.S3_LIBRARY_BUCKET,
+                "Key": key,
+                "ContentLength": size,
+                "ContentType": content_type,
+            },
             ExpiresIn=settings.UPLOAD_URL_EXPIRY_SECONDS,
         )
 

@@ -29,7 +29,8 @@ class AnalyticsRepository(AnalyticsRepositoryProtocol):
             self.db.query(func.count(LibraryChunk.id))
             .join(Library, LibraryChunk.library_id == Library.id)
             .filter(Library.user_id == user_id)
-            .scalar() or 0
+            .scalar()
+            or 0
         )
 
         feedback_rows = (

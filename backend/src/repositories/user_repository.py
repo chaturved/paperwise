@@ -67,7 +67,6 @@ class UserRepository(UserRepositoryProtocol):
         self.db.delete(user)
         self.db.commit()
 
-
     def get_oauth_account(self, provider: str, provider_user_id: str) -> OAuthAccount | None:
         return (
             self.db.query(OAuthAccount)
@@ -95,7 +94,6 @@ class UserRepository(UserRepositoryProtocol):
         self.db.refresh(acct)
         return acct
 
-
     def invalidate_magic_tokens(self, email: str) -> None:
         self.db.query(MagicToken).filter(MagicToken.email == email, MagicToken.used_at.is_(None)).delete()
         self.db.commit()
@@ -114,7 +112,6 @@ class UserRepository(UserRepositoryProtocol):
         mt.used_at = datetime.now(UTC)
         self.db.commit()
 
-
     def invalidate_reset_tokens(self, user_id: int) -> None:
         self.db.query(ResetToken).filter(ResetToken.user_id == user_id, ResetToken.used_at.is_(None)).delete()
         self.db.commit()
@@ -132,7 +129,6 @@ class UserRepository(UserRepositoryProtocol):
     def mark_reset_token_used(self, rt: ResetToken) -> None:
         rt.used_at = datetime.now(UTC)
         self.db.commit()
-
 
     def count_documents(self, user_id: int) -> int:
         return self.db.query(Library).filter(Library.user_id == user_id).count()

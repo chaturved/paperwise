@@ -14,7 +14,9 @@ SYSTEM_PROMPT = "You are a helpful assistant."
 TIMEOUT = httpx.Timeout(60.0)
 EMBED_BATCH_SIZE = 100
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
-AT_LIMIT_MESSAGE = "The AI service has reached its limit for now. Please try again later. This question was not counted."
+AT_LIMIT_MESSAGE = (
+    "The AI service has reached its limit for now. Please try again later. This question was not counted."
+)
 
 
 @dataclass(frozen=True)
@@ -133,6 +135,6 @@ class GeminiProvider(AIProvider):
             res.raise_for_status()
             async for line in res.aiter_lines():
                 if line.startswith("data:"):
-                    text = self._extract_text(json.loads(line[len("data:"):]))
+                    text = self._extract_text(json.loads(line[len("data:") :]))
                     if text:
                         yield text

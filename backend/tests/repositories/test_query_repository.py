@@ -26,11 +26,7 @@ class TestQueryRepository:
     def test_get_recent_queries_returns_ordered_list(self):
         expected = [MagicMock(spec=RecentQuery), MagicMock(spec=RecentQuery)]
         (
-            self.db.query.return_value
-            .filter.return_value
-            .order_by.return_value
-            .limit.return_value
-            .all.return_value
+            self.db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value
         ) = expected
 
         result = self.repo.get_recent_queries(user_id=1, limit=5)

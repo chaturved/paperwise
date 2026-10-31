@@ -4,7 +4,13 @@ from src.utils.chunk_formatter import ChunkFormatter
 
 
 def _chunk(
-    name: str, index: int, text: str, page: int | None = 1, kind: str | None = "pdf", doc_id: int = 7, scanned: bool = False
+    name: str,
+    index: int,
+    text: str,
+    page: int | None = 1,
+    kind: str | None = "pdf",
+    doc_id: int = 7,
+    scanned: bool = False,
 ) -> dict:
     return {
         "library_id": doc_id,
@@ -39,7 +45,11 @@ class TestChunkFormatter:
 
     def test_sources_give_every_passage_its_own_number_in_the_same_order_as_the_context(self):
         sources = self.formatter.sources(
-            [_chunk("a.pdf", 0, "first", page=2), _chunk("a.pdf", 1, "second", page=5), _chunk("b.md", 0, "third", None, None, 9)]
+            [
+                _chunk("a.pdf", 0, "first", page=2),
+                _chunk("a.pdf", 1, "second", page=5),
+                _chunk("b.md", 0, "third", None, None, 9),
+            ]
         )
 
         assert sources == [

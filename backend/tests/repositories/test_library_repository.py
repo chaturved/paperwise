@@ -15,7 +15,6 @@ class TestLibraryRepository:
         self.db = MagicMock(spec_set=Session)
         self.repo = LibraryRepository(db=self.db)
 
-
     def test_get_all_returns_user_libraries(self):
         expected = [MagicMock(spec=Library), MagicMock(spec=Library)]
         self.db.query.return_value.filter.return_value.all.return_value = expected
@@ -24,7 +23,6 @@ class TestLibraryRepository:
 
         assert result == expected
         self.db.query.assert_called_once_with(Library)
-
 
     def test_get_by_id_returns_matching_library(self):
         expected = MagicMock(spec=Library)
@@ -41,7 +39,6 @@ class TestLibraryRepository:
 
         assert result is None
 
-
     def test_add_persists_and_returns_library(self):
         lib = MagicMock(spec=Library)
 
@@ -51,7 +48,6 @@ class TestLibraryRepository:
         self.db.commit.assert_called_once()
         self.db.refresh.assert_called_once_with(lib)
         assert result == lib
-
 
     def test_add_chunks_bulk_saves_and_commits(self):
         chunks: list[LibraryChunk] = [MagicMock(spec=LibraryChunk), MagicMock(spec=LibraryChunk)]
@@ -67,7 +63,6 @@ class TestLibraryRepository:
         self.db.add_all.assert_called_once_with([])
         self.db.commit.assert_called_once()
 
-
     def test_delete_removes_and_commits(self):
         lib = MagicMock(spec=Library)
 
@@ -75,7 +70,6 @@ class TestLibraryRepository:
 
         self.db.delete.assert_called_once_with(lib)
         self.db.commit.assert_called_once()
-
 
     def test_clear_user_library_commits(self):
         lib1, lib2 = MagicMock(), MagicMock()
@@ -86,16 +80,10 @@ class TestLibraryRepository:
 
         self.db.commit.assert_called_once()
 
-
     def test_get_top_k_chunks_returns_results(self):
         expected = [MagicMock(), MagicMock()]
         (
-            self.db.query.return_value
-            .join.return_value
-            .filter.return_value
-            .order_by.return_value
-            .limit.return_value
-            .all.return_value
+            self.db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value
         ) = expected
 
         result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1, 0.2], top_k=2)
@@ -105,13 +93,7 @@ class TestLibraryRepository:
     def test_get_top_k_chunks_with_doc_ids_filter(self):
         expected = [MagicMock()]
         (
-            self.db.query.return_value
-            .join.return_value
-            .filter.return_value
-            .filter.return_value
-            .order_by.return_value
-            .limit.return_value
-            .all.return_value
+            self.db.query.return_value.join.return_value.filter.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value
         ) = expected
 
         result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1], top_k=1, doc_ids=[5])
@@ -127,7 +109,9 @@ class TestLibraryRepositoryReembedding:
 
     def test_get_chunks_after_returns_next_batch(self):
         expected = [MagicMock(spec=LibraryChunk)]
-        self.db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = expected
+        self.db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = (
+            expected
+        )
 
         assert self.repo.get_chunks_after(chunk_id=10, limit=50) == expected
         self.db.query.assert_called_once_with(LibraryChunk)

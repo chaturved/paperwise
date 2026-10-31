@@ -33,5 +33,7 @@ class Library(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     status_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    chunks: Mapped[list[LibraryChunk]] = relationship("LibraryChunk", back_populates="library", cascade="all, delete-orphan")
+    chunks: Mapped[list[LibraryChunk]] = relationship(
+        "LibraryChunk", back_populates="library", cascade="all, delete-orphan"
+    )
     user: Mapped[User] = relationship("User", back_populates="libraries")

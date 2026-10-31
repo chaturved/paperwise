@@ -15,14 +15,15 @@ class TestTierService:
         self.mock_repo = MagicMock(spec_set=TierRepositoryProtocol)
         self.svc = TierService(repo=self.mock_repo)
 
-
     def test_metadata_accepts_files_within_the_free_limits(self):
         files = [UploadMeta("contract.docx", 2 * 1024 * 1024), UploadMeta("notes.md", 10)]
         self.svc.check_upload_metadata(Plan.FREE, files, current_doc_count=3)
 
     def test_metadata_rejects_going_over_the_document_limit(self):
         with pytest.raises(PlanLimitError) as exc:
-            self.svc.check_upload_metadata(Plan.FREE, [UploadMeta("a.pdf", 1), UploadMeta("b.pdf", 1)], current_doc_count=4)
+            self.svc.check_upload_metadata(
+                Plan.FREE, [UploadMeta("a.pdf", 1), UploadMeta("b.pdf", 1)], current_doc_count=4
+            )
         assert exc.value.limit == "documents"
 
     def test_metadata_rejects_a_file_over_the_size_limit(self):
@@ -46,7 +47,6 @@ class TestTierService:
         with pytest.raises(PlanLimitError) as exc:
             self.svc.check_upload_metadata(Plan.PRO, [UploadMeta("big.pdf", 51 * 1024 * 1024)], current_doc_count=0)
         assert exc.value.limit == "file_size"
-
 
     def test_ask_free_at_limit(self):
         self.mock_repo.count_queries_24h.return_value = 20
@@ -74,7 +74,6 @@ class TestTierService:
         self.mock_repo.count_queries_24h.return_value = 10000
         self.svc.check_and_log_ask(Plan.PRO, user_id=1)
         self.mock_repo.log_query.assert_called_once_with(1)
-
 
     def test_history_free_too_old(self):
         old = datetime.now(UTC) - timedelta(days=8)

@@ -18,7 +18,6 @@ class TestUserRepository:
         self.db = MagicMock(spec_set=Session)
         self.repo = UserRepository(db=self.db)
 
-
     def test_add_persists_and_returns_user(self):
         user = MagicMock(spec=User)
 
@@ -28,7 +27,6 @@ class TestUserRepository:
         self.db.commit.assert_called_once()
         self.db.refresh.assert_called_once_with(user)
         assert result == user
-
 
     def test_get_by_email_returns_user(self):
         expected = MagicMock(spec=User)
@@ -45,7 +43,6 @@ class TestUserRepository:
 
         assert result is None
 
-
     def test_get_by_id_returns_user(self):
         expected = MagicMock(spec=User)
         self.db.query.return_value.filter.return_value.first.return_value = expected
@@ -53,7 +50,6 @@ class TestUserRepository:
         result = self.repo.get_by_id(1)
 
         assert result == expected
-
 
     def test_update_commits_and_refreshes(self):
         user = MagicMock(spec=User)
@@ -64,7 +60,6 @@ class TestUserRepository:
         self.db.refresh.assert_called_once_with(user)
         assert result == user
 
-
     def test_delete_removes_and_commits(self):
         user = MagicMock(spec=User)
 
@@ -72,7 +67,6 @@ class TestUserRepository:
 
         self.db.delete.assert_called_once_with(user)
         self.db.commit.assert_called_once()
-
 
     def test_get_oauth_account_returns_matching(self):
         expected = MagicMock()
@@ -82,17 +76,18 @@ class TestUserRepository:
 
         assert result == expected
 
-
     def test_create_oauth_account_persists_and_returns(self):
         self.repo.create_oauth_account(
-            user_id=1, provider="google", provider_user_id="sub-123",
-            access_token="tok", refresh_token=None,
+            user_id=1,
+            provider="google",
+            provider_user_id="sub-123",
+            access_token="tok",
+            refresh_token=None,
         )
 
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()
         self.db.refresh.assert_called_once()
-
 
     def test_invalidate_magic_tokens_deletes_and_commits(self):
         self.repo.invalidate_magic_tokens("user@example.com")
@@ -128,7 +123,6 @@ class TestUserRepository:
         assert mt.used_at is not None
         self.db.commit.assert_called_once()
 
-
     def test_invalidate_reset_tokens_deletes_and_commits(self):
         self.repo.invalidate_reset_tokens(user_id=1)
 
@@ -160,7 +154,6 @@ class TestUserRepository:
 
         assert rt.used_at is not None
         self.db.commit.assert_called_once()
-
 
     def test_count_documents_returns_count(self):
         self.db.query.return_value.filter.return_value.count.return_value = 7
@@ -199,12 +192,14 @@ class TestQuestionCountMatchesTheLimit:
         QueryUsageLog.__table__.create(engine)
         now = datetime.now(UTC).replace(tzinfo=None)
         with Session(engine) as session:
-            session.add_all([
-                QueryUsageLog(user_id=1, created_at=now),
-                QueryUsageLog(user_id=1, created_at=now - timedelta(hours=23)),
-                QueryUsageLog(user_id=1, created_at=now - timedelta(hours=25)),
-                QueryUsageLog(user_id=2, created_at=now),
-            ])
+            session.add_all(
+                [
+                    QueryUsageLog(user_id=1, created_at=now),
+                    QueryUsageLog(user_id=1, created_at=now - timedelta(hours=23)),
+                    QueryUsageLog(user_id=1, created_at=now - timedelta(hours=25)),
+                    QueryUsageLog(user_id=2, created_at=now),
+                ]
+            )
             session.commit()
 
             assert UserRepository(db=session).count_queries_24h(user_id=1) == 2

@@ -22,7 +22,12 @@ def _make_conv(id=1, title="New conversation", days_old=0):
 
 def _node(id: int, parent_id: int | None, role: str, content: str = "", meta: dict | None = None) -> SimpleNamespace:
     return SimpleNamespace(
-        id=id, parent_id=parent_id, role=role, content=content or f"{role} {id}", meta=meta, conversation_id=1,
+        id=id,
+        parent_id=parent_id,
+        role=role,
+        content=content or f"{role} {id}",
+        meta=meta,
+        conversation_id=1,
         created_at=datetime.now(UTC),
     )
 
@@ -68,7 +73,6 @@ class TestConversationService:
         assert self.svc.search_conversations(user_id=7, query=" ") == []
         self.mock_conv_repo.search.assert_not_called()
 
-
     def test_new_conversation_creates_and_returns(self):
         conv = _make_conv(title="Custom title")
         conv.updated_at = datetime.now(UTC)
@@ -78,7 +82,6 @@ class TestConversationService:
 
         self.mock_conv_repo.create.assert_called_once_with(1, "Custom title")
         assert result.title == "Custom title"
-
 
     def test_rename_conversation_raises_when_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -100,7 +103,6 @@ class TestConversationService:
         self.mock_conv_repo.update_title.assert_called_once_with(conv, "New")
         assert result.title == "New"
 
-
     def test_remove_conversation_raises_when_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
 
@@ -115,7 +117,6 @@ class TestConversationService:
 
         self.mock_conv_repo.delete.assert_called_once_with(conv)
         assert result.message == "Conversation deleted"
-
 
     def test_list_messages_raises_when_conv_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -158,8 +159,12 @@ class TestMessageVersions:
         self.conv = _make_conv(title="My chat")
         self.conv_repo.get_by_id.return_value = self.conv
         self.ids = iter(range(100, 1000))
-        self.conv_repo.set_active_leaf.side_effect = lambda conv, message_id: setattr(conv, "active_leaf_id", message_id)
-        self.conv_repo.add_message.side_effect = lambda *a, **k: _node(next(self.ids), a[4] if len(a) > 4 else k.get("parent_id"), a[1], a[2], a[3])
+        self.conv_repo.set_active_leaf.side_effect = lambda conv, message_id: setattr(
+            conv, "active_leaf_id", message_id
+        )
+        self.conv_repo.add_message.side_effect = lambda *a, **k: _node(
+            next(self.ids), a[4] if len(a) > 4 else k.get("parent_id"), a[1], a[2], a[3]
+        )
         self.svc = ConversationService(conv_repo=self.conv_repo, tier=self.tier)
 
     def _tree(self) -> list[SimpleNamespace]:

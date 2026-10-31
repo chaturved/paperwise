@@ -18,7 +18,9 @@ class Message(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id", ondelete="CASCADE"))
-    parent_id: Mapped[int | None] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), index=True, nullable=True)
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE"), index=True, nullable=True
+    )
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
     meta: Mapped[Any | None] = mapped_column(JSONB, nullable=True)

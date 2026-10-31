@@ -5,6 +5,7 @@ Revises: 0003_conversations_messages
 Create Date: 2026-05-18 00:03:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa

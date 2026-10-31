@@ -10,7 +10,13 @@ from src.services.demo_request_service import THANKS_MESSAGE, DemoRequestService
 
 
 def _request(**overrides) -> DemoRequestCreate:
-    fields = {"name": "Sam Rivera", "email": "Sam@Example.com", "company": "Rivera Design", "team_size": "2-10", "message": "Contracts"}
+    fields = {
+        "name": "Sam Rivera",
+        "email": "Sam@Example.com",
+        "company": "Rivera Design",
+        "team_size": "2-10",
+        "message": "Contracts",
+    }
     return DemoRequestCreate(**{**fields, **overrides})
 
 
@@ -29,7 +35,11 @@ class TestDemoRequestService:
 
         saved = self.repo.add.call_args.args[0]
         assert (saved.name, saved.email, saved.company, saved.team_size, saved.message) == (
-            "Sam Rivera", "sam@example.com", "Rivera Design", "2-10", "Contracts",
+            "Sam Rivera",
+            "sam@example.com",
+            "Rivera Design",
+            "2-10",
+            "Contracts",
         )
         assert result.message == THANKS_MESSAGE
 
@@ -82,7 +92,9 @@ class TestDemoRequestSchema:
     def test_a_line_break_in_the_name_cannot_survive(self):
         assert _request(name="Sam\r\nBcc: someone@else.com").name == "Sam Bcc: someone@else.com"
 
-    @pytest.mark.parametrize("field,value", [("name", ""), ("name", "x" * 121), ("message", "x" * 2001), ("team_size", "500")])
+    @pytest.mark.parametrize(
+        "field,value", [("name", ""), ("name", "x" * 121), ("message", "x" * 2001), ("team_size", "500")]
+    )
     def test_bad_values_are_refused(self, field, value):
         with pytest.raises(ValueError):
             _request(**{field: value})

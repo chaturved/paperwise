@@ -161,7 +161,10 @@ class TestRecoverInterrupted:
         )
 
     def test_marks_stuck_processing_documents_as_failed_and_removes_abandoned_uploads(self):
-        stuck, abandoned = _lib(id=1), _lib(id=2, status=DocumentStatus.UPLOADING, path="https://s/object/library/2/y/b.pdf")
+        stuck, abandoned = (
+            _lib(id=1),
+            _lib(id=2, status=DocumentStatus.UPLOADING, path="https://s/object/library/2/y/b.pdf"),
+        )
         self.repo.list_stale.side_effect = lambda statuses, cutoff: {
             DocumentStatus.PROCESSING: [stuck],
             DocumentStatus.UPLOADING: [abandoned],
@@ -222,7 +225,9 @@ class TestReindex:
 
         self.repo.finish_processing.assert_not_called()
 
-    @pytest.mark.parametrize("error", [BadRequestError("too large"), RuntimeError("provider down"), StorageError("down")])
+    @pytest.mark.parametrize(
+        "error", [BadRequestError("too large"), RuntimeError("provider down"), StorageError("down")]
+    )
     async def test_a_failure_leaves_the_document_ready_and_keeps_its_file(self, error):
         self.reader.extract = AsyncMock(side_effect=error)
 

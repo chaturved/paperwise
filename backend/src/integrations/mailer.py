@@ -50,8 +50,15 @@ class SmtpMailer:
             ("Message", demo_request.message or "-"),
         ]
         plain = "New demo request\n\n" + "\n".join(f"{label}: {value}" for label, value in details)
-        rows = "".join(f"<p><strong>{html_escape(label)}:</strong> {html_escape(str(value))}</p>" for label, value in details)
-        self._send(to_email, f"Demo request from {demo_request.name}", f"<div style='font-family:sans-serif'><h2>New demo request</h2>{rows}</div>", plain)
+        rows = "".join(
+            f"<p><strong>{html_escape(label)}:</strong> {html_escape(str(value))}</p>" for label, value in details
+        )
+        self._send(
+            to_email,
+            f"Demo request from {demo_request.name}",
+            f"<div style='font-family:sans-serif'><h2>New demo request</h2>{rows}</div>",
+            plain,
+        )
 
     def send_magic_link(self, to_email: str, token: str) -> None:
         link = f"{settings.APP_URL}/auth/magic-link/verify?token={token}"

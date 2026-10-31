@@ -13,9 +13,11 @@ if TYPE_CHECKING:
 
 try:
     from pgvector.sqlalchemy import Vector
+
     _EMBEDDING_COL = Vector(settings.EMBEDDING_DIMENSIONS)
 except ImportError:
     from sqlalchemy import Text as _Text
+
     _EMBEDDING_COL = _Text()
 
 

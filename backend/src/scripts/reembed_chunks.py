@@ -5,6 +5,7 @@ different models can't be compared, so old chunks stop matching new questions.
 
     cd backend && python -m src.scripts.reembed_chunks
 """
+
 import asyncio
 
 from src.database.db import SessionLocal

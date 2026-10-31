@@ -66,11 +66,7 @@ class ConversationRepository(ConversationRepositoryProtocol):
         )
 
     def get_by_id(self, conv_id: int, user_id: int) -> Conversation | None:
-        return (
-            self.db.query(Conversation)
-            .filter(Conversation.id == conv_id, Conversation.user_id == user_id)
-            .first()
-        )
+        return self.db.query(Conversation).filter(Conversation.id == conv_id, Conversation.user_id == user_id).first()
 
     def update_title(self, conv: Conversation, title: str) -> Conversation:
         conv.title = title
@@ -86,7 +82,6 @@ class ConversationRepository(ConversationRepositoryProtocol):
         self.db.delete(conv)
         self.db.commit()
 
-
     def add_message(
         self, conversation_id: int, role: str, content: str, meta: dict | None = None, parent_id: int | None = None
     ) -> Message:
@@ -98,10 +93,7 @@ class ConversationRepository(ConversationRepositoryProtocol):
 
     def get_messages(self, conversation_id: int) -> list[Message]:
         return (
-            self.db.query(Message)
-            .filter(Message.conversation_id == conversation_id)
-            .order_by(Message.id.asc())
-            .all()
+            self.db.query(Message).filter(Message.conversation_id == conversation_id).order_by(Message.id.asc()).all()
         )
 
     def set_active_leaf(self, conv: Conversation, message_id: int | None) -> None:

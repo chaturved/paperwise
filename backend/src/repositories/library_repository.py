@@ -141,11 +141,7 @@ class LibraryRepository(LibraryRepositoryProtocol):
 
     def get_chunks_after(self, chunk_id: int, limit: int) -> list[LibraryChunk]:
         return (
-            self.db.query(LibraryChunk)
-            .filter(LibraryChunk.id > chunk_id)
-            .order_by(LibraryChunk.id)
-            .limit(limit)
-            .all()
+            self.db.query(LibraryChunk).filter(LibraryChunk.id > chunk_id).order_by(LibraryChunk.id).limit(limit).all()
         )
 
     def set_embeddings(self, chunks: list[LibraryChunk], embeddings: list[list[float]]) -> None:

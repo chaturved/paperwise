@@ -40,7 +40,9 @@ async def test_extension_is_case_insensitive():
 
 
 async def test_docx_is_parsed_in_the_worker():
-    assert await IsolatedExtractor().extract(_docx_bytes("Payment due in 30 days"), "docx") == [Page(None, "Payment due in 30 days")]
+    assert await IsolatedExtractor().extract(_docx_bytes("Payment due in 30 days"), "docx") == [
+        Page(None, "Payment due in 30 days")
+    ]
 
 
 async def test_worker_errors_keep_their_plain_message():
@@ -104,7 +106,7 @@ async def test_crashed_worker_is_reported_as_too_complex(monkeypatch):
     assert "too large or complex" in exc.value.message
 
 
-_SLOW_WORKER = "import time; time.sleep(0.3); print('{\"ok\": true, \"pages\": [{\"number\": null, \"text\": \"done\"}]}')"
+_SLOW_WORKER = 'import time; time.sleep(0.3); print(\'{"ok": true, "pages": [{"number": null, "text": "done"}]}\')'
 
 
 def _track_concurrency(monkeypatch):

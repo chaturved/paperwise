@@ -5,6 +5,7 @@ Revises: 0001_alter_users
 Create Date: 2026-05-18 00:01:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa

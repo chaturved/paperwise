@@ -20,7 +20,9 @@ class TokenService(TokenServiceProtocol):
         self.codec = codec
 
     def create_access_token(self, user_id: int) -> str:
-        return self._create(user_id, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES), settings.ACCESS_TOKEN_TYPE)
+        return self._create(
+            user_id, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES), settings.ACCESS_TOKEN_TYPE
+        )
 
     def create_refresh_token(self, user_id: int) -> str:
         return self._create(user_id, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS), settings.REFRESH_TOKEN_TYPE)

@@ -20,6 +20,7 @@ from .timeouts import ExtractionTimeout
 # The worker is started as `python -m src.integrations.documents.worker`, so it must run from the backend root.
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
 
+
 class IsolatedExtractor:
     """Parses a file in a separate process. At most EXTRACT_MAX_CONCURRENCY workers run at once per server
     process, shared by every instance. Raises BadRequestError for unreadable or oversized files, when parsing

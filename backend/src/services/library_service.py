@@ -85,7 +85,9 @@ class LibraryService(LibraryServiceProtocol):
             )
             upload_url = self.storage.create_upload_url(key, f.size, content_type)
             slots.append(
-                UploadSlotResponse(id=library.id, name=name, upload_url=upload_url, headers={"Content-Type": content_type})
+                UploadSlotResponse(
+                    id=library.id, name=name, upload_url=upload_url, headers={"Content-Type": content_type}
+                )
             )
         return CreateUploadsResponse(uploads=slots)
 

@@ -25,7 +25,9 @@ def test_a_demo_request_reaches_the_service(client):
     service = _Service()
     app.dependency_overrides[DemoRequestService] = lambda: service
 
-    response = client.post("/api/v1/demo-requests", json={"name": "Sam", "email": "sam@example.com", "team_size": "solo"})
+    response = client.post(
+        "/api/v1/demo-requests", json={"name": "Sam", "email": "sam@example.com", "team_size": "solo"}
+    )
 
     assert response.status_code == 200
     assert service.received.email == "sam@example.com"

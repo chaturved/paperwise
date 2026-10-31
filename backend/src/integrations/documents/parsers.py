@@ -145,7 +145,13 @@ class DocumentParser:
         docx_parser = DocxParser(DocxArchiveGuard(), budget)
         text_parser = PlainTextParser()
         ocr = TesseractPageOcr() if settings.OCR_ENABLED else None
-        return {"pdf": PdfParser(budget, ocr), "docx": docx_parser, "doc": docx_parser, "txt": text_parser, "md": text_parser}
+        return {
+            "pdf": PdfParser(budget, ocr),
+            "docx": docx_parser,
+            "doc": docx_parser,
+            "txt": text_parser,
+            "md": text_parser,
+        }
 
     def parse(self, contents: bytes, ext: str) -> list[Page]:
         """Return the pages of an uploaded file. Raises BadRequestError with a plain message if it can't be used."""

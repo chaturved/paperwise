@@ -115,7 +115,11 @@ class ConversationService(ConversationServiceProtocol):
     def _with_versions(message: Message, tree: MessageTree[Message]) -> MessageOut:
         sibling_ids = [version.id for version in tree.versions(message)]
         return MessageOut.model_validate(message).model_copy(
-            update={"version": sibling_ids.index(message.id) + 1, "versions": len(sibling_ids), "sibling_ids": sibling_ids}
+            update={
+                "version": sibling_ids.index(message.id) + 1,
+                "versions": len(sibling_ids),
+                "sibling_ids": sibling_ids,
+            }
         )
 
     @staticmethod

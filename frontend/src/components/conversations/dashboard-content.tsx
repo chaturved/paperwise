@@ -5,18 +5,30 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAppLayout } from "@/context/AppLayoutContext";
 import { useSSEStream } from "@/hooks/useSSEStream";
-import { useAccountUsage } from "@/hooks/useAccountUsage";
 import { useAttachDocuments } from "@/hooks/useAttachDocuments";
 import { useLibrary } from "@/hooks/useLibrary";
 import { historyLimitReached } from "@/lib/api-error";
 import { createConversation, getMessages } from "@/lib/api/conversations";
-import type { Message } from "@/types";
+import type { LibraryDoc, Message } from "@/types";
 import { AddDocumentButton } from "./add-document-button";
 import { AIMessage } from "./ai-message";
 import { InputBox } from "./input-box";
 import { DashboardWelcome } from "./dashboard-welcome";
 import { HistoryLimitNotice } from "./history-limit-notice";
 import { UserMessage } from "./user-message";
+
+const validIds = (ids: number[]) => ids.filter((id) => Number.isInteger(id) && id > 0);
+
+function scopeFromParams(params: URLSearchParams): number[] {
+  const several = (params.get("docs") ?? "").split(",").filter(Boolean).map(Number);
+  return validIds(several.length ? several : [Number(params.get("doc"))]);
+}
+
+function scopeLabel(docIds: number[], documents: LibraryDoc[]): string | null {
+  if (docIds.length === 0) return null;
+  if (docIds.length > 1) return `${docIds.length} documents`;
+  return documents.find((document) => document.id === docIds[0])?.name ?? null;
+}
 
 function DashboardInner() {
   const params = useSearchParams();
@@ -32,18 +44,20 @@ function DashboardInner() {
   const [historyLocked, setHistoryLocked] = useState(false);
   const [inputValue, setInputValue]     = useState("");
   const [sidebarRefresh, setSidebarRefresh] = useState(0);
-  const { attach: handleAttach, uploading: isUploading } = useAttachDocuments(() => setSidebarRefresh((value) => value + 1));
-  const usage = useAccountUsage(sidebarRefresh);
-  const { documents, loaded: libraryLoaded } = useLibrary();
-  const [docId, setDocId] = useState<number | null>(() => {
-    const id = Number(params.get("doc"));
-    return Number.isInteger(id) && id > 0 ? id : null;
+  const { documents, loaded: libraryLoaded, refresh: refreshLibrary } = useLibrary();
+  const { attach: handleAttach, uploading: isUploading } = useAttachDocuments(() => {
+    setSidebarRefresh((value) => value + 1);
+    refreshLibrary();
   });
-  const scopeName = documents.find((document) => document.id === docId)?.name ?? null;
+  const [docIds, setDocIds] = useState<number[]>(() => scopeFromParams(params));
+  const scopeName = scopeLabel(docIds, documents);
+  const selectDoc = useCallback((id: number | null) => setDocIds(id === null ? [] : [id]), []);
 
   useEffect(() => {
-    if (libraryLoaded && docId !== null && !documents.some((document) => document.id === docId)) setDocId(null);
-  }, [libraryLoaded, docId, documents]);
+    if (!libraryLoaded || docIds.length === 0) return;
+    const known = docIds.filter((id) => documents.some((document) => document.id === id));
+    if (known.length !== docIds.length) setDocIds(known);
+  }, [libraryLoaded, docIds, documents]);
   const chatEndRef  = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const newConversationIdRef = useRef<number | null>(null);
@@ -103,7 +117,7 @@ function DashboardInner() {
 
   const handleNewChat = useCallback(() => {
     resetStream();
-    setDocId(null);
+    setDocIds([]);
     setActiveConvId(null);
     setMessages([]);
     setLoadingConversation(false);
@@ -113,7 +127,7 @@ function DashboardInner() {
   const handleConvSelect = useCallback((id: number) => {
     if (id === activeConvId) return;
     resetStream();
-    setDocId(null);
+    setDocIds([]);
     setMessages([]);
     setLoadingConversation(true);
     setActiveConvId(id);
@@ -168,8 +182,15 @@ function DashboardInner() {
     setInputValue("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
-    await sendStream(convId, q, docId);
-  }, [activeConvId, docId, inputValue, isStreaming, router, sendStream]);
+    await sendStream(convId, q, docIds);
+  }, [activeConvId, docIds, inputValue, isStreaming, router, sendStream]);
+
+  const lastAssistantId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
+  const questionBefore = (index: number): string | null => messages.slice(0, index).reverse().find((message) => message.role === "user")?.content ?? null;
+  const handleRewrite = useCallback(() => {
+    const last = [...messages].reverse().find((message) => message.role === "user");
+    if (last) handleSend(last.content);
+  }, [messages, handleSend]);
 
   const handleSendRef = useRef(handleSend);
   handleSendRef.current = handleSend;
@@ -184,12 +205,11 @@ function DashboardInner() {
   }, [initialQuestion, router]);
 
   const inChat = messages.length > 0 || activeConvId !== null;
-  const documentCount = usage?.documents.used ?? null;
   const title = inChat ? conversations.find((conversation) => conversation.id === activeConvId)?.title ?? "Conversation" : "New chat";
 
   return (
     <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-workspace text-ink">
-      <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-5 sm:px-10">
+      <div className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line px-5 sm:px-10">
         <h1 className={`min-w-0 truncate text-[15px] ${inChat ? "font-medium" : "text-muted"}`}>{title}</h1>
         <AddDocumentButton onAttach={handleAttach} uploading={isUploading} />
       </div>
@@ -200,10 +220,10 @@ function DashboardInner() {
         <>
           <div className="thin-scroll relative z-10 flex-1 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
             <div className="mx-auto w-full max-w-[700px] space-y-9">
-            {loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg) =>
+            {loadingConversation ? <p className="text-sm text-muted">Loading conversation…</p> : messages.map((msg, index) =>
               msg.role === "user"
                 ? <UserMessage key={msg.id} content={msg.content} />
-                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} />
+                : <AIMessage key={msg.id} messageId={msg.id} content={msg.content} meta={msg.meta} timestamp={msg.created_at} question={questionBefore(index)} onRewrite={msg.id === lastAssistantId && !isStreaming ? handleRewrite : undefined} />
             )}
             {isStreaming && (
               <AIMessage content={streamingContent} meta={streamingMeta} streaming timestamp={new Date().toISOString()} />
@@ -222,9 +242,11 @@ function DashboardInner() {
               isUploading={isUploading}
               onAttach={handleAttach}
               textareaRef={textareaRef}
+              documents={documents}
+              docIds={docIds}
+              onSelectDoc={selectDoc}
               placeholder="Ask a follow-up"
               scope={scopeName ? `Asking in ${scopeName}` : undefined}
-              onClearScope={scopeName ? () => setDocId(null) : undefined}
             />
             <p className="mt-2.5 text-center text-xs text-muted">Check sources before relying on an answer.</p>
             </div>
@@ -239,9 +261,11 @@ function DashboardInner() {
           isUploading={isUploading}
           onAttach={handleAttach}
           textareaRef={textareaRef}
-          documentCount={documentCount}
+          documents={documents}
+          docIds={docIds}
+          onSelectDoc={selectDoc}
           scopeName={scopeName}
-          onClearScope={() => setDocId(null)}
+          conversations={conversations}
         />
       )}
     </main>

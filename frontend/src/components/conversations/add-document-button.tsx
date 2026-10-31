@@ -16,7 +16,7 @@ export function AddDocumentButton({ onAttach, uploading }: Props) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="inline-flex h-9 items-center rounded border border-field px-3.5 text-[13px] font-medium transition hover:border-ink disabled:opacity-50"
+        className="inline-flex h-8 items-center rounded border border-field px-3 text-[13px] font-medium transition hover:border-ink disabled:opacity-50"
       >
         {uploading ? "Uploading…" : "Add a document"}
       </button>

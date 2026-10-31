@@ -34,7 +34,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <button type="button" aria-label="Open navigation" onClick={() => setMobileMenuOpen(true)} className="flex h-9 w-9 items-center justify-center rounded border border-line"><Menu size={18} /></button>
       </div>
       {mobileMenuOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMobileMenuOpen(false)} />}
-      <div className={`fixed inset-y-0 left-0 z-50 w-[300px] max-w-[calc(100vw-3rem)] transition-transform duration-200 md:static md:z-auto md:w-[300px] md:max-w-none md:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-[300px] max-w-[calc(100vw-3rem)] transition-transform duration-200 md:static md:z-auto md:w-[260px] md:max-w-none md:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <button type="button" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)} className="absolute right-3 top-4 z-10 flex h-8 w-8 items-center justify-center rounded text-ink/60 md:hidden"><X size={18} /></button>
         <AppSidebar
           {...sidebarCallbacks}

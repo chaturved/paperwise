@@ -13,6 +13,9 @@ import { AccountMenu } from "./account-menu";
 import { ConversationList } from "./conversation-list";
 import { PlanMeter } from "./plan-meter";
 
+const rowClass = (active: boolean) =>
+  `flex h-9 w-full items-center gap-3 rounded px-3 text-sm transition hover:bg-ink/[0.05] hover:text-ink ${active ? "bg-ink/[0.08] font-medium text-ink" : "text-ink/80"}`;
+
 interface Props {
   activeConvId?: number | null;
   onConvSelect?: (id: number) => void;
@@ -27,7 +30,9 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
   const { conversations, refresh, remove, rename } = useConversations(onConversationsChange);
   const [searchOpen, setSearchOpen] = useState(false);
   const usage = useAccountUsage(refreshKey);
-  const onLibraryPage = usePathname().startsWith("/library");
+  const pathname = usePathname();
+  const onLibraryPage = pathname.startsWith("/library");
+  const onNewChatPage = pathname.startsWith("/dashboard") && !activeConvId;
 
   useEffect(() => {
     refresh();
@@ -63,7 +68,7 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden border-r border-line bg-rail text-ink">
       <ConversationSearchDialog open={searchOpen} onOpenChange={setSearchOpen} recentConversations={conversations} onSelect={handleSelect} />
-      <div className="flex h-16 shrink-0 items-center justify-between gap-2 px-6">
+      <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-5">
         <Link href="/dashboard" className="font-display text-[23px] tracking-[-0.0125em]">Paperwise</Link>
         <button
           type="button"
@@ -80,15 +85,12 @@ export default function AppSidebar({ activeConvId, onConvSelect, onConvDelete, o
         <button
           type="button"
           onClick={handleNewChat}
-          className="btn-primary w-full gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          aria-current={onNewChatPage ? "page" : undefined}
+          className={`${rowClass(onNewChatPage)} text-left`}
         >
-          <Plus size={16} strokeWidth={2} /> New chat
+          <Plus size={17} strokeWidth={1.7} /> New chat
         </button>
-        <Link
-          href="/library"
-          aria-current={onLibraryPage ? "page" : undefined}
-          className={`flex h-10 w-full items-center gap-3 rounded px-3 text-sm transition hover:bg-ink/[0.05] hover:text-ink ${onLibraryPage ? "bg-ink/[0.08] font-medium text-ink" : "text-ink/80"}`}
-        >
+        <Link href="/library" aria-current={onLibraryPage ? "page" : undefined} className={rowClass(onLibraryPage)}>
           <FileText size={17} strokeWidth={1.7} /> Library
           {usage && <span className="ml-auto font-mono text-xs text-muted">{usage.documents.used}</span>}
         </Link>

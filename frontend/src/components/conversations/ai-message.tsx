@@ -1,40 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Bot, Shield, Waves, Sparkles, Star, Zap, BookOpen, Link2,
-  Check, AlertTriangle,
-} from "lucide-react";
+import { Copy, Download, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { setFeedback } from "@/lib/api/analytics";
 import { CITATION_HREF_PREFIX, citedSources, linkCitations } from "@/lib/citations";
-import type { Badge, Meta } from "@/types";
+import { answerToMarkdown, downloadText } from "@/lib/export-answer";
+import type { Meta } from "@/types";
 import { CitationChip } from "./citation-chip";
 import { SourcesPanel, sourceElementId } from "./sources-panel";
-
-const BADGE_ICONS: Record<string, React.ReactNode> = {
-  bot:       <Bot size={10} />,
-  shield:    <Shield size={10} />,
-  waves:     <Waves size={10} />,
-  sparkles:  <Sparkles size={10} />,
-  star:      <Star size={10} />,
-  lightning: <Zap size={10} />,
-  book:      <BookOpen size={10} />,
-  link:      <Link2 size={10} />,
-  check:     <Check size={10} />,
-  warning:   <AlertTriangle size={10} />,
-};
-
-function BadgeChip({ badge }: { badge: Badge }) {
-  return (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded border border-line px-2 py-[2px] text-[11px] font-medium text-ink/70">
-      <span className="opacity-60">{BADGE_ICONS[badge.icon] ?? <Sparkles size={10} />}</span>
-      {badge.label}
-    </span>
-  );
-}
 
 interface Props {
   messageId?: number;
@@ -42,9 +18,13 @@ interface Props {
   meta: Meta | null;
   streaming?: boolean;
   timestamp: string;
+  question?: string | null;
+  onRewrite?: () => void;
 }
 
-export function AIMessage({ messageId, content, meta, streaming, timestamp }: Props) {
+const ACTION = "inline-flex h-7 items-center gap-1.5 rounded px-2 text-[13px] text-muted transition hover:bg-ink/[0.06] hover:text-ink";
+
+export function AIMessage({ messageId, content, meta, streaming, timestamp, question, onRewrite }: Props) {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
   const [feedback, setFeedbackState] = useState<"up" | "down" | null>(null);
 
@@ -60,6 +40,7 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
   };
 
   const sources = citedSources(meta);
+  const handleExport = () => downloadText("paperwise-answer.md", answerToMarkdown(question ?? null, content, sources));
   const messageKey = String(messageId ?? "new");
 
   const showSource = (n: number) => {
@@ -68,7 +49,6 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
   };
   const toggleSource = (n: number) => setExpandedSource((current) => (current === n ? null : n));
 
-  const hasMeta    = !streaming && (meta?.description || (meta?.badges && meta.badges.length > 0));
 
   return (
     <div className="msg-in group">
@@ -87,15 +67,6 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
             </span>
           )}
         </div>
-
-        {hasMeta && (
-          <div className="mb-3 space-y-1.5">
-            {meta?.description && <p className="text-sm leading-relaxed text-muted">{meta.description}</p>}
-            {meta?.badges && meta.badges.length > 0 && (
-              <div className="flex flex-wrap gap-1">{meta.badges.map((b, i) => <BadgeChip key={i} badge={b} />)}</div>
-            )}
-          </div>
-        )}
 
         {streaming && !content ? (
           <div className="space-y-2.5 py-1">
@@ -127,10 +98,13 @@ export function AIMessage({ messageId, content, meta, streaming, timestamp }: Pr
         {!streaming && <SourcesPanel messageKey={messageKey} sources={sources} expanded={expandedSource} onToggle={toggleSource} />}
 
         {!streaming && (
-          <div className="mt-4 flex items-center gap-4 text-[13px] text-muted">
-            <button type="button" onClick={handleCopy} className="link-underline hover:text-ink">Copy</button>
-            <button type="button" onClick={() => handleFeedback("up")} aria-pressed={feedback === "up"} className={`link-underline hover:text-ink ${feedback === "up" ? "font-medium text-ink" : ""}`}>Helpful</button>
-            <button type="button" onClick={() => handleFeedback("down")} aria-pressed={feedback === "down"} className={`link-underline hover:text-ink ${feedback === "down" ? "font-medium text-ink" : ""}`}>Not helpful</button>
+          <div className="mt-3 flex items-center gap-1">
+            <button type="button" onClick={handleCopy} className={ACTION}><Copy size={14} /> Copy</button>
+            <button type="button" onClick={handleExport} className={ACTION}><Download size={14} /> Export</button>
+            {onRewrite && <button type="button" onClick={onRewrite} className={ACTION}><RefreshCw size={14} /> Rewrite</button>}
+            <span className="flex-1" />
+            <button type="button" onClick={() => handleFeedback("up")} aria-pressed={feedback === "up"} aria-label="Helpful" className={`${ACTION} ${feedback === "up" ? "text-ink" : ""}`}><ThumbsUp size={14} fill={feedback === "up" ? "currentColor" : "none"} /></button>
+            <button type="button" onClick={() => handleFeedback("down")} aria-pressed={feedback === "down"} aria-label="Not helpful" className={`${ACTION} ${feedback === "down" ? "text-ink" : ""}`}><ThumbsDown size={14} fill={feedback === "down" ? "currentColor" : "none"} /></button>
           </div>
         )}
       </div>

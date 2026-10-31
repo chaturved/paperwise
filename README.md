@@ -44,7 +44,7 @@ flowchart LR
     Tier --> PG
 ```
 
-**Ingestion**: the browser uploads each file straight to storage through a signed URL that fixes its exact size and type, then tells the API it arrived. A background job downloads it, hashes it (sha256) to reject duplicates, extracts its text in an isolated worker process (PyMuPDF for PDF, `python-docx` for Word), splits it into ~500-character overlapping chunks, embeds them via the configured AI provider (Gemini or Hugging Face), and saves the text, chunks and `ready` status in one commit. A document moves `uploading → processing → ready` (or `failed`, which the user can retry), so a failed step never leaves a half-indexed document that counts against the plan quota.
+**Ingestion**: the browser uploads each file straight to storage through a signed URL that fixes its exact size and type, then tells the API it arrived. A background job downloads it, hashes it (sha256) to reject duplicates, extracts its text in an isolated worker process (PyMuPDF for PDF, `python-docx` for Word; PDF pages with no text layer are read with Tesseract OCR and marked as scanned), splits it into ~500-character overlapping chunks, embeds them via the configured AI provider (Gemini or Hugging Face), and saves the text, chunks and `ready` status in one commit. A document moves `uploading → processing → ready` (or `failed`, which the user can retry), so a failed step never leaves a half-indexed document that counts against the plan quota.
 
 **Retrieval + answering**: a question is embedded with the same model, and `pgvector`'s cosine-distance operator finds the top-k nearest chunks directly in SQL. Those chunks are assembled into a prompt with the question, sent to the chat model, and the response is streamed back to the browser token-by-token over Server-Sent Events — the UI renders it incrementally rather than waiting for the full answer.
 
@@ -52,7 +52,9 @@ flowchart LR
 
 - **Auth** — email/password, Google OAuth, and passwordless magic links, all issuing the same `httponly`/`Secure` JWT access + refresh cookie pair
 - **Document library** — upload PDF/TXT/MD, content-hash deduplication (rejects a re-upload before it touches storage or the embedding API), per-plan file-size and file-type limits
-- **RAG chat** — streamed, cited answers over your own documents; conversation history persisted per user
+- **RAG chat** — streamed answers over your own documents, each passage cited as `[n]` with its page and a "read from a scan" mark when it came from OCR; conversation history persisted per user
+- **Edit, retry and branch** — edit any question or retry an answer and keep the old version behind a `1/2` switcher (messages form a tree), or continue from any answer in a new chat
+- **Follow-up suggestions** and a **sources panel** beside the chat on wide screens
 - **Onboarding** — guided first-run flow that hands the first question straight into a real dashboard conversation
 - **Analytics** — usage dashboard
 - **Plans**, enforced server-side per request:
@@ -179,20 +181,37 @@ Runs on a single AWS EC2 instance (t3.small) via this same `docker-compose.yml`,
 
 - Live at `https://paperwise.chaturved-sumanth-lakkaraju.com`
 - `deploy.sh` — pulls latest `main` and runs `docker compose up -d --build` on the instance
-- `.github/workflows/deploy.yml` — manually triggered from the Actions tab; runs backend `pytest` + frontend `lint`/`build`, then deploys via `deploy.sh` over SSH (a "skip tests" checkbox allows a force-deploy)
+- `.github/workflows/deploy.yml` — manually triggered from the Actions tab; runs `deploy.sh` on the instance over SSH. It does not run tests, so let CI go green on `main` first
+- Migrations run on every start: the backend container runs `alembic upgrade head` before `uvicorn`
 - First-time cert issuance (already done for the current domain, only needed again for a new domain):
   ```bash
   docker compose run --rm --entrypoint certbot certbot certonly --webroot -w /var/www/certbot -d <domain> --email <email> --agree-tos --no-eff-email
   ```
 
-## Testing
+## Development
+
+Install the repo-level tooling once so staged files are formatted on every commit:
 
 ```bash
-cd backend
-pytest
+npm install            # at the repo root: installs lefthook and its git hook
 ```
 
-153 unit tests covering services and repositories with mocked dependencies (auth, library, conversation, tier enforcement, dedup).
+| Check | Backend (`cd backend`) | Frontend (`cd frontend`) |
+|---|---|---|
+| Tests | `pytest` | none yet |
+| Lint | `ruff check .` | `npm run lint` |
+| Format | `ruff format .` | `npm run format` (check with `npm run format:check`) |
+| Types | `pyright backend/src` from the repo root | `npm run typecheck` |
+
+CI (`.github/workflows/ci.yml`) runs all of these, builds the frontend, and applies every Alembic migration to an empty pgvector Postgres. Dev-only Python tools (`ruff`, `pyright`) live in `backend/requirements-dev.txt`: `pip install -r requirements-dev.txt` in `backend/`.
+
+Things that catch people out:
+
+- Run `alembic upgrade head` after pulling. New migrations add columns the code reads, so answers fail until they are applied.
+- `uvicorn` without `--reload` keeps serving the old code after you edit the backend; restart it.
+- Don't run `next build` while `next dev` is running. They share `.next` and corrupt it.
+- Your `DATABASE_URL` may point at a hosted database. Check it before running migrations or scripts.
+- Layer rules, naming and the design system are in [`AGENTS.md`](AGENTS.md).
 
 ## Further reading
 

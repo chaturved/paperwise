@@ -19,7 +19,7 @@ const groups: FaqGroup[] = [
     title: "Getting started",
     items: [
       { question: "What can I upload?", answer: "PDF, Word (.docx), plain text and Markdown files. The size limit for each file depends on your plan." },
-      { question: "Can I upload a scanned document?", answer: "Not yet. Paperwise reads the text in a file, so a scan or an image-only PDF with no selectable text cannot be read. PDFs and Word files that contain real text work." },
+      { question: "Can I upload a scanned document?", answer: "Yes, for PDFs. Pages with no selectable text are read from the image, up to 25 pages in a fully scanned file. Reading from an image can misread a character, so sources from a scan are marked \"read from a scan\". Check figures against the original page." },
       { question: "How many documents and questions do I get?", answer: <>It depends on your plan. <Link href="/pricing" className={link}>Pricing</Link> shows what Free and Pro include.</> },
     ],
   },

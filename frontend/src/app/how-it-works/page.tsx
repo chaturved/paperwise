@@ -32,7 +32,7 @@ export default function HowItWorksPage() {
             <SectionHead title="Add it once, ask it any time" description="Your library keeps your files together, and you choose which one to ask about." />
             <PaintedSplit card={<UploadCard />} rows={[
               { title: "Four file types", text: "PDF, Word, plain text and Markdown." },
-              { title: "Read for you", text: "Scanned files with no selectable text are not supported yet." },
+              { title: "Read for you", text: "Pages with no selectable text are read from the image, and sources from a scan are marked so you can check them." },
             ]} />
           </section>
 

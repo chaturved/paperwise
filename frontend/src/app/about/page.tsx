@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const principles = [
   { icon: FileSearch, title: "Show the source", text: "Every answer cites numbered passages, and for PDFs you can open the page they came from." },
   { icon: MessageSquareText, title: "Plain language", text: "Ask the way you would ask a colleague. There is no query syntax and nothing to set up." },
-  { icon: Lock, title: "Private and honest", text: "Your files are yours alone. Scanned files are not supported yet and AI can still be wrong, and we say so." },
+  { icon: Lock, title: "Private and honest", text: "Your files are yours alone. Text read from a scan can contain mistakes, AI can still be wrong, and we say so." },
 ];
 
 export default function AboutPage() {

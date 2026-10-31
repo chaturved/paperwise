@@ -14,7 +14,7 @@ python-docx==1.2.0
 psycopg[binary]==3.3.6
 pgvector==0.5.1
 python-dotenv==1.2.4
-boto3==1.43.120
+boto3==1.43.121
 huggingface_hub[inference]==2.3.0
 numpy==2.4.6
 authlib==1.9.1

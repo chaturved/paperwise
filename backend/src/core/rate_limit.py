@@ -37,6 +37,14 @@ class RateLimit:
         cls._storage.reset()
 
 
+class EmailRateLimit(RateLimit):
+    """Counts per email address, for routes that say something about an account. It never refuses the request:
+    refusing would let anyone lock a real user out of sign-in, so the route answers neutrally once it is spent."""
+
+    def allows(self, email: str) -> bool:
+        return self._strategy.hit(self.rule, self.name, f"email:{email.strip().lower()}")
+
+
 class UserRateLimit(RateLimit):
     def __call__(self, request: Request, user_id: int = Depends(get_current_user_id)) -> None:
         self._count(f"user:{user_id}")

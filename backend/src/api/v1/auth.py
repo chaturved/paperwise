@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
 from src.core.dependencies import get_current_user_id
-from src.core.rate_limit import RateLimit
+from src.core.rate_limit import EmailRateLimit, RateLimit
 from src.schemas.user import (
     EmailExistsResponse,
     ForgotPasswordRequest,
@@ -21,6 +21,8 @@ sign_up_limit = RateLimit("sign-up", "5/minute")
 token_limit = RateLimit("auth-token", "10/minute")
 email_limit = RateLimit("auth-email", "5/minute")
 methods_limit = RateLimit("auth-methods", "10/minute")
+methods_email_limit = EmailRateLimit("auth-methods-email", "10/hour")
+email_exists_email_limit = EmailRateLimit("auth-email-exists-email", "10/hour")
 
 
 @router.post("/signup", dependencies=[Depends(sign_up_limit)])
@@ -39,11 +41,15 @@ def login_route(
 
 @router.post("/email-exists", response_model=EmailExistsResponse, dependencies=[Depends(methods_limit)])
 def email_exists_route(body: SignInMethodsRequest, service: AuthServiceProtocol = Depends(AuthService)):
+    if not email_exists_email_limit.allows(body.email):
+        return EmailExistsResponse(exists=False)
     return service.email_exists(body.email)
 
 
 @router.post("/methods", response_model=SignInMethodsResponse, dependencies=[Depends(methods_limit)])
 def sign_in_methods_route(body: SignInMethodsRequest, service: AuthServiceProtocol = Depends(AuthService)):
+    if not methods_email_limit.allows(body.email):
+        return SignInMethodsResponse(has_password=True)
     return service.sign_in_methods(body.email)
 
 

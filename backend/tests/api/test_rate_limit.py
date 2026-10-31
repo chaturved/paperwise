@@ -114,3 +114,48 @@ def test_the_sign_in_methods_route_is_limited():
 
     assert statuses[:10] == [200] * 10
     assert statuses[-1] == 429
+
+
+def _post_repeatedly(path: str, body: dict, service, times: int) -> list[dict]:
+    from src.main import app
+    from src.services.auth_service import AuthService
+
+    app.dependency_overrides[AuthService] = lambda: service
+    try:
+        client = TestClient(app)
+        responses = []
+        for index in range(times):
+            responses.append(client.post(path, json=body, headers={"x-forwarded-for": f"9.9.9.{index}"}))
+        return responses
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_the_sign_in_methods_route_goes_neutral_for_one_email_after_ten_asks(monkeypatch):
+    from src.schemas.user import SignInMethodsResponse
+
+    monkeypatch.setattr(settings, "TRUST_FORWARDED_FOR", True)
+
+    class _GoogleOnly:
+        def sign_in_methods(self, email):
+            return SignInMethodsResponse(has_password=False)
+
+    responses = _post_repeatedly("/api/v1/auth/methods", {"email": "Someone@B.co"}, _GoogleOnly(), 12)
+
+    assert all(r.status_code == 200 for r in responses)
+    assert [r.json()["has_password"] for r in responses] == [False] * 10 + [True] * 2
+
+
+def test_the_email_exists_route_goes_neutral_for_one_email_after_ten_asks(monkeypatch):
+    from src.schemas.user import EmailExistsResponse
+
+    monkeypatch.setattr(settings, "TRUST_FORWARDED_FOR", True)
+
+    class _Taken:
+        def email_exists(self, email):
+            return EmailExistsResponse(exists=True)
+
+    responses = _post_repeatedly("/api/v1/auth/email-exists", {"email": "a@b.co"}, _Taken(), 12)
+
+    assert [r.json()["exists"] for r in responses] == [True] * 10 + [False] * 2
+    assert _post_repeatedly("/api/v1/auth/email-exists", {"email": "other@b.co"}, _Taken(), 1)[0].json() == {"exists": True}

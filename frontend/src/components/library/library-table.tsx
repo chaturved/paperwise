@@ -8,6 +8,7 @@ import { apiErrorMessage } from "@/lib/api-error";
 import { formatBytes, formatDate } from "@/lib/format";
 import type { LibraryDoc } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   documents: LibraryDoc[];
@@ -73,8 +74,6 @@ function RowActions({ document, onRetry, onDelete }: { document: LibraryDoc; onR
   );
 }
 
-const CHECKBOX = "h-4 w-4 cursor-pointer accent-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-30";
-
 export function LibraryTable({ documents, progress, selected, onToggle, onToggleAll, onRetry, onDelete }: Props) {
   const selectable = documents.filter((document) => document.status === "ready");
   const allSelected = selectable.length > 0 && selectable.every((document) => selected.has(document.id));
@@ -85,7 +84,7 @@ export function LibraryTable({ documents, progress, selected, onToggle, onToggle
         <thead className="border-b border-ink text-xs font-medium text-muted">
           <tr>
             <th scope="col" className="w-10 px-3 py-3">
-              <input type="checkbox" checked={allSelected} disabled={selectable.length === 0} onChange={(event) => onToggleAll(event.target.checked)} aria-label="Select all documents" className={CHECKBOX} />
+              <Checkbox checked={allSelected} disabled={selectable.length === 0} onCheckedChange={onToggleAll} aria-label="Select all documents" />
             </th>
             <th scope="col" className="w-[40%] px-3 py-3 font-medium">Name</th>
             <th scope="col" className="hidden px-3 py-3 font-medium md:table-cell">Pages</th>
@@ -99,7 +98,7 @@ export function LibraryTable({ documents, progress, selected, onToggle, onToggle
           {documents.map((document) => (
             <tr key={document.id} className={`border-b border-line last:border-b-0 ${selected.has(document.id) ? "bg-ink/[0.05]" : ""}`}>
               <td className="px-3 py-4">
-                <input type="checkbox" checked={selected.has(document.id)} disabled={document.status !== "ready"} onChange={() => onToggle(document.id)} aria-label={`Select ${document.name}`} className={CHECKBOX} />
+                <Checkbox checked={selected.has(document.id)} disabled={document.status !== "ready"} onCheckedChange={() => onToggle(document.id)} aria-label={`Select ${document.name}`} />
               </td>
               <td className="max-w-0 px-3 py-4">
                 <p className="truncate text-[15px] font-medium" title={document.name}>{document.name}</p>

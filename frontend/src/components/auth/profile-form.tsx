@@ -13,6 +13,7 @@ import { Field } from "@/components/ui/field";
 import { AppearanceSetting } from "@/components/settings/appearance-setting";
 import { SettingsHeading, SettingsSection } from "@/components/settings/settings-section";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const schema = z.object({ full_name: z.string().trim().min(2, "Name must be at least 2 characters") });
 type FormData = z.infer<typeof schema>;
@@ -64,7 +65,7 @@ export function ProfileForm() {
           </span>
           <div className="min-w-0 flex-1">
             <label htmlFor="full_name" className="sr-only">Full name</label>
-            <input id="full_name" aria-invalid={Boolean(errors.full_name)} {...register("full_name")} className="field" />
+            <Input id="full_name" aria-invalid={Boolean(errors.full_name)} {...register("full_name")} />
             {errors.full_name && <p role="alert" className="field-error">{errors.full_name.message}</p>}
           </div>
           <Button type="submit" disabled={isSubmitting || !isDirty} size="lg" className="disabled:opacity-40">
@@ -75,7 +76,7 @@ export function ProfileForm() {
 
       <SettingsSection title="Email" description="Used to sign in. To change it, contact support.">
         <Field id="email" label="Email address">
-          <input id="email" value={user?.email || ""} readOnly className="field" />
+          <Input id="email" value={user?.email || ""} readOnly />
         </Field>
         <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted"><Check size={14} strokeWidth={2.2} className="text-ink" /> Verified</p>
       </SettingsSection>
@@ -90,7 +91,7 @@ export function ProfileForm() {
         ) : (
           <div className="max-w-sm space-y-3">
             <Field id="delete-confirm" label="Type DELETE to confirm">
-              <input id="delete-confirm" value={deleteInput} onChange={(event) => setDeleteInput(event.target.value)} placeholder="DELETE" autoComplete="off" className="field" />
+              <Input id="delete-confirm" value={deleteInput} onChange={(event) => setDeleteInput(event.target.value)} placeholder="DELETE" autoComplete="off" />
             </Field>
             <div className="flex gap-2">
               <Button type="button" onClick={() => { setShowDelete(false); setDeleteInput(""); }} variant="secondary">Cancel</Button>

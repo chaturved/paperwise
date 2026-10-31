@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { SettingsHeading, SettingsSection } from "@/components/settings/settings-section";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type View = "overview" | "analytics";
 
@@ -127,12 +128,11 @@ export function AnalyticsContent() {
               <h2 className="font-display text-[26px] font-normal tracking-[-0.0125em]">Question activity</h2>
               <p className="mt-1 text-sm text-muted">Questions asked across your documents over time.</p>
             </div>
-            <div role="group" aria-label="Date range" className="inline-flex overflow-hidden rounded border border-field text-[13px] font-medium">
-              {([7, 30] as const).map((range, index) => (
-                <button key={range} type="button" onClick={() => setDays(range)} aria-pressed={days === range}
-                  className={`h-[34px] px-4 transition ${index > 0 ? "border-l border-field" : ""} ${days === range ? "bg-ink text-bg" : "hover:bg-ink/[0.05]"}`}>{range}d</button>
-              ))}
-            </div>
+            <Tabs value={days} onValueChange={(value) => setDays(value as 7 | 30)}>
+              <TabsList aria-label="Date range" className="text-[13px]">
+                {([7, 30] as const).map((range) => <TabsTrigger key={range} value={range} className="h-[34px] px-4">{range}d</TabsTrigger>)}
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className="rounded-lg border border-line bg-surface px-7 pb-5 pt-6">

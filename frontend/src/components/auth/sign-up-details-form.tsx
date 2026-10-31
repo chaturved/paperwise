@@ -13,6 +13,7 @@ import { PasswordInput } from "./password-input";
 import { PasswordStrength } from "./password-strength";
 import { GoogleButton, OrDivider } from "./google-button";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Name must be at least 2 characters"),
@@ -43,7 +44,7 @@ export function SignUpDetailsForm({ email }: { email: string }) {
     <>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-[18px]">
         <Field id="full_name" label="Full name" error={errors.full_name?.message}>
-          <input id="full_name" autoComplete="name" autoFocus aria-invalid={Boolean(errors.full_name)} {...register("full_name")} className="field" />
+          <Input id="full_name" autoComplete="name" autoFocus aria-invalid={Boolean(errors.full_name)} {...register("full_name")} />
         </Field>
         <Field id="password" label="Password" error={errors.password?.message} hint="Use at least 8 characters.">
           <PasswordInput id="password" autoComplete="new-password" aria-invalid={Boolean(errors.password)} {...register("password")} />

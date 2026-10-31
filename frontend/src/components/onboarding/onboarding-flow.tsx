@@ -12,6 +12,7 @@ import { useLibrary } from "@/hooks/useLibrary";
 import { apiErrorMessage } from "@/lib/api-error";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const STEPS = ["Welcome", "Upload", "Ask"];
 
@@ -188,13 +189,13 @@ export function OnboardingFlow() {
                 ))}
               </div>
               <label htmlFor="own-question" className="sr-only">Your own question</label>
-              <input
+              <Input
                 id="own-question"
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
                 onKeyDown={(event) => { if (event.key === "Enter" && question.trim()) startConversation(); }}
                 placeholder="Or type your own question"
-                className="field mb-7"
+                className="mb-7"
               />
               <div className="flex gap-3">
                 <Button type="button" onClick={() => setStep(2)} variant="secondary" size="lg" className="px-6">Back</Button>

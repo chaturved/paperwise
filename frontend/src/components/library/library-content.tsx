@@ -10,6 +10,7 @@ import { AddDocumentButton } from "@/components/conversations/add-document-butto
 import { Button } from "@/components/ui/button";
 import type { DocumentStatus } from "@/types";
 import { LibraryTable } from "./library-table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type StatusFilter = "all" | DocumentStatus;
 
@@ -97,14 +98,12 @@ export function LibraryContent() {
                     className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink/50"
                   />
                 </label>
-                <select
-                  value={status}
-                  onChange={(event) => setStatus(event.target.value as StatusFilter)}
-                  aria-label="Filter by status"
-                  className="h-9 rounded border border-line bg-transparent px-3 text-[13px] text-ink outline-none transition hover:border-field focus-visible:border-ink"
-                >
-                  {STATUS_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
-                </select>
+                <Select value={status} onValueChange={(value) => setStatus(value as StatusFilter)} items={STATUS_FILTERS}>
+                  <SelectTrigger aria-label="Filter by status" className="min-w-36"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUS_FILTERS.map((filter) => <SelectItem key={filter.value} value={filter.value}>{filter.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               {visible.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted">No documents match your search.</p>

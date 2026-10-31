@@ -8,7 +8,13 @@ from src.core.dependencies import get_current_user, get_current_user_id
 from src.core.exceptions import AppError
 from src.core.rate_limit import RateLimit, UserRateLimit
 from src.models.user import User
-from src.schemas.conversation import AskRequest, ConversationCreate, ConversationRename, ConversationSearchResult
+from src.schemas.conversation import (
+    AskRequest,
+    ConversationCreate,
+    ConversationRename,
+    ConversationSearchResult,
+    FollowUpsResponse,
+)
 from src.services.conversation_service import FAILED_MESSAGE, ConversationService, ConversationServiceProtocol
 
 _log = logging.getLogger(__name__)
@@ -17,6 +23,7 @@ router = APIRouter(prefix="/conversations", tags=["Conversations"])
 
 ask_address_limit = RateLimit("ask-address", "90/minute")
 ask_user_limit = UserRateLimit("ask-user", "30/minute")
+follow_ups_limit = UserRateLimit("follow-ups", "30/minute")
 
 
 @router.get("")
@@ -71,6 +78,15 @@ def messages(
     service: ConversationServiceProtocol = Depends(ConversationService),
 ):
     return service.list_messages(conv_id, user.id, user.plan)
+
+
+@router.post("/{conv_id}/follow-ups", response_model=FollowUpsResponse, dependencies=[Depends(follow_ups_limit)])
+async def follow_ups(
+    conv_id: int,
+    user_id: int = Depends(get_current_user_id),
+    service: ConversationServiceProtocol = Depends(ConversationService),
+) -> FollowUpsResponse:
+    return await service.follow_ups(conv_id, user_id)
 
 
 @router.post("/{conv_id}/ask", dependencies=[Depends(ask_address_limit), Depends(ask_user_limit)])

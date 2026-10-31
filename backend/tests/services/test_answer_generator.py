@@ -171,3 +171,31 @@ class TestStreamDecidesWhatKindOfQuestionItIs:
 
     async def test_there_is_no_conversation_section_when_there_is_no_history(self):
         assert "Conversation so far" not in await self._prompt()
+
+
+class TestFollowUps:
+    async def test_returns_the_questions_the_model_suggests(self):
+        ai = _ai()
+        ai.chat = AsyncMock(return_value='["What is the notice period?", "Who pays the deposit?"]')
+
+        questions = await _generator(ai).follow_ups("What is the rent?", "The rent is $900 [1].")
+
+        assert questions == ["What is the notice period?", "Who pays the deposit?"]
+
+    async def test_reads_a_reply_wrapped_in_a_code_fence(self):
+        ai = _ai()
+        ai.chat = AsyncMock(return_value='```json\n["When does it end?"]\n```')
+
+        assert await _generator(ai).follow_ups("q", "a") == ["When does it end?"]
+
+    async def test_drops_repeats_the_asked_question_and_long_ones_and_keeps_three(self):
+        ai = _ai()
+        ai.chat = AsyncMock(return_value='["Same?", "One?", "One?", "' + "x" * 200 + '", "Two?", "Three?", "Four?"]')
+
+        assert await _generator(ai).follow_ups("Same?", "a") == ["One?", "Two?", "Three?"]
+
+    async def test_returns_nothing_when_the_reply_is_not_a_list(self):
+        ai = _ai()
+        ai.chat = AsyncMock(return_value="Sorry, I can't.")
+
+        assert await _generator(ai).follow_ups("q", "a") == []

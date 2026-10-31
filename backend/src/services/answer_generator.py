@@ -10,12 +10,15 @@ from src.utils.chunk_formatter import ChunkFormatter
 
 NOT_FOUND_MESSAGE = "I couldn't find that in your documents."
 HISTORY_CHARS_PER_MESSAGE = 1500
+FOLLOW_UP_COUNT = 3
+FOLLOW_UP_MAX_CHARS = 120
 
 
 class AnswerGeneratorProtocol(Protocol):
     async def describe(self, chunks: list[dict], question: str) -> tuple[str, list[dict]]: ...
     def stream(self, chunks: list[dict], question: str, history: list[tuple[str, str]] | None = None) -> AsyncGenerator[str, None]: ...
     def stream_general(self, question: str, history: list[tuple[str, str]]) -> AsyncGenerator[str, None]: ...
+    async def follow_ups(self, question: str, answer: str) -> list[str]: ...
 
 
 class AnswerGenerator(AnswerGeneratorProtocol):
@@ -120,6 +123,33 @@ Example response:
 
         async for token in self.ai.stream_chat(prompt):
             yield token
+
+    async def follow_ups(self, question: str, answer: str) -> list[str]:
+        """Up to three short questions the user could ask next. Returns none if the model's reply is unusable."""
+        prompt = (
+            f"Suggest {FOLLOW_UP_COUNT} short follow-up questions the user could ask next, based on this exchange. "
+            "Each must be a question they could ask about the same documents, under 12 words, and different from "
+            "the others and from the question already asked. Reply with only a JSON array of strings.\n\n"
+            f"Question: {question[:HISTORY_CHARS_PER_MESSAGE]}\n\nAnswer: {answer[:HISTORY_CHARS_PER_MESSAGE]}"
+        )
+        output = await self.ai.chat(prompt, temperature=0.5, max_tokens=200)
+        return self._parse_questions(output, question)
+
+    @staticmethod
+    def _parse_questions(output: str, asked: str) -> list[str]:
+        text = output.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        try:
+            items = json.loads(text)
+        except json.JSONDecodeError:
+            return []
+        if not isinstance(items, list):
+            return []
+        questions: list[str] = []
+        for item in items:
+            question = item.strip() if isinstance(item, str) else ""
+            if question and len(question) <= FOLLOW_UP_MAX_CHARS and question != asked.strip() and question not in questions:
+                questions.append(question)
+        return questions[:FOLLOW_UP_COUNT]
 
     @staticmethod
     def _transcript(history: list[tuple[str, str]] | None) -> str:

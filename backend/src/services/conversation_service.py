@@ -22,6 +22,7 @@ from src.schemas.conversation import (
     AskFilters,
     ConversationOut,
     ConversationSearchResult,
+    FollowUpsResponse,
     MessageOut,
 )
 from src.schemas.user import MessageResponse
@@ -41,6 +42,7 @@ class ConversationServiceProtocol(Protocol):
     def rename_conversation(self, conv_id: int, user_id: int, title: str) -> ConversationOut: ...
     def remove_conversation(self, conv_id: int, user_id: int) -> MessageResponse: ...
     def list_messages(self, conv_id: int, user_id: int, plan: Plan) -> list[MessageOut]: ...
+    async def follow_ups(self, conv_id: int, user_id: int) -> FollowUpsResponse: ...
     def ask(
         self,
         conv_id: int,
@@ -115,6 +117,23 @@ class ConversationService(ConversationServiceProtocol):
             raise NotFoundError("Conversation not found")
         self.tier.check_history(plan, conv.created_at or datetime.now(UTC))
         return [MessageOut.model_validate(m) for m in self.conv_repo.get_messages(conv_id)]
+
+    async def follow_ups(self, conv_id: int, user_id: int) -> FollowUpsResponse:
+        """Suggestions are a nicety: when the model fails or there is nothing to follow up on, return none."""
+        conv = self.conv_repo.get_by_id(conv_id, user_id)
+        if not conv:
+            raise NotFoundError("Conversation not found")
+        recent = self.conv_repo.get_recent_messages(conv_id, 2)
+        if len(recent) < 2 or recent[-1].role != "assistant" or recent[-2].role != "user":
+            return FollowUpsResponse(questions=[])
+        answer = recent[-1]
+        if (answer.meta or {}).get("failed") or answer.content.startswith(NOT_FOUND_MESSAGE):
+            return FollowUpsResponse(questions=[])
+        try:
+            questions = await self.answers.follow_ups(recent[-2].content, answer.content)
+        except Exception:  # noqa: BLE001 - suggestions are optional, so any failure just means none
+            return FollowUpsResponse(questions=[])
+        return FollowUpsResponse(questions=questions)
 
     async def ask(
         self,

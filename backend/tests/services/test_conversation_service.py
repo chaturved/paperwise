@@ -468,3 +468,60 @@ class TestConversationService:
 
         assert events[-1] == ("cited", [])
         assert self.mock_conv_repo.add_message.call_args_list[-1].args[3]["sources"] == []
+
+
+class TestFollowUps:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.conv_repo = MagicMock(spec_set=ConversationRepositoryProtocol)
+        self.answers = MagicMock(spec_set=AnswerGeneratorProtocol)
+        self.answers.follow_ups = AsyncMock(return_value=["Next?"])
+        self.conv_repo.get_by_id.return_value = _make_conv()
+        self.svc = ConversationService(
+            conv_repo=self.conv_repo,
+            lib_repo=MagicMock(spec_set=LibraryRepositoryProtocol),
+            tier=MagicMock(spec_set=TierServiceProtocol),
+            ai=MagicMock(spec_set=AIProvider),
+            answers=self.answers,
+            formatter=ChunkFormatter(),
+            citations=CitationExtractor(),
+        )
+
+    def _history(self, *messages: tuple[str, str, dict | None]) -> None:
+        self.conv_repo.get_recent_messages.return_value = [
+            SimpleNamespace(role=role, content=content, meta=meta) for role, content, meta in messages
+        ]
+
+    async def test_suggests_questions_after_an_answer(self):
+        self._history(("user", "What is the rent?", None), ("assistant", "It is $900.", {"sources": []}))
+
+        result = await self.svc.follow_ups(1, 1)
+
+        assert result.questions == ["Next?"]
+        self.answers.follow_ups.assert_awaited_once_with("What is the rent?", "It is $900.")
+
+    async def test_raises_when_the_conversation_is_not_found(self):
+        self.conv_repo.get_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            await self.svc.follow_ups(1, 1)
+
+    async def test_suggests_nothing_when_the_last_message_is_a_question(self):
+        self._history(("assistant", "Hi", None), ("user", "What is the rent?", None))
+
+        assert (await self.svc.follow_ups(1, 1)).questions == []
+        self.answers.follow_ups.assert_not_awaited()
+
+    async def test_suggests_nothing_after_a_failed_or_not_found_answer(self):
+        self._history(("user", "q", None), ("assistant", "Something went wrong.", {"failed": True}))
+        assert (await self.svc.follow_ups(1, 1)).questions == []
+
+        self._history(("user", "q", None), ("assistant", NOT_FOUND_MESSAGE, {"sources": []}))
+        assert (await self.svc.follow_ups(1, 1)).questions == []
+        self.answers.follow_ups.assert_not_awaited()
+
+    async def test_suggests_nothing_when_the_model_fails(self):
+        self._history(("user", "q", None), ("assistant", "a", {"sources": []}))
+        self.answers.follow_ups.side_effect = RuntimeError("quota")
+
+        assert (await self.svc.follow_ups(1, 1)).questions == []

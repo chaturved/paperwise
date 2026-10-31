@@ -37,6 +37,10 @@ class MessageOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class FollowUpsResponse(BaseModel):
+    questions: list[str]
+
+
 class AskFilters(BaseModel):
     doc_id: int | None = None
     doc_ids: list[int] | None = Field(default=None, max_length=20)

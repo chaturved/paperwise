@@ -3,7 +3,7 @@ import shutil
 import zipfile
 
 import docx
-import fitz
+import pymupdf
 import pytest
 
 from src.config import settings
@@ -72,7 +72,7 @@ class TestUploadSafetyLimits:
 
     def test_pdf_with_too_many_pages_is_rejected(self, monkeypatch):
         monkeypatch.setattr(settings, "MAX_PDF_PAGES", 2)
-        pdf = fitz.open()
+        pdf = pymupdf.open()
         for _ in range(3):
             pdf.new_page()
         contents = pdf.tobytes()
@@ -107,7 +107,7 @@ class TestUploadSafetyLimits:
 
     def test_pdf_text_over_the_cap_is_rejected_while_reading_pages(self, monkeypatch):
         monkeypatch.setattr(settings, "MAX_EXTRACTED_CHARS", 50)
-        pdf = fitz.open()
+        pdf = pymupdf.open()
         for _ in range(5):
             pdf.new_page().insert_text((72, 72), "word " * 10)
         contents = pdf.tobytes()
@@ -135,7 +135,7 @@ class TestExtractOtherTypes:
         assert DocumentParser().parse(b"hello", "txt") == [Page(None, "hello")]
 
     def test_pdf_pages_are_numbered_from_one(self):
-        pdf = fitz.open()
+        pdf = pymupdf.open()
         for text in ("first page", "second page"):
             pdf.new_page().insert_text((72, 72), text)
 
@@ -157,12 +157,12 @@ class TestExtractOtherTypes:
 
 def _pdf(*pages: tuple[str, str]) -> bytes:
     """A PDF made of ("text", words) pages that have a text layer and ("image", words) pages that are only a picture."""
-    target = fitz.open()
+    target = pymupdf.open()
     for kind, words in pages:
         if kind == "text":
             target.new_page().insert_text((72, 100), words, fontsize=14)
             continue
-        source = fitz.open()
+        source = pymupdf.open()
         page = source.new_page()
         if words:
             page.insert_text((72, 120), words, fontsize=28)
@@ -175,13 +175,13 @@ class _FakeOcr(PageOcr):
     def __init__(self) -> None:
         self.read_pages: list[int] = []
 
-    def read(self, page: fitz.Page) -> str:
+    def read(self, page: pymupdf.Page) -> str:
         self.read_pages.append(page.number)
         return f"scanned page {page.number + 1}"
 
 
 class _MissingOcr(PageOcr):
-    def read(self, page: fitz.Page) -> str:
+    def read(self, page: pymupdf.Page) -> str:
         raise OcrUnavailableError("Tesseract is not installed")
 
 

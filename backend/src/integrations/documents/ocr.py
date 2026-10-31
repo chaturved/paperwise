@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-import fitz
+import pymupdf
 
 from ...config import settings
 
@@ -13,13 +13,13 @@ class OcrUnavailableError(Exception):
 
 class PageOcr(ABC):
     @abstractmethod
-    def read(self, page: fitz.Page) -> str: ...
+    def read(self, page: pymupdf.Page) -> str: ...
 
 
 class TesseractPageOcr(PageOcr):
     """Uses the Tesseract program through PyMuPDF. Raises OcrUnavailableError if Tesseract can't be found."""
 
-    def read(self, page: fitz.Page) -> str:
+    def read(self, page: pymupdf.Page) -> str:
         try:
             textpage = page.get_textpage_ocr(language=settings.OCR_LANGUAGE, dpi=settings.OCR_DPI, full=True)  # type: ignore[attr-defined]
         except RuntimeError as exc:

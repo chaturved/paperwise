@@ -1,106 +1,176 @@
-import { ArrowRight, FileSearch, FileText, MessageSquare, ShieldCheck, Sparkles } from "lucide-react";
-import { ProductPreview } from "@/components/site/product-preview";
+import { ArrowRight, KeyRound, Lock, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { HeroCtas, PaintedCtaButtons } from "@/components/site/cta-buttons";
+import { FaqList } from "@/components/site/faq-list";
+import { AudienceTiles, PlansTeaser } from "@/components/site/home-sections";
+import {
+  DetailRows,
+  PageHero,
+  PaintedCard,
+  PaintedCta,
+  SectionHead,
+  Statement,
+  StepColumns,
+} from "@/components/site/page-sections";
+import { CitedRows, ProductPreview } from "@/components/site/product-preview";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
-import { AuthActionLink } from "@/components/site/auth-action-link";
 
-const steps = [
-  { number: "01", title: "Bring your sources", description: "Add the reports, notes, and documents you want to understand. Your library keeps them together.", icon: FileText },
-  { number: "02", title: "Ask what matters", description: "Use plain language to explore a topic, summarize a file, or find a specific detail.", icon: MessageSquare },
-  { number: "03", title: "Check the evidence", description: "Follow each citation back to the passage behind the answer before you use it.", icon: ShieldCheck },
-] as const;
+const securityRows = [
+  {
+    icon: Lock,
+    label: "Private to your account",
+    detail: "Your documents and conversations are visible only to you, and your files are stored privately.",
+  },
+  {
+    icon: Trash2,
+    label: "Delete whenever you like",
+    detail: "Remove a single document, or your whole account and everything in it, from your settings.",
+  },
+  {
+    icon: KeyRound,
+    label: "Sign in your way",
+    detail: "Use a password, Google, or a one-time link sent to your email.",
+  },
+];
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg text-ink">
       <SiteNav />
-      <main className="pt-16">
-        <section className="px-5 pb-16 pt-14 md:px-8 md:pb-24 md:pt-20">
-          <div className="mx-auto grid max-w-[1280px] items-center gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:gap-14">
-            <div className="max-w-[580px]">
-              <p className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-accent"><span className="h-px w-8 bg-accent" /> A clearer way through your documents</p>
-              <h1 className="font-display text-[44px] font-medium leading-[1.02] tracking-[-0.045em] sm:text-[58px] lg:text-[72px]">Make sense of the files that matter.</h1>
-              <p className="mt-7 max-w-[500px] text-[17px] leading-8 text-ink/65 md:text-[19px]">Paperwise turns scattered documents into answers you can verify. Ask a question, see the source, and keep moving.</p>
-              <div className="mt-9 flex flex-wrap items-center gap-3">
-                <AuthActionLink signedOutLabel="Start with your documents" signedInLabel="Continue in your workspace" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-6 text-sm font-medium text-bg transition hover:opacity-80" />
-                <a href="#how-it-works" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-ink/20 px-6 text-sm font-medium transition hover:bg-ink/5">See how it works <ArrowRight size={16} /></a>
-              </div>
-              <p className="mt-6 text-[13px] text-ink/45">Your documents and conversations, all in one place.</p>
-            </div>
+      <main>
+        <PageHero first title="Know exactly where every answer comes from">
+          <p>Paperwise answers questions about your documents and shows you the passages it used.</p>
+          <HeroCtas />
+        </PageHero>
 
-            <div className="relative isolate overflow-hidden rounded-lg border border-ink/10 bg-card p-5 sm:p-8 lg:min-h-[550px] lg:pt-16">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-400/40 blur-3xl dark:bg-amber-500/20" />
-              <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
-              <div className="relative mb-5 flex items-center justify-between gap-3 text-xs font-medium text-ink/55">
-                <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-orange-500" /> A workspace for your sources</span>
-                <span className="hidden sm:inline">PAPERWISE / 01</span>
-              </div>
-              <div className="relative w-full lg:translate-x-8"><ProductPreview /></div>
-              <div className="relative mt-5 flex items-center justify-end gap-2 text-xs font-medium text-ink/55"><ShieldCheck size={15} /> Answers with a path back</div>
-            </div>
-          </div>
-        </section>
+        <div className="page-w">
+          <ProductPreview />
 
-        <section className="border-y border-ink/10 px-5 md:px-8">
-          <div className="mx-auto grid max-w-[1280px] gap-0 md:grid-cols-3">
-            {steps.map(({ number, title }, index) => (
-              <div key={number} className={`flex items-center gap-4 py-5 ${index > 0 ? "border-t border-ink/10 md:border-l md:border-t-0 md:pl-8" : ""}`}>
-                <span className="font-display text-[28px] font-medium text-accent/70">{number}</span>
-                <span className="text-sm font-medium">{title}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+          <section className="pb-8 pt-24">
+            <SectionHead
+              title="From a file to a checked answer"
+              description="Three steps, and the source is part of every one."
+            />
+            <StepColumns
+              steps={[
+                {
+                  title: "Add a document",
+                  text: "Upload a PDF, Word, text or Markdown file. Paperwise reads it and gets it ready to search.",
+                },
+                {
+                  title: "Ask in plain language",
+                  text: "Type a question the way you would ask a colleague. Paperwise answers from your own documents.",
+                },
+                {
+                  title: "Check the source",
+                  text: "Every answer cites numbered passages. Open one, or for a PDF the page itself.",
+                },
+              ]}
+            />
+            <p className="mt-10">
+              <Link href="/how-it-works" className="text-[15.5px] underline underline-offset-4">
+                See how it works
+              </Link>
+            </p>
+          </section>
 
-        <section id="how-it-works" className="px-5 py-20 md:px-8 md:py-28">
-          <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
-            <div className="max-w-[480px]">
-              <p className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-accent">How Paperwise works</p>
-              <h2 className="font-display text-[34px] font-medium leading-[1.1] tracking-[-0.035em] md:text-[48px]">A simple path from question to source.</h2>
-              <p className="mt-5 text-[17px] leading-8 text-ink/60">The useful detail is already in your files. Paperwise helps you find it and see where it came from.</p>
-              <AuthActionLink signedOutLabel="Create your workspace" signedInLabel="Open your workspace" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:opacity-70" />
-            </div>
-            <div className="border-t border-ink/15">
-              {steps.map(({ number, title, description, icon: Icon }) => (
-                <div key={number} className="grid gap-4 border-b border-ink/15 py-7 sm:grid-cols-[56px_1fr_32px] sm:gap-6">
-                  <span className="font-display text-[24px] text-accent">{number}</span>
-                  <div><h3 className="font-display text-[22px] font-medium tracking-[-0.02em]">{title}</h3><p className="mt-2 max-w-lg text-[15px] leading-7 text-ink/60">{description}</p></div>
-                  <Icon size={22} className="hidden text-ink/35 sm:block" strokeWidth={1.5} />
-                </div>
-              ))}
-            </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <PaintedCard
+              title="For contracts and policies"
+              text="Check a clause, a deadline or a requirement and see the passages it used."
+              cta={{ label: "Explore the product", href: "/product" }}
+            >
+              <CitedRows
+                title="Office lease"
+                rows={[
+                  { text: "Termination notice", source: "lease.docx" },
+                  { text: "Payment terms", source: "lease.docx" },
+                  { text: "Renewal", source: "lease.docx" },
+                ]}
+              />
+            </PaintedCard>
+            <PaintedCard
+              tone="warm"
+              title="For reports and notes"
+              text="Pull a figure from a long report or find the decision in last week's meeting."
+              cta={{ label: "See use cases", href: "/use-cases" }}
+            >
+              <CitedRows
+                title="Team sync notes"
+                rows={[
+                  { text: "Budget follow-up: Maya", source: "notes.docx" },
+                  { text: "Launch checklist review", source: "notes.docx" },
+                  { text: "Open risks", source: "notes.docx" },
+                ]}
+              />
+            </PaintedCard>
           </div>
-        </section>
 
-        <section id="technology" className="px-5 pb-20 md:px-8 md:pb-28">
-          <div className="mx-auto max-w-[1280px]">
-            <div className="mb-9 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-              <div><p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-accent">Built for real work</p><h2 className="max-w-2xl font-display text-[34px] font-medium leading-[1.1] tracking-[-0.035em] md:text-[48px]">Your library, conversation, and sources in one place.</h2></div>
-              <p className="max-w-sm text-[15px] leading-7 text-ink/60">Less time hunting through tabs. More confidence in the answer you take away.</p>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-              <article className="relative min-h-[380px] overflow-hidden rounded-lg border border-ink/10 bg-card p-7 text-ink sm:p-10">
-                <div className="max-w-[340px]"><FileSearch size={26} className="text-accent" /><h3 className="mt-5 font-display text-[29px] font-medium tracking-[-0.03em]">Find the exact passage.</h3><p className="mt-3 text-sm leading-7 text-ink/60">Go from a clear answer to the original document without losing your place.</p></div>
-                <div className="absolute -bottom-6 right-[-18px] w-[76%] max-w-[430px] rotate-[-4deg] rounded-lg border border-ink/10 bg-workspace p-5 shadow-[0_20px_60px_rgba(0,0,0,0.1)] sm:right-7">
-                  <div className="flex items-center justify-between text-xs font-medium"><span className="flex items-center gap-2"><FileText size={15} className="text-accent" /> Research report.pdf</span><span className="text-ink/40">Page 8</span></div>
-                  <div className="mt-5 space-y-2"><div className="h-2 w-full rounded-full bg-ink/10" /><div className="h-2 w-[85%] rounded-full bg-ink/10" /><div className="rounded-sm border-l-2 border-accent bg-accent/10 px-3 py-2 text-xs leading-5 text-ink/75">Clear evidence helps teams reach better decisions.</div><div className="h-2 w-[60%] rounded-full bg-ink/10" /></div>
-                </div>
-              </article>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                <article className="rounded-lg border border-ink/10 bg-card p-7 sm:p-8"><MessageSquare size={25} className="text-accent" /><h3 className="mt-5 font-display text-[24px] font-medium tracking-[-0.02em]">Keep the conversation going.</h3><p className="mt-3 text-sm leading-7 text-ink/60">Ask a follow-up and build on what you have already learned.</p></article>
-                <article className="rounded-lg border border-ink/10 bg-card p-7 sm:p-8"><Sparkles size={25} className="text-accent" /><h3 className="mt-5 font-display text-[24px] font-medium tracking-[-0.02em]">Bring scattered work together.</h3><p className="mt-3 text-sm leading-7 text-ink/60">One place for your files and the questions that make them useful.</p></article>
-              </div>
-            </div>
-          </div>
-        </section>
+          <Statement
+            lead="Every answer comes with its source."
+            rest="Read the original text before you rely on it, and keep your files, questions and history in one place."
+          />
 
-        <section className="px-5 md:px-8">
-          <div className="mx-auto grid max-w-[1280px] gap-8 rounded-lg bg-[#1b1b1b] px-8 py-12 text-white dark:border dark:border-white/10 dark:bg-[#242424] md:grid-cols-[1fr_auto] md:items-end md:px-12 md:py-16">
-            <div><p className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-amber-400">Ready when you are</p><h2 className="max-w-2xl font-display text-[34px] font-medium leading-[1.1] tracking-[-0.035em] md:text-[48px]">Your next answer starts with a document.</h2><p className="mt-4 text-[16px] leading-7 text-white/65">Bring your files together and ask your next question.</p></div>
-            <AuthActionLink signedOutLabel="Get started" signedInLabel="Go to workspace" className="inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded-full bg-amber-400 px-6 text-sm font-semibold text-[#211608] transition hover:opacity-85" />
-          </div>
-        </section>
+          <section className="pb-24">
+            <SectionHead
+              title="Made for people who read closely"
+              description="Start with the documents you already have to understand."
+            />
+            <AudienceTiles />
+          </section>
+
+          <section className="pb-24">
+            <SectionHead
+              title="Start free, with room to grow"
+              description="The Free plan needs no payment details. Pro is coming soon."
+            />
+            <PlansTeaser />
+          </section>
+        </div>
+
+        <div className="page-w pb-24">
+          <FaqList
+            groups={[
+              {
+                id: "common-questions",
+                title: "Common questions",
+                items: [
+                  { question: "What can I upload?", answer: "PDF, Word, plain text and Markdown files." },
+                  {
+                    question: "Can I trust the answers?",
+                    answer:
+                      "Every answer cites numbered passages from your documents, so you can read the original words. AI can still be wrong, so check the source for anything that matters.",
+                  },
+                  {
+                    question: "Who can see my documents?",
+                    answer: "Only you. Your files are stored privately and no other Paperwise customer can open them.",
+                  },
+                ],
+                footer: (
+                  <Link href="/faq" className="inline-flex items-center gap-2 text-[15.5px] font-medium">
+                    More questions and answers <ArrowRight size={15} />
+                  </Link>
+                ),
+              },
+            ]}
+          />
+        </div>
+
+        <DetailRows
+          title="Built so you can check the answer"
+          text="See how Paperwise handles your account and your files."
+          cta={{ label: "Read about security", href: "/security" }}
+          rows={securityRows}
+        />
+
+        <div className="pt-24">
+          <PaintedCta title="Ask your first document a question">
+            <PaintedCtaButtons />
+          </PaintedCta>
+        </div>
       </main>
+      <div className="h-24" />
       <SiteFooter />
     </div>
   );

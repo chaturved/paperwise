@@ -10,14 +10,12 @@ export interface ConversationSearchResult extends Conversation {
 }
 
 export interface Source {
+  n?: number;
+  doc_id?: number;
   name: string;
+  page?: number | null;
+  scanned?: boolean;
   quote: string;
-  icon: string;
-}
-
-export interface Snippet {
-  name: string;
-  snippet: string;
   icon: string;
 }
 
@@ -29,8 +27,9 @@ export interface Badge {
 export interface Meta {
   description: string;
   badges: Badge[];
-  snippets: Snippet[];
   sources: Source[];
+  cited?: number[];
+  failed?: boolean;
 }
 
 export interface Message {
@@ -39,4 +38,8 @@ export interface Message {
   content: string;
   meta: Meta | null;
   created_at: string;
+  failed?: boolean;
+  version?: number;
+  versions?: number;
+  sibling_ids?: number[];
 }

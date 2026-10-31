@@ -1,8 +1,10 @@
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.orm import Session
 
+from src.core.enums import DocumentStatus
 from src.models import Library, LibraryChunk
 from src.repositories.library_repository import LibraryRepository
 
@@ -13,8 +15,6 @@ class TestLibraryRepository:
         self.db = MagicMock(spec_set=Session)
         self.repo = LibraryRepository(db=self.db)
 
-    # ── get_all ───────────────────────────────────────────────────────────────
-
     def test_get_all_returns_user_libraries(self):
         expected = [MagicMock(spec=Library), MagicMock(spec=Library)]
         self.db.query.return_value.filter.return_value.all.return_value = expected
@@ -23,8 +23,6 @@ class TestLibraryRepository:
 
         assert result == expected
         self.db.query.assert_called_once_with(Library)
-
-    # ── get_by_id ─────────────────────────────────────────────────────────────
 
     def test_get_by_id_returns_matching_library(self):
         expected = MagicMock(spec=Library)
@@ -41,8 +39,6 @@ class TestLibraryRepository:
 
         assert result is None
 
-    # ── add ───────────────────────────────────────────────────────────────────
-
     def test_add_persists_and_returns_library(self):
         lib = MagicMock(spec=Library)
 
@@ -52,8 +48,6 @@ class TestLibraryRepository:
         self.db.commit.assert_called_once()
         self.db.refresh.assert_called_once_with(lib)
         assert result == lib
-
-    # ── add_chunks ────────────────────────────────────────────────────────────
 
     def test_add_chunks_bulk_saves_and_commits(self):
         chunks: list[LibraryChunk] = [MagicMock(spec=LibraryChunk), MagicMock(spec=LibraryChunk)]
@@ -69,8 +63,6 @@ class TestLibraryRepository:
         self.db.add_all.assert_called_once_with([])
         self.db.commit.assert_called_once()
 
-    # ── delete ────────────────────────────────────────────────────────────────
-
     def test_delete_removes_and_commits(self):
         lib = MagicMock(spec=Library)
 
@@ -78,8 +70,6 @@ class TestLibraryRepository:
 
         self.db.delete.assert_called_once_with(lib)
         self.db.commit.assert_called_once()
-
-    # ── clear_user_library ────────────────────────────────────────────────────
 
     def test_clear_user_library_commits(self):
         lib1, lib2 = MagicMock(), MagicMock()
@@ -90,36 +80,23 @@ class TestLibraryRepository:
 
         self.db.commit.assert_called_once()
 
-    # ── get_top_k_chunks ──────────────────────────────────────────────────────
-
     def test_get_top_k_chunks_returns_results(self):
         expected = [MagicMock(), MagicMock()]
         (
-            self.db.query.return_value
-            .join.return_value
-            .filter.return_value
-            .order_by.return_value
-            .limit.return_value
-            .all.return_value
+            self.db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value
         ) = expected
 
         result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1, 0.2], top_k=2)
 
         assert result == expected
 
-    def test_get_top_k_chunks_with_doc_id_filter(self):
+    def test_get_top_k_chunks_with_doc_ids_filter(self):
         expected = [MagicMock()]
         (
-            self.db.query.return_value
-            .join.return_value
-            .filter.return_value
-            .filter.return_value
-            .order_by.return_value
-            .limit.return_value
-            .all.return_value
+            self.db.query.return_value.join.return_value.filter.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value
         ) = expected
 
-        result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1], top_k=1, doc_id=5)
+        result = self.repo.get_top_k_chunks(user_id=1, query_vector=[0.1], top_k=1, doc_ids=[5])
 
         assert result == expected
 
@@ -132,7 +109,9 @@ class TestLibraryRepositoryReembedding:
 
     def test_get_chunks_after_returns_next_batch(self):
         expected = [MagicMock(spec=LibraryChunk)]
-        self.db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = expected
+        self.db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = (
+            expected
+        )
 
         assert self.repo.get_chunks_after(chunk_id=10, limit=50) == expected
         self.db.query.assert_called_once_with(LibraryChunk)
@@ -144,4 +123,96 @@ class TestLibraryRepositoryReembedding:
 
         assert chunks[0].embedding == [0.1]
         assert chunks[1].embedding == [0.2]
+        self.db.commit.assert_called_once()
+
+
+class TestLibraryStatusMethods:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.db = MagicMock(spec_set=Session)
+        self.repo = LibraryRepository(db=self.db)
+
+    def test_count_active_returns_the_scalar(self):
+        self.db.query.return_value.filter.return_value.scalar.return_value = 3
+
+        assert self.repo.count_active(user_id=1) == 3
+
+    def test_count_active_is_zero_when_there_are_no_rows(self):
+        self.db.query.return_value.filter.return_value.scalar.return_value = None
+
+        assert self.repo.count_active(user_id=1) == 0
+
+    def test_get_looks_the_document_up_by_primary_key(self):
+        expected = MagicMock(spec=Library)
+        self.db.get.return_value = expected
+
+        assert self.repo.get(5) is expected
+        self.db.get.assert_called_once_with(Library, 5)
+
+    def test_transition_status_wins_when_one_row_changed(self):
+        self.db.query.return_value.filter.return_value.update.return_value = 1
+
+        assert self.repo.transition_status(1, DocumentStatus.UPLOADING, DocumentStatus.PROCESSING) is True
+        self.db.commit.assert_called_once()
+
+    def test_transition_status_loses_when_the_status_already_moved(self):
+        self.db.query.return_value.filter.return_value.update.return_value = 0
+
+        assert self.repo.transition_status(1, DocumentStatus.UPLOADING, DocumentStatus.PROCESSING) is False
+
+    def test_set_status_records_status_message_and_time(self):
+        lib = MagicMock(spec=Library)
+
+        self.repo.set_status(lib, DocumentStatus.FAILED, "could not read")
+
+        assert lib.status == DocumentStatus.FAILED
+        assert lib.error_message == "could not read"
+        assert lib.status_updated_at is not None
+        self.db.commit.assert_called_once()
+
+    def test_finish_processing_saves_text_chunks_and_status_in_one_commit(self):
+        lib = MagicMock(spec=Library)
+        chunks = [MagicMock(spec=LibraryChunk)]
+
+        self.repo.finish_processing(lib, "the text", "abc123", chunks)
+
+        assert lib.extracted_text == "the text"
+        assert lib.content_hash == "abc123"
+        assert lib.status == DocumentStatus.READY
+        assert lib.error_message is None
+        self.db.add_all.assert_called_once_with(chunks)
+        self.db.commit.assert_called_once()
+
+    def test_finish_processing_replaces_the_documents_old_chunks_in_the_same_commit(self):
+        lib = MagicMock(spec=Library)
+        lib.id = 7
+
+        self.repo.finish_processing(lib, "text", "hash", [MagicMock(spec=LibraryChunk)])
+
+        self.db.query.assert_called_once_with(LibraryChunk)
+        self.db.query.return_value.filter.return_value.delete.assert_called_once_with(synchronize_session=False)
+        self.db.commit.assert_called_once()
+
+    def test_list_stale_returns_matching_documents(self):
+        expected = [MagicMock(spec=Library)]
+        self.db.query.return_value.filter.return_value.all.return_value = expected
+
+        result = self.repo.list_stale([DocumentStatus.UPLOADING], datetime(2026, 1, 1))
+
+        assert result == expected
+
+    def test_list_passages_returns_each_chunks_text_and_page_in_order(self):
+        (self.db.query.return_value.filter.return_value.order_by.return_value.all.return_value) = [
+            ("first", 1),
+            ("second", None),
+        ]
+
+        assert self.repo.list_passages(4) == [("first", 1), ("second", None)]
+
+    def test_set_key_dates_saves_them_on_the_document(self):
+        lib = MagicMock(spec=Library)
+
+        self.repo.set_key_dates(lib, [{"label": "x"}])
+
+        assert lib.key_dates == [{"label": "x"}]
         self.db.commit.assert_called_once()

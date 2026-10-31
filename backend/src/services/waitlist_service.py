@@ -2,7 +2,7 @@ from typing import Protocol
 
 from fastapi import Depends
 
-from src.repositories.waitlist_repository import WaitlistRepositoryProtocol, WaitlistRepository
+from src.repositories.waitlist_repository import WaitlistRepository, WaitlistRepositoryProtocol
 from src.schemas.user import MessageResponse
 
 

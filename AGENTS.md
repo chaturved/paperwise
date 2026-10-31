@@ -28,7 +28,9 @@ This is a resume-quality production project. It must feel like a real product an
 - React 19
 - TypeScript 5
 - Tailwind CSS v4
-- Radix UI (Dialog, Dropdown, Tabs)
+- Vitest + Testing Library (`npm test`, tests sit next to the code as `*.test.ts(x)`)
+- Prettier (`npm run format`, 120 columns; long JSX tags put one prop per line)
+- Base UI (`@base-ui/react`: Dialog, Menu, Button) with class-variance-authority, clsx and tailwind-merge
 - React Hook Form + Zod
 - Lucide React
 - react-markdown + remark-gfm + rehype-highlight
@@ -42,13 +44,26 @@ This is a resume-quality production project. It must feel like a real product an
 - Pydantic Settings (env config)
 - PyMuPDF + python-docx
 - AI provider adapter (`integrations/ai/`): Gemini (httpx) + HuggingFace Inference
+- Document parsing (`integrations/documents/`): PyMuPDF + python-docx, run in an isolated worker process with time, memory and concurrency limits. Scanned PDF pages are read with Tesseract OCR (a system package, `tesseract-ocr` in the Dockerfile) through PyMuPDF; if Tesseract is missing, parsing still works and scans are rejected as before
 - python-jose + passlib (JWT)
 - authlib + httpx (Google OAuth)
 - boto3 (Supabase Storage / S3)
-- slowapi (rate limiting)
+- limits (rate limiting, wrapped by `core/rate_limit.py`)
 - pytest + pytest-asyncio (unit tests, `backend/tests/`)
 
 Do not introduce new libraries without explaining the reason and asking first.
+
+---
+
+## Classes and SOLID
+
+Backend logic lives in classes, one responsibility each. Only code the framework requires stays a function: route handlers, `Depends` providers (`get_db`, `get_current_user_id`), the lifespan hook and Alembic migrations.
+
+- **Single responsibility:** a class has one reason to change. Shaping chunks (`ChunkFormatter`) and prompting the AI (`AnswerGenerator`) are separate classes.
+- **Open/closed:** add behaviour by adding a class, not by editing a switch. `DocumentParser` takes a mapping of file type to `FileParser`.
+- **Dependency inversion:** a class receives what it needs in `__init__` and, where it has more than one implementation or is mocked in tests, depends on a `Protocol`. Wire it with `Depends(TheClass)`.
+- **Shared limits live on the class, not the instance.** `Depends` builds a new object per request, so a concurrency limit (`PerLoopSemaphore`) or a cached client is a class attribute.
+- **Background work** (`core/jobs.py`, `DocumentJobs`) runs after the request is over, so it opens its own session and builds its services by hand, passing real objects (never the `Depends(...)` defaults).
 
 ---
 
@@ -88,6 +103,7 @@ backend/src/
   core/
     dependencies.py     ← FastAPI Depends() — get_db, get_current_user_id
     exceptions.py       ← Typed exception classes (NotFoundError, UnauthorizedError, etc.)
+    rate_limit.py       ← RateLimit (per client address) and UserRateLimit (per signed-in user) route dependencies
   database/
     db.py               ← SQLAlchemy engine, SessionLocal, Base
   models/               ← SQLAlchemy ORM models (one file per model)
@@ -106,9 +122,15 @@ backend/src/
   services/             ← Business logic (one file per domain)
     auth_service.py
     user_service.py
-    conversation_service.py
+    conversation_service.py ← Conversations, message versions and branching
+    ask_service.py      ← Answers a question and suggests follow-ups
+    answer_export_service.py ← Exports an answer as Word
+    key_dates_service.py ← Dates and deadlines found in a document
     library_service.py
     token_service.py
+    answer_generator.py ← Prompts the AI and streams the answer
+    ingestion_service.py ← Background indexing of uploaded documents
+    key_date_extractor.py ← Asks the model for dates, each with its quoted sentence
     query_service.py
   repositories/         ← All DB queries (one file per domain)
     user_repository.py
@@ -126,9 +148,10 @@ backend/src/
     storage.py          ← S3 / Supabase Storage
     mailer.py           ← SMTP email
     google_oauth.py     ← Google sign-in (Authlib)
-  utils/                ← Pure shared helpers (JWT, hashing, text parsing, query building)
+    documents/          ← Reading uploads safely: parsers, isolated worker process, runner, user-facing messages
+  utils/                ← Small single-purpose classes (JwtCodec, PasswordHasher, TextChunker, ChunkFormatter)
     jwt.py
-    query_utils.py
+    chunk_formatter.py
     security.py
     text_utils.py
   migrations/           ← Alembic migration files
@@ -199,7 +222,7 @@ frontend/src/
       signup/page.tsx
       forgot-password/page.tsx
       reset-password/page.tsx
-    (app)/                    ← Route group — authenticated pages, shared layout
+    (workspace)/                    ← Route group — authenticated pages, shared layout
       layout.tsx              ← AppShell (sidebar, header)
       dashboard/page.tsx
       settings/
@@ -211,6 +234,9 @@ frontend/src/
     layout.tsx                ← Root layout (fonts, providers)
     page.tsx                  ← Landing
     pricing/page.tsx
+    product/page.tsx
+    security/page.tsx
+    use-cases/page.tsx
     privacy/page.tsx
     terms/page.tsx
     onboarding/page.tsx
@@ -220,18 +246,21 @@ frontend/src/
 
   components/                 ← All reusable UI components
     ui/                       ← Primitives (no app logic, no API calls, generic props)
-    auth/                     ← Auth-specific UI (AuthCard, AuthBackground, form fields)
-    conversations/            ← DashboardContent and chat sub-components
-    Header/                   ← Header with sub-components (Brand, Actions, UserDropdown)
-    LibrarySidebar/           ← Document library sidebar with sub-components
-    InsightsSidebar/          ← Insights panel with sub-components
-    Workspace/                ← Main chat workspace with sub-components
+    auth/                     ← Sign-in, sign-up and password flows, form fields
+    conversations/            ← DashboardContent, messages, answer actions, sources, version switcher
+    library/                  ← Library table, key dates dialog
+    settings/                 ← Plan cards, appearance, password, waitlist
+    site/                     ← Marketing pages: home sections, pricing, demo request, legal
+    layout/                   ← Status pages, theme toggle and toaster
+    pdf/                      ← PDF page viewer with passage highlighting
+    onboarding/, analytics/   ← First-run flow and usage screens
 
-  hooks/                      ← All custom React hooks
-    useAuth.ts
-    useLibrary.ts
-    useConversation.ts
-    useSSEStream.ts
+  hooks/                      ← All custom React hooks (tests sit beside them as *.test.ts)
+    useConversationChat.ts    ← Chat state: messages, send, edit, retry, new chat
+    useMessageVersions.ts     ← Switching versions and branching into a new chat
+    useSSEStream.ts           ← The streamed answer
+    useFollowUps.ts, useKeyDates.ts, useAnswerExport.ts, useSourceAside.ts
+    useLibrary.ts, useDocumentUpload.ts, useAttachDocuments.ts
 
   lib/
     api-client.ts             ← Axios base client — base URL, cookie auth, token refresh
@@ -289,12 +318,17 @@ const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/conversations
 
 Use Tailwind CSS v4 exclusively. Do not use inline `style={{}}` unless a value is computed at runtime and cannot be expressed as a Tailwind class.
 
-Design system:
-- **Background:** white / near-white
-- **Accents:** amber only — no purple
-- **Borders:** subtle — `border-neutral-200` on light surfaces, `border-white/10` on dark
-- **Typography:** clear hierarchy — one weight jump per heading level
-- **Radius:** consistent — `rounded-lg` for cards, `rounded-md` for inputs and buttons
+Design system (Harvey-inspired, editorial):
+- **Background:** warm off-white (`bg-bg`), cards on `bg-surface` (white) or `bg-card` (warm grey). Dark mode flips every token.
+- **Type:** Newsreader (`font-display`) for headlines, Instrument Sans for UI and body, Geist Mono for source names and small data. Display weight 400, tracking `-0.0125em`.
+- **Accent:** one deep amber (`text-accent`), used only for source citations. Everything else is ink on warm neutral.
+- **Painted surfaces:** product UI sits on grainy dark backdrops (`paint`, `paint-warm`, `bezel` in `globals.css`). Do not use blurred glow blobs.
+- **Borders:** hairline `border-line`. Inputs use `border-field`.
+- **Radius:** `rounded` (4px) for buttons and inputs on marketing pages, `rounded-lg` (8px) for cards and auth/app inputs.
+- **Buttons:** use `Button` or `buttonVariants` from `components/ui/button.tsx`. Variants: `primary`, `secondary`, `quiet`, `ghost`, `light`, `outlineLight`, `danger`, `dangerSolid`. Sizes: `xs`, `sm`, `md`, `default`, `lg` (48px), `icon`. Use `buttonVariants` on a `Link` or `a`. `danger` and `dangerSolid` are for destructive actions only.
+- **UI primitives:** `components/ui/` holds only generic, shadcn-style primitives built on Base UI (`Button`, `DropdownMenu`, `Dialog`, `Field`), styled with `cva` and `cn()` from `lib/utils.ts`. Anything tied to the app (theme, status pages) lives elsewhere, such as `components/layout/`.
+- **Forms:** inputs use the `field` class (48px, 4px radius, no leading icons) inside the `Field` component from `components/ui/field.tsx`, which supplies the label, error and hint. Errors and destructive text use `text-danger`, never raw red. Passwords use `PasswordInput` and `PasswordStrength` from `components/auth/`.
+- **Pages:** auth pages sit in `AuthShell` (`components/auth/auth-shell.tsx`), settings pages use `SettingsHeading` and `SettingsSection`, and error and 404 pages use `StatusPage`. A new page of those kinds reuses them instead of building its own layout.
 
 When a design reference is provided, match it exactly — layout, spacing, color, font size, proportions. Do not approximate. Do not simplify unless explicitly asked.
 
@@ -315,7 +349,7 @@ Place `"use client"` as deep in the component tree as possible — not at the pa
 
 ```tsx
 // ✅ Correct — page is a Server Component, interactive widget is a Client Component
-// app/(app)/dashboard/page.tsx
+// app/(workspace)/dashboard/page.tsx
 import DashboardContent from "@/components/conversations/DashboardContent"; // "use client" inside
 
 export default function DashboardPage() {
@@ -375,7 +409,9 @@ export default function DashboardPage() {
 - The `sseClient` wrapper in `lib/api-client.ts` handles auth refresh for SSE connections
 - SSE logic in components calls `sseClient` directly from within the component (or a hook) — not via `lib/api/` functions since SSE is stateful and event-driven
 - The backend SSE endpoint: `POST /api/v1/conversations/{conv_id}/ask`
-- SSE event format: `data: {"meta": {...}}` then `data: {"token": "..."}` then `data: [DONE]`
+- Messages form a tree (`messages.parent_id`); `conversations.active_leaf_id` marks the visible path. `ask` takes `edit_of` (store the question as a sibling of that one) or `retry_of` (answer that answer's question again), never both. `POST .../versions` switches the visible version and `POST .../branch` copies the path up to a message into a new conversation.
+- SSE event format: `data: {"meta": {...}}` (description, badges, every retrieved passage as a numbered `sources` entry), then `data: {"token": "..."}` for each token, then `data: {"cited": [1, 3]}` (the source numbers the answer cites that match a real source), then `data: [DONE]`. A failure is sent as `event: error` and still ends with `[DONE]`.
+- Answers cite passages as `[n]`. The frontend turns a marker into a chip only when `n` matches a source, and drops any other marker. The stored message keeps only the cited sources.
 
 ---
 
@@ -389,7 +425,7 @@ When building any feature:
 4. Build downward on the backend: `schema → repository → service → route`
 5. Build inward on the frontend: `types → lib/api/ function → hook → component → page`
 6. Ensure the feature works end-to-end before closing
-7. Run `npm run lint`, `npm run typecheck`, and `ruff check .` — fix all errors
+7. Run `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, `ruff check .` and `pytest` — fix all errors
 
 ---
 

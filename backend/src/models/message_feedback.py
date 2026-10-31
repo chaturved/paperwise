@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,4 +14,4 @@ class MessageFeedback(Base):
     message_id: Mapped[int] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     value: Mapped[str] = mapped_column(String(4))
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())

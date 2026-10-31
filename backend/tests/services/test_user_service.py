@@ -6,7 +6,9 @@ from src.core.enums import Plan
 from src.core.exceptions import BadRequestError, NotFoundError, UnprocessableEntityError
 from src.repositories.user_repository import UserRepositoryProtocol
 from src.schemas.user import UserCreate
+from src.services.library_service import LibraryServiceProtocol
 from src.services.user_service import UserService
+from src.utils.security import PasswordHasher
 
 
 def _make_user(id=1, email="user@example.com", full_name="Test User", plan=Plan.FREE):
@@ -24,23 +26,21 @@ class TestUserService:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.mock_repo = MagicMock(spec_set=UserRepositoryProtocol)
-        self.svc = UserService(repo=self.mock_repo)
-
-    # ── create_user ───────────────────────────────────────────────────────────
+        self.mock_hasher = MagicMock(spec_set=PasswordHasher)
+        self.mock_library = MagicMock(spec_set=LibraryServiceProtocol)
+        self.svc = UserService(repo=self.mock_repo, hasher=self.mock_hasher, library=self.mock_library)
 
     def test_create_user_hashes_password(self):
         user_in = UserCreate(email="a@b.com", password="secret123", full_name="John Doe")
         self.mock_repo.add.return_value = _make_user(email="a@b.com", full_name="John Doe")
 
-        with patch("src.services.user_service.hash_password", return_value="hashed") as mock_hash:
+        with patch.object(self.mock_hasher, "hash", return_value="hashed") as mock_hash:
             self.svc.create_user(user_in)
 
         mock_hash.assert_called_once_with("secret123")
         self.mock_repo.add.assert_called_once()
         added = self.mock_repo.add.call_args[0][0]
         assert added.hashed_password == "hashed"
-
-    # ── create_user_oauth ─────────────────────────────────────────────────────
 
     def test_create_user_oauth_sets_no_password(self):
         self.mock_repo.add.return_value = _make_user()
@@ -49,8 +49,6 @@ class TestUserService:
 
         added = self.mock_repo.add.call_args[0][0]
         assert added.hashed_password is None
-
-    # ── update_profile ────────────────────────────────────────────────────────
 
     def test_update_profile_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -68,8 +66,6 @@ class TestUserService:
         assert user.full_name == "Jane Smith"
         self.mock_repo.update.assert_called_once_with(user)
 
-    # ── change_password ───────────────────────────────────────────────────────
-
     def test_change_password_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
 
@@ -81,7 +77,7 @@ class TestUserService:
         self.mock_repo.get_by_id.return_value = user
 
         with (
-            patch("src.services.user_service.verify_password", return_value=False),
+            patch.object(self.mock_hasher, "verify", return_value=False),
             pytest.raises(BadRequestError),
         ):
             self.svc.change_password(user_id=1, current_password="wrong", new_password="newpass1")
@@ -91,7 +87,7 @@ class TestUserService:
         self.mock_repo.get_by_id.return_value = user
 
         with (
-            patch("src.services.user_service.verify_password", return_value=True),
+            patch.object(self.mock_hasher, "verify", return_value=True),
             pytest.raises(UnprocessableEntityError),
         ):
             self.svc.change_password(user_id=1, current_password="old", new_password="short")
@@ -101,16 +97,14 @@ class TestUserService:
         self.mock_repo.get_by_id.return_value = user
 
         with (
-            patch("src.services.user_service.verify_password", return_value=True),
-            patch("src.services.user_service.hash_password", return_value="new_hashed"),
+            patch.object(self.mock_hasher, "verify", return_value=True),
+            patch.object(self.mock_hasher, "hash", return_value="new_hashed"),
         ):
             result = self.svc.change_password(user_id=1, current_password="old", new_password="newpass123")
 
         assert user.hashed_password == "new_hashed"
         self.mock_repo.update.assert_called_once_with(user)
         assert result.message == "Password updated"
-
-    # ── set_password ──────────────────────────────────────────────────────────
 
     def test_set_password_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -128,13 +122,11 @@ class TestUserService:
         user = _make_user()
         self.mock_repo.get_by_id.return_value = user
 
-        with patch("src.services.user_service.hash_password", return_value="hashed_new"):
+        with patch.object(self.mock_hasher, "hash", return_value="hashed_new"):
             result = self.svc.set_password(user_id=1, new_password="newpass123")
 
         assert user.hashed_password == "hashed_new"
         assert result.message == "Password set"
-
-    # ── remove_account ────────────────────────────────────────────────────────
 
     def test_remove_account_raises_on_wrong_confirmation(self):
         with pytest.raises(BadRequestError):
@@ -155,7 +147,23 @@ class TestUserService:
         self.mock_repo.delete.assert_called_once_with(user)
         assert result.message == "Account deleted"
 
-    # ── complete_onboarding ───────────────────────────────────────────────────
+    def test_remove_account_deletes_the_users_stored_files_before_the_account(self):
+        user = _make_user()
+        self.mock_repo.get_by_id.return_value = user
+        order = MagicMock()
+        order.attach_mock(self.mock_library.clear_all, "clear_files")
+        order.attach_mock(self.mock_repo.delete, "delete_user")
+
+        self.svc.remove_account(user_id=1, confirmation="DELETE")
+
+        assert [c[0] for c in order.mock_calls] == ["clear_files", "delete_user"]
+        self.mock_library.clear_all.assert_called_once_with(1)
+
+    def test_remove_account_keeps_everything_when_the_confirmation_is_wrong(self):
+        with pytest.raises(BadRequestError):
+            self.svc.remove_account(user_id=1, confirmation="delete")
+
+        self.mock_library.clear_all.assert_not_called()
 
     def test_complete_onboarding_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
@@ -174,8 +182,6 @@ class TestUserService:
         self.mock_repo.update.assert_called_once_with(user)
         assert result.message == "Onboarding complete"
 
-    # ── get_usage ─────────────────────────────────────────────────────────────
-
     def test_get_usage_raises_when_not_found(self):
         self.mock_repo.get_by_id.return_value = None
 
@@ -186,26 +192,26 @@ class TestUserService:
         user = _make_user(plan=Plan.FREE)
         self.mock_repo.get_by_id.return_value = user
         self.mock_repo.count_documents.return_value = 2
-        self.mock_repo.count_queries_today.return_value = 5
+        self.mock_repo.count_queries_24h.return_value = 5
         self.mock_repo.sum_storage_bytes.return_value = 1024
 
         result = self.svc.get_usage(user_id=1)
 
         assert result.documents.used == 2
-        assert result.documents.limit == 5  # FREE max_docs
-        assert result.queries_today.used == 5
-        assert result.queries_today.limit == 20  # FREE max_queries_day
+        assert result.documents.limit == 5
+        assert result.queries_24h.used == 5
+        assert result.queries_24h.limit == 20
         assert result.storage_bytes.used == 1024
-        assert result.storage_bytes.limit == 10 * 1024 * 1024  # 10MB
+        assert result.storage_bytes.limit == 10 * 1024 * 1024
 
     def test_get_usage_pro_plan_has_no_doc_limit(self):
         user = _make_user(plan=Plan.PRO)
         self.mock_repo.get_by_id.return_value = user
         self.mock_repo.count_documents.return_value = 100
-        self.mock_repo.count_queries_today.return_value = 500
+        self.mock_repo.count_queries_24h.return_value = 500
         self.mock_repo.sum_storage_bytes.return_value = 0
 
         result = self.svc.get_usage(user_id=1)
 
         assert result.documents.limit is None
-        assert result.queries_today.limit is None
+        assert result.queries_24h.limit is None

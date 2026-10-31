@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef } from "react";
-import { ArrowUp, Plus } from "lucide-react";
+import { ArrowUp, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { LibraryDoc } from "@/types";
+import { AttachMenu } from "./attach-menu";
 
 interface Props {
   value: string;
@@ -11,10 +13,29 @@ interface Props {
   isUploading: boolean;
   onAttach: (files: File[]) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  documents: LibraryDoc[];
+  docIds: number[];
+  onSelectDoc: (id: number | null) => void;
+  placeholder?: string;
+  scope?: string;
+  tall?: boolean;
 }
 
-export function InputBox({ value, onChange, onSend, isStreaming, isUploading, onAttach, textareaRef }: Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function InputBox({
+  value,
+  onChange,
+  onSend,
+  isStreaming,
+  isUploading,
+  onAttach,
+  textareaRef,
+  documents,
+  docIds,
+  onSelectDoc,
+  placeholder,
+  scope,
+  tall,
+}: Props) {
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
     event.target.style.height = "auto";
@@ -29,17 +50,7 @@ export function InputBox({ value, onChange, onSend, isStreaming, isUploading, on
   };
 
   return (
-    <div className="flex min-h-[64px] items-end gap-3 rounded-[28px] border border-ink/[0.06] bg-composer px-5 py-3 shadow-sm transition focus-within:border-accent/50">
-      <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} aria-label="Add documents"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/65 transition hover:bg-ink/[0.07] hover:text-ink disabled:opacity-40">
-        {isUploading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/20 border-t-ink" /> : <Plus size={20} />}
-      </button>
-      <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.txt,.md" className="hidden" aria-label="Choose documents"
-        onChange={(event) => {
-          const files = Array.from(event.target.files ?? []);
-          if (files.length) onAttach(files);
-          event.target.value = "";
-        }} />
+    <div className="rounded-lg bg-composer px-4 pb-3 pt-3.5 ring-1 ring-transparent transition focus-within:ring-field">
       <textarea
         ref={textareaRef}
         rows={1}
@@ -47,13 +58,49 @@ export function InputBox({ value, onChange, onSend, isStreaming, isUploading, on
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         aria-label="Ask Paperwise"
-        placeholder="Ask Paperwise"
-        className="max-h-[180px] min-h-9 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-1.5 text-[15px] leading-6 text-ink outline-none placeholder:text-ink/45"
+        placeholder={placeholder ?? "Ask anything"}
+        className={`max-h-[180px] w-full resize-none overflow-y-auto bg-transparent px-1 text-sm leading-[22px] text-ink outline-none placeholder:text-ink/50 ${tall ? "min-h-[60px]" : "min-h-[40px]"}`}
       />
-      <button type="button" onClick={onSend} disabled={isStreaming || !value.trim()} aria-label="Send question"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/35 dark:text-[#211608]">
-        {isStreaming ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <ArrowUp size={18} strokeWidth={2.2} />}
-      </button>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <AttachMenu
+            documents={documents}
+            docIds={docIds}
+            uploading={isUploading}
+            onAttach={onAttach}
+            onSelectDoc={onSelectDoc}
+          />
+          {scope && (
+            <span className="inline-flex h-8 min-w-0 items-center gap-1.5 rounded border border-line bg-surface pl-3 pr-2 text-[13px] text-ink/75">
+              <span className="truncate">{scope}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onSelectDoc(null)}
+                aria-label="Ask across all documents"
+                className="h-5 w-5 shrink-0 text-ink/55 hover:bg-transparent hover:text-ink"
+              >
+                <X size={13} strokeWidth={2} />
+              </Button>
+            </span>
+          )}
+        </div>
+        <Button
+          size="sm"
+          onClick={onSend}
+          disabled={isStreaming || !value.trim()}
+          aria-label="Send question"
+          className="shrink-0 gap-1.5 disabled:border-transparent disabled:bg-ink/10 disabled:text-ink/40"
+        >
+          {isStreaming ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg/30 border-t-bg" />
+          ) : (
+            <>
+              Ask <ArrowUp size={16} strokeWidth={2.2} />
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

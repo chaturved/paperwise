@@ -1,4 +1,4 @@
-export const PROTECTED_PATHS = ["/dashboard", "/analytics", "/settings", "/onboarding"];
+export const PROTECTED_PATHS = ["/dashboard", "/library", "/analytics", "/settings", "/onboarding"];
 
 export function matchesRoute(pathname: string, route: string): boolean {
   return pathname === route || pathname.startsWith(`${route}/`);

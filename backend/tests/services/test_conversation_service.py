@@ -1,13 +1,12 @@
-from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
-from src.integrations.ai.base import AIProvider
 from src.core.enums import Plan
 from src.core.exceptions import NotFoundError
 from src.repositories.conversation_repository import ConversationRepositoryProtocol
-from src.repositories.library_repository import LibraryRepositoryProtocol
 from src.services.conversation_service import ConversationService
 from src.services.tier_service import TierServiceProtocol
 
@@ -16,29 +15,34 @@ def _make_conv(id=1, title="New conversation", days_old=0):
     conv = MagicMock()
     conv.id = id
     conv.title = title
-    conv.created_at = datetime.now(timezone.utc) - timedelta(days=days_old)
+    conv.created_at = datetime.now(UTC) - timedelta(days=days_old)
+    conv.active_leaf_id = None
     return conv
+
+
+def _node(id: int, parent_id: int | None, role: str, content: str = "", meta: dict | None = None) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=id,
+        parent_id=parent_id,
+        role=role,
+        content=content or f"{role} {id}",
+        meta=meta,
+        conversation_id=1,
+        created_at=datetime.now(UTC),
+    )
 
 
 class TestConversationService:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.mock_conv_repo = MagicMock(spec_set=ConversationRepositoryProtocol)
-        self.mock_lib_repo = MagicMock(spec_set=LibraryRepositoryProtocol)
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
-        self.mock_ai = MagicMock(spec_set=AIProvider)
-        self.svc = ConversationService(
-            conv_repo=self.mock_conv_repo,
-            lib_repo=self.mock_lib_repo,
-            tier=self.mock_tier,
-            ai=self.mock_ai,
-        )
-
-    # ── list_conversations ────────────────────────────────────────────────────
+        self.mock_conv_repo.get_messages.return_value = []
+        self.svc = ConversationService(conv_repo=self.mock_conv_repo, tier=self.mock_tier)
 
     def test_list_conversations_returns_validated_list(self):
         conv = _make_conv()
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.get_all.return_value = [conv]
 
         result = self.svc.list_conversations(user_id=1)
@@ -55,7 +59,7 @@ class TestConversationService:
 
     def test_search_conversations_returns_message_excerpt(self):
         conv = _make_conv(title="Quarterly report")
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.search.return_value = [(conv, "The revenue grew in the third quarter.")]
 
         result = self.svc.search_conversations(user_id=7, query="revenue")
@@ -69,19 +73,15 @@ class TestConversationService:
         assert self.svc.search_conversations(user_id=7, query=" ") == []
         self.mock_conv_repo.search.assert_not_called()
 
-    # ── new_conversation ──────────────────────────────────────────────────────
-
     def test_new_conversation_creates_and_returns(self):
         conv = _make_conv(title="Custom title")
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.create.return_value = conv
 
         result = self.svc.new_conversation(user_id=1, title="Custom title")
 
         self.mock_conv_repo.create.assert_called_once_with(1, "Custom title")
         assert result.title == "Custom title"
-
-    # ── rename_conversation ───────────────────────────────────────────────────
 
     def test_rename_conversation_raises_when_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -91,19 +91,17 @@ class TestConversationService:
 
     def test_rename_conversation_updates_title(self):
         conv = _make_conv(title="Old")
-        conv.updated_at = datetime.now(timezone.utc)
+        conv.updated_at = datetime.now(UTC)
         self.mock_conv_repo.get_by_id.return_value = conv
 
         renamed = _make_conv(title="New")
-        renamed.updated_at = datetime.now(timezone.utc)
+        renamed.updated_at = datetime.now(UTC)
         self.mock_conv_repo.update_title.return_value = renamed
 
         result = self.svc.rename_conversation(conv_id=1, user_id=1, title="New")
 
         self.mock_conv_repo.update_title.assert_called_once_with(conv, "New")
         assert result.title == "New"
-
-    # ── remove_conversation ───────────────────────────────────────────────────
 
     def test_remove_conversation_raises_when_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -119,8 +117,6 @@ class TestConversationService:
 
         self.mock_conv_repo.delete.assert_called_once_with(conv)
         assert result.message == "Conversation deleted"
-
-    # ── list_messages ─────────────────────────────────────────────────────────
 
     def test_list_messages_raises_when_conv_not_found(self):
         self.mock_conv_repo.get_by_id.return_value = None
@@ -145,7 +141,8 @@ class TestConversationService:
         msg.role = "user"
         msg.content = "hello"
         msg.meta = None
-        msg.created_at = datetime.now(timezone.utc)
+        msg.parent_id = None
+        msg.created_at = datetime.now(UTC)
         self.mock_conv_repo.get_by_id.return_value = conv
         self.mock_conv_repo.get_messages.return_value = [msg]
 
@@ -153,85 +150,72 @@ class TestConversationService:
 
         assert len(result) == 1
 
-    # ── ask ───────────────────────────────────────────────────────────────────
 
-    async def test_ask_raises_when_conv_not_found(self):
-        self.mock_conv_repo.get_by_id.return_value = None
+class TestMessageVersions:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.conv_repo = MagicMock(spec_set=ConversationRepositoryProtocol)
+        self.tier = MagicMock(spec_set=TierServiceProtocol)
+        self.conv = _make_conv(title="My chat")
+        self.conv_repo.get_by_id.return_value = self.conv
+        self.ids = iter(range(100, 1000))
+        self.conv_repo.set_active_leaf.side_effect = lambda conv, message_id: setattr(
+            conv, "active_leaf_id", message_id
+        )
+        self.conv_repo.add_message.side_effect = lambda *a, **k: _node(
+            next(self.ids), a[4] if len(a) > 4 else k.get("parent_id"), a[1], a[2], a[3]
+        )
+        self.svc = ConversationService(conv_repo=self.conv_repo, tier=self.tier)
+
+    def _tree(self) -> list[SimpleNamespace]:
+        """1 Q1 -> 2 A1 -> 3 Q2 -> 4 A2, with 5 an edited Q2 -> 6 its answer, and 7 a retried A1."""
+        return [
+            _node(1, None, "user", "Q1"),
+            _node(2, 1, "assistant", "A1"),
+            _node(3, 2, "user", "Q2"),
+            _node(4, 3, "assistant", "A2"),
+            _node(5, 2, "user", "Q2 edited"),
+            _node(6, 5, "assistant", "A2 edited"),
+            _node(7, 1, "assistant", "A1 retried"),
+        ]
+
+    def test_messages_show_the_active_path_and_which_version_each_turn_is(self):
+        self.conv.active_leaf_id = 4
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        visible = self.svc.list_messages(1, 1, Plan.FREE)
+
+        assert [m.id for m in visible] == [1, 2, 3, 4]
+        assert [(m.version, m.versions) for m in visible] == [(1, 1), (1, 2), (1, 2), (1, 1)]
+        assert visible[2].sibling_ids == [3, 5]
+
+    def test_switching_to_another_version_continues_down_its_newest_branch(self):
+        self.conv_repo.get_messages.return_value = self._tree()
+
+        visible = self.svc.select_version(1, 1, 5, Plan.FREE)
+
+        self.conv_repo.set_active_leaf.assert_called_once_with(self.conv, 6)
+        assert [m.id for m in visible] == [1, 2, 5, 6]
+
+    def test_switching_to_a_message_that_is_not_in_the_conversation_fails(self):
+        self.conv_repo.get_messages.return_value = self._tree()
 
         with pytest.raises(NotFoundError):
-            async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
-                pass
+            self.svc.select_version(1, 1, 99, Plan.FREE)
 
-    async def test_ask_yields_meta_then_tokens(self):
-        conv = _make_conv(title="New conversation")
-        self.mock_conv_repo.get_by_id.return_value = conv
+        self.conv_repo.set_active_leaf.assert_not_called()
 
-        mock_vector = [0.1, 0.2]
-        self.mock_lib_repo.get_top_k_chunks.return_value = []
+    def test_a_branch_copies_the_path_up_to_a_message_into_a_new_conversation(self):
+        self.conv_repo.get_messages.return_value = self._tree()
+        branch = _make_conv(id=9, title="My chat")
+        branch.updated_at = datetime.now(UTC)
+        self.conv_repo.create.return_value = branch
 
-        async def fake_stream(ai, ctx, question):
-            yield "hello"
-            yield " world"
+        result = self.svc.branch_conversation(1, 1, 5, Plan.FREE)
 
-        with (
-            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch("src.services.conversation_service.get_library_chunks", return_value=[]),
-            patch("src.services.conversation_service.build_context_text", return_value="ctx"),
-            patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("desc", ["b1"]))),
-            patch("src.services.conversation_service.generate_snippets", return_value=[]),
-            patch("src.services.conversation_service.generate_sources", return_value=[]),
-            patch("src.services.conversation_service.stream_answer", fake_stream),
-        ):
-            events = []
-            async for event in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
-                events.append(event)
-
-        assert events[0] == ("meta", {"description": "desc", "badges": ["b1"], "snippets": [], "sources": []})
-        assert ("token", "hello") in events
-        assert ("token", " world") in events
-
-    async def test_ask_auto_renames_new_conversation(self):
-        conv = _make_conv(title="New conversation")
-        self.mock_conv_repo.get_by_id.return_value = conv
-        mock_vector = [0.1]
-        self.mock_lib_repo.get_top_k_chunks.return_value = []
-
-        async def fake_stream(ai, ctx, question):
-            yield "answer"
-
-        with (
-            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch("src.services.conversation_service.get_library_chunks", return_value=[]),
-            patch("src.services.conversation_service.build_context_text", return_value=""),
-            patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("", []))),
-            patch("src.services.conversation_service.generate_snippets", return_value=[]),
-            patch("src.services.conversation_service.generate_sources", return_value=[]),
-            patch("src.services.conversation_service.stream_answer", fake_stream),
-        ):
-            async for _ in self.svc.ask(1, 1, "A long question here?", None, 5, Plan.FREE):
-                pass
-
-        self.mock_conv_repo.update_title.assert_called_once()
-
-    async def test_ask_touches_existing_conversation(self):
-        conv = _make_conv(title="My chat")
-        self.mock_conv_repo.get_by_id.return_value = conv
-        mock_vector = [0.1]
-        self.mock_lib_repo.get_top_k_chunks.return_value = []
-
-        async def fake_stream(ai, ctx, question):
-            yield "answer"
-
-        with (
-            patch.object(self.mock_ai, "get_embedding", AsyncMock(return_value=mock_vector)),
-            patch("src.services.conversation_service.get_library_chunks", return_value=[]),
-            patch("src.services.conversation_service.build_context_text", return_value=""),
-            patch("src.services.conversation_service.generate_description_and_badges", AsyncMock(return_value=("", []))),
-            patch("src.services.conversation_service.generate_snippets", return_value=[]),
-            patch("src.services.conversation_service.generate_sources", return_value=[]),
-            patch("src.services.conversation_service.stream_answer", fake_stream),
-        ):
-            async for _ in self.svc.ask(1, 1, "question?", None, 5, Plan.FREE):
-                pass
-
-        self.mock_conv_repo.touch.assert_called_once_with(conv)
+        self.conv_repo.create.assert_called_once_with(1, "My chat", self.conv.created_at)
+        copied = [c.args[1:3] for c in self.conv_repo.add_message.call_args_list]
+        assert copied == [("user", "Q1"), ("assistant", "A1"), ("user", "Q2 edited")]
+        assert [c.args[4] for c in self.conv_repo.add_message.call_args_list] == [None, 100, 101]
+        self.conv_repo.set_active_leaf.assert_called_once_with(branch, 102)
+        assert result.id == 9

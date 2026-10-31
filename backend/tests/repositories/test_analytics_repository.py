@@ -1,9 +1,11 @@
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from src.models import MessageFeedback
+from src.models import MessageFeedback, QueryUsageLog
 from src.repositories.analytics_repository import AnalyticsRepository
 
 
@@ -12,8 +14,6 @@ class TestAnalyticsRepository:
     def setup(self) -> None:
         self.db = MagicMock(spec_set=Session)
         self.repo = AnalyticsRepository(db=self.db)
-
-    # ── get_overview ──────────────────────────────────────────────────────────
 
     def test_get_overview_returns_expected_keys(self):
         self.db.query.return_value.filter.return_value.scalar.return_value = 5
@@ -44,14 +44,11 @@ class TestAnalyticsRepository:
     def test_get_overview_computes_quality_pct_from_feedback(self):
         self.db.query.return_value.filter.return_value.scalar.return_value = 0
         self.db.query.return_value.join.return_value.filter.return_value.scalar.return_value = 0
-        # Simulate 3 thumbs_up, 1 thumbs_down rows
         up_row = MagicMock()
         up_row.__getitem__ = lambda self, i: "up" if i == 0 else 3
         down_row = MagicMock()
         down_row.__getitem__ = lambda self, i: "down" if i == 0 else 1
-        self.db.query.return_value.filter.return_value.group_by.return_value.all.return_value = [
-            ("up", 3), ("down", 1)
-        ]
+        self.db.query.return_value.filter.return_value.group_by.return_value.all.return_value = [("up", 3), ("down", 1)]
 
         result = self.repo.get_overview(user_id=1)
 
@@ -59,18 +56,12 @@ class TestAnalyticsRepository:
         assert result["thumbs_down"] == 1
         assert result["quality_pct"] == 75
 
-    # ── get_query_volume ──────────────────────────────────────────────────────
-
     def test_get_query_volume_returns_list_of_dicts(self):
         row = MagicMock()
         row.day = "2024-01-01"
         row.count = 5
         (
-            self.db.query.return_value
-            .filter.return_value
-            .group_by.return_value
-            .order_by.return_value
-            .all.return_value
+            self.db.query.return_value.filter.return_value.group_by.return_value.order_by.return_value.all.return_value
         ) = [row]
 
         result = self.repo.get_query_volume(user_id=1, days=30)
@@ -79,18 +70,12 @@ class TestAnalyticsRepository:
 
     def test_get_query_volume_empty(self):
         (
-            self.db.query.return_value
-            .filter.return_value
-            .group_by.return_value
-            .order_by.return_value
-            .all.return_value
+            self.db.query.return_value.filter.return_value.group_by.return_value.order_by.return_value.all.return_value
         ) = []
 
         result = self.repo.get_query_volume(user_id=1, days=7)
 
         assert result == []
-
-    # ── upsert_feedback ───────────────────────────────────────────────────────
 
     def test_upsert_feedback_updates_existing(self):
         existing = MagicMock(spec=MessageFeedback)
@@ -116,8 +101,6 @@ class TestAnalyticsRepository:
         assert added.message_id == 1
         assert added.value == "up"
 
-    # ── get_user_feedbacks ────────────────────────────────────────────────────
-
     def test_get_user_feedbacks_returns_empty_dict_for_no_ids(self):
         result = self.repo.get_user_feedbacks(user_id=1, message_ids=[])
 
@@ -135,3 +118,37 @@ class TestAnalyticsRepository:
         result = self.repo.get_user_feedbacks(user_id=1, message_ids=[1, 2])
 
         assert result == {1: "up", 2: "down"}
+
+
+class TestQuestionsAreCountedFromTheAskLog:
+    """Run against a real database, because a mocked session cannot tell which table a query reads."""
+
+    @pytest.fixture
+    def repo(self):
+        engine = create_engine("sqlite://")
+        QueryUsageLog.__table__.create(engine)
+        with Session(engine) as session:
+            now = datetime.now(UTC).replace(tzinfo=None)
+            session.add_all(
+                [
+                    QueryUsageLog(user_id=1, created_at=now),
+                    QueryUsageLog(user_id=1, created_at=now),
+                    QueryUsageLog(user_id=1, created_at=now - timedelta(days=40)),
+                    QueryUsageLog(user_id=2, created_at=now),
+                ]
+            )
+            session.commit()
+            yield AnalyticsRepository(db=session)
+
+    def test_all_time_count_includes_only_that_users_questions(self, repo):
+        assert repo.count_questions(user_id=1) == 3
+        assert repo.count_questions(user_id=2) == 1
+        assert repo.count_questions(user_id=3) == 0
+
+    def test_count_can_be_limited_to_recent_questions(self, repo):
+        assert repo.count_questions(user_id=1, since=datetime.now(UTC) - timedelta(days=30)) == 2
+
+    def test_volume_groups_the_last_days_by_date(self, repo):
+        today = datetime.now(UTC).date().isoformat()
+
+        assert repo.get_query_volume(user_id=1, days=30) == [{"date": today, "count": 2}]

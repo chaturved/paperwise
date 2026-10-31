@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from sqlalchemy.orm import Session
 
 from src.repositories.tier_repository import TierRepository
@@ -21,4 +21,10 @@ class TestTierRepository:
     def test_log_query_adds_and_commits(self):
         self.repo.log_query(user_id=1)
         self.db.add.assert_called_once()
+        self.db.commit.assert_called_once()
+
+    def test_remove_query_clears_a_failed_session_then_deletes_the_entry_and_commits(self):
+        self.repo.remove_query(log_id=5)
+        self.db.rollback.assert_called_once()
+        self.db.query.return_value.filter.return_value.delete.assert_called_once()
         self.db.commit.assert_called_once()

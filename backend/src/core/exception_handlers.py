@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from .exceptions import AppError, PlanLimitError, UploadFailedError
+from .exceptions import AppError, PlanLimitError
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -16,13 +16,6 @@ def register_exception_handlers(app: FastAPI) -> None:
                     "upgrade_url": "/settings/billing",
                 }
             },
-        )
-
-    @app.exception_handler(UploadFailedError)
-    async def upload_failed_error_handler(request: Request, exc: UploadFailedError) -> JSONResponse:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"uploaded": [], "errors": [e.model_dump() for e in exc.errors]},
         )
 
     @app.exception_handler(AppError)

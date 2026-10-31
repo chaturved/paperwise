@@ -14,7 +14,7 @@ class TestQueryRepository:
         self.repo = QueryRepository(db=self.db)
 
     def test_add_recent_query_persists_and_returns(self):
-        result = self.repo.add_recent_query(user_id=1, query="what is RAG?")
+        self.repo.add_recent_query(user_id=1, query="what is RAG?")
 
         self.db.add.assert_called_once()
         self.db.commit.assert_called_once()
@@ -26,11 +26,7 @@ class TestQueryRepository:
     def test_get_recent_queries_returns_ordered_list(self):
         expected = [MagicMock(spec=RecentQuery), MagicMock(spec=RecentQuery)]
         (
-            self.db.query.return_value
-            .filter.return_value
-            .order_by.return_value
-            .limit.return_value
-            .all.return_value
+            self.db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value
         ) = expected
 
         result = self.repo.get_recent_queries(user_id=1, limit=5)

@@ -2,8 +2,6 @@ import axios from "axios";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
 import { isProtectedRoute } from "@/lib/auth-routes";
 
-// ─── Axios base client ────────────────────────────────────────────────────────
-
 const apiClient = axios.create({
   baseURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}`,
   withCredentials: true,
@@ -55,12 +53,10 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
-
-// ─── SSE client ───────────────────────────────────────────────────────────────
 
 type FetchEventSourceFn = typeof fetchEventSource;
 
@@ -89,9 +85,7 @@ export const sseClient: FetchEventSourceFn = (path, init) => {
 
         if (res.status === 401) {
           if (isSseRefreshing) {
-            await new Promise<void>((resolve, reject) =>
-              sseFailedQueue.push({ resolve, reject })
-            );
+            await new Promise<void>((resolve, reject) => sseFailedQueue.push({ resolve, reject }));
             return attempt();
           }
 

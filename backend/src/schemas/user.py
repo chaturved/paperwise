@@ -1,8 +1,6 @@
 from pydantic import BaseModel, EmailStr, computed_field
 
 
-# ─── Request schemas ──────────────────────────────────────────────────────────
-
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
@@ -30,6 +28,18 @@ class MagicLinkRequest(BaseModel):
     email: EmailStr
 
 
+class SignInMethodsRequest(BaseModel):
+    email: EmailStr
+
+
+class SignInMethodsResponse(BaseModel):
+    has_password: bool
+
+
+class EmailExistsResponse(BaseModel):
+    exists: bool
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
@@ -42,8 +52,6 @@ class ResetPasswordRequest(BaseModel):
 class WaitlistRequest(BaseModel):
     email: EmailStr
 
-
-# ─── Response schemas ─────────────────────────────────────────────────────────
 
 def _initials(full_name: str) -> str:
     parts = full_name.strip().split()
@@ -87,7 +95,7 @@ class UsageItemResponse(BaseModel):
 
 class UsageResponse(BaseModel):
     documents: UsageItemResponse
-    queries_today: UsageItemResponse
+    queries_24h: UsageItemResponse
     storage_bytes: UsageItemResponse
 
 

@@ -12,8 +12,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = ""
 
-    AI_PROVIDER: str = "gemini"  # "gemini" or "huggingface"
-    EMBEDDING_DIMENSIONS: int = 384  # size of the pgvector column — changing it needs an Alembic migration + re-embed
+    AI_PROVIDER: str = "gemini"
+    EMBEDDING_DIMENSIONS: int = 384
 
     GEMINI_API_BASE: str = "https://generativelanguage.googleapis.com/v1beta"
     GEMINI_API_KEY: str = ""
@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = "noreply@paperwise.ai"
 
     APP_URL: str = "http://localhost:3000"
+    DEMO_REQUEST_NOTIFY_EMAIL: str = ""
 
     JWT_SECRET_KEY: str
     SESSION_SECRET_KEY: str
@@ -51,6 +52,27 @@ class Settings(BaseSettings):
 
     TEXT_CHUNK_SIZE: int = 500
     TEXT_CHUNK_OVERLAP: int = 50
+    MAX_DOCX_UNZIPPED_MB: int = 50
+    MAX_DOCX_ENTRIES: int = 2000
+    MAX_PDF_PAGES: int = 1000
+    MAX_EXTRACTED_CHARS: int = 3_000_000
+    EXTRACT_TIMEOUT_SECONDS: int = 30
+    EXTRACT_MAX_MEMORY_MB: int = 2048
+    EXTRACT_MAX_CONCURRENCY: int = 2
+    EXTRACT_QUEUE_TIMEOUT_SECONDS: int = 60
+    OCR_ENABLED: bool = True
+    OCR_LANGUAGE: str = "eng"
+    OCR_DPI: int = 200
+    OCR_MAX_PAGES: int = 25
+    OCR_EXTRA_TIMEOUT_SECONDS: int = 120
+    UPLOAD_URL_EXPIRY_SECONDS: int = 600
+    DOWNLOAD_URL_EXPIRY_SECONDS: int = 600
+    INGEST_MAX_CONCURRENCY: int = 3
+    STALE_UPLOAD_HOURS: int = 1
+    STALE_PROCESSING_MINUTES: int = 15
+
+    TRUST_FORWARDED_FOR: bool = False
+    DOCS_ENABLED: bool = True
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 

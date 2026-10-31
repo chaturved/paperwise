@@ -9,9 +9,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("paperwise_access_token")?.value;
 
   const isProtected = isProtectedRoute(pathname);
-  const isAuthOnly = AUTH_ONLY_PATHS.some((route) =>
-    matchesRoute(pathname, route),
-  );
+  const isAuthOnly = AUTH_ONLY_PATHS.some((route) => matchesRoute(pathname, route));
 
   if (!token && isProtected) {
     const url = request.nextUrl.clone();
@@ -29,7 +27,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

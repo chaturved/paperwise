@@ -1,12 +1,13 @@
-# backend/alembic/versions/0005_query_usage_log.py
 """add query_usage_log table
 
 Revision ID: 0005
 Revises: 0004_waitlist
 Create Date: 2026-05-21
 """
-from alembic import op
+
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "0005"
 down_revision = "0004_waitlist"

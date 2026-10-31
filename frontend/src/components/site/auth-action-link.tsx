@@ -11,12 +11,21 @@ interface AuthActionLinkProps {
   arrow?: "right" | "up-right";
 }
 
-export function AuthActionLink({ signedOutLabel, signedInLabel = "Open your workspace", className, arrow = "up-right" }: AuthActionLinkProps) {
+export function AuthActionLink({
+  signedOutLabel,
+  signedInLabel = "Open your workspace",
+  className,
+  arrow = "up-right",
+}: AuthActionLinkProps) {
   const { user, loading } = useAuth();
   const Icon = arrow === "right" ? ArrowRight : ArrowUpRight;
 
   if (loading) {
-    return <span role="status" aria-label="Checking account status" className={`${className} cursor-default opacity-50`}><span className="h-3 w-28 animate-pulse rounded-full bg-current/25" /></span>;
+    return (
+      <span role="status" aria-label="Checking account status" className={`${className} cursor-default opacity-50`}>
+        <span className="h-3 w-28 animate-pulse rounded-full bg-current/25" />
+      </span>
+    );
   }
 
   return (

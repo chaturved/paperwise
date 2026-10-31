@@ -42,7 +42,6 @@ class PlanLimitError(AppError):
         self.limit = limit
 
 
-class UploadFailedError(AppError):
-    def __init__(self, errors: list, message: str = "All files failed to upload"):
-        super().__init__(message, "UPLOAD_FAILED", 422)
-        self.errors = errors
+class TooManyRequestsError(AppError):
+    def __init__(self, message: str = "Too many requests. Please wait a moment and try again."):
+        super().__init__(message, "RATE_LIMITED", 429)

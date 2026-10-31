@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from ..internal import health
 
 router = APIRouter(prefix="/internal")

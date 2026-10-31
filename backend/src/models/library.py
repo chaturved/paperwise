@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from ..core.enums import DocumentStatus
 from ..database.db import Base
 
 if TYPE_CHECKING:
@@ -22,10 +24,18 @@ class Library(Base):
     name: Mapped[str] = mapped_column(String)
     size: Mapped[int] = mapped_column(Integer)
     type: Mapped[str] = mapped_column(String)
-    path: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    extracted_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    content_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+    path: Mapped[str | None] = mapped_column(String, nullable=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    key_dates: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    status: Mapped[str] = mapped_column(
+        String(20), default=DocumentStatus.READY, server_default=DocumentStatus.READY.value
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    chunks: Mapped[list[LibraryChunk]] = relationship("LibraryChunk", back_populates="library", cascade="all, delete-orphan")
+    chunks: Mapped[list[LibraryChunk]] = relationship(
+        "LibraryChunk", back_populates="library", cascade="all, delete-orphan"
+    )
     user: Mapped[User] = relationship("User", back_populates="libraries")

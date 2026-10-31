@@ -33,11 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refetchUser().finally(() => setLoading(false));
   }, [refetchUser]);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, refetchUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, loading, refetchUser }}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);

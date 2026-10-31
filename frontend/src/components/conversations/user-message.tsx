@@ -1,22 +1,56 @@
 "use client";
 
+import { useState } from "react";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MessageEditor } from "./message-editor";
+import { VersionSwitcher, type MessageVersions } from "./version-switcher";
+
 interface Props {
+  messageId?: number;
   content: string;
-  timestamp: string;
+  versions?: MessageVersions;
+  busy?: boolean;
+  onEdit?: (messageId: number, text: string) => void;
+  onSwitch?: (messageId: number) => void;
 }
 
-export function UserMessage({ content, timestamp }: Props) {
+export function UserMessage({ messageId, content, versions, busy, onEdit, onSwitch }: Props) {
+  const [editing, setEditing] = useState(false);
+  const canEdit = Boolean(onEdit) && messageId !== undefined && !busy;
+
+  if (editing && messageId !== undefined) {
+    return (
+      <MessageEditor
+        initial={content}
+        onCancel={() => setEditing(false)}
+        onSave={(text) => {
+          setEditing(false);
+          onEdit?.(messageId, text);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="msg-in flex justify-end">
-      <div className="max-w-[72%]">
-        <div className="rounded-[20px] rounded-br-[6px] px-4 py-3 bg-ink/[0.07] border border-ink/[0.08]">
-          <p className="text-[14px] leading-relaxed text-ink">{content}</p>
-        </div>
-        <div className="flex justify-end mt-1">
-          <span className="text-[10px] text-ink/30 tabular-nums">
-            {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </span>
-        </div>
+    <div className="msg-in group flex flex-col items-end gap-1">
+      <p className="max-w-[min(520px,85%)] whitespace-pre-wrap rounded-lg bg-card px-4 py-3 text-base leading-relaxed text-ink">
+        {content}
+      </p>
+      <div className="flex items-center gap-1">
+        {versions && onSwitch && <VersionSwitcher versions={versions} onSwitch={onSwitch} disabled={busy} />}
+        {canEdit && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            aria-label="Edit message"
+            onClick={() => setEditing(true)}
+            className="w-7 px-0 sm:opacity-0 sm:transition sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+          >
+            <Pencil size={14} />
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -1,25 +1,27 @@
-from datetime import datetime, timezone
-from typing import AsyncGenerator, Protocol
+from datetime import UTC, datetime
+from typing import Protocol
 
 from fastapi import Depends
 
 from src.core.enums import Plan
 from src.core.exceptions import NotFoundError
-from src.repositories.conversation_repository import ConversationRepository, ConversationRepositoryProtocol
-from src.repositories.library_repository import LibraryRepositoryProtocol, LibraryRepository
-from src.schemas.conversation import AskFilters, ConversationOut, ConversationSearchResult, DEFAULT_CONVERSATION_TITLE, MessageOut
-from src.schemas.user import MessageResponse
-from src.services.tier_service import TierServiceProtocol, TierService
-from src.integrations.ai import get_ai_provider
-from src.integrations.ai.base import AIProvider
-from src.utils.query_utils import (
-    build_context_text,
-    generate_description_and_badges,
-    generate_snippets,
-    generate_sources,
-    get_library_chunks,
-    stream_answer,
+from src.models import Conversation, Message
+from src.repositories.conversation_repository import (
+    ConversationRepository,
+    ConversationRepositoryProtocol,
 )
+from src.schemas.conversation import (
+    DEFAULT_CONVERSATION_TITLE,
+    ConversationOut,
+    ConversationSearchResult,
+    MessageOut,
+)
+from src.schemas.user import MessageResponse
+from src.services.tier_service import TierService, TierServiceProtocol
+from src.utils.message_tree import MessageTree
+
+EXCERPT_BEFORE = 50
+EXCERPT_AFTER = 90
 
 
 class ConversationServiceProtocol(Protocol):
@@ -29,29 +31,18 @@ class ConversationServiceProtocol(Protocol):
     def rename_conversation(self, conv_id: int, user_id: int, title: str) -> ConversationOut: ...
     def remove_conversation(self, conv_id: int, user_id: int) -> MessageResponse: ...
     def list_messages(self, conv_id: int, user_id: int, plan: Plan) -> list[MessageOut]: ...
-    def ask(
-        self,
-        conv_id: int,
-        user_id: int,
-        question: str,
-        filters: AskFilters | None,
-        top_k: int,
-        plan: Plan,
-    ) -> AsyncGenerator[tuple[str, dict | str], None]: ...
+    def select_version(self, conv_id: int, user_id: int, message_id: int, plan: Plan) -> list[MessageOut]: ...
+    def branch_conversation(self, conv_id: int, user_id: int, message_id: int, plan: Plan) -> ConversationOut: ...
 
 
 class ConversationService(ConversationServiceProtocol):
     def __init__(
         self,
         conv_repo: ConversationRepositoryProtocol = Depends(ConversationRepository),
-        lib_repo: LibraryRepositoryProtocol = Depends(LibraryRepository),
         tier: TierServiceProtocol = Depends(TierService),
-        ai: AIProvider = Depends(get_ai_provider),
     ):
         self.conv_repo = conv_repo
-        self.lib_repo = lib_repo
         self.tier = tier
-        self.ai = ai
 
     def list_conversations(self, user_id: int) -> list[ConversationOut]:
         return [ConversationOut.model_validate(c) for c in self.conv_repo.get_all(user_id)]
@@ -59,87 +50,84 @@ class ConversationService(ConversationServiceProtocol):
     def search_conversations(self, user_id: int, query: str) -> list[ConversationSearchResult]:
         if len(query) < 2:
             return []
-        results = []
-        for conversation, matching_content in self.conv_repo.search(user_id, query):
-            excerpt = None
-            if matching_content:
-                match_at = matching_content.casefold().find(query.casefold())
-                start = max(0, match_at - 50)
-                end = min(len(matching_content), match_at + len(query) + 90)
-                excerpt = ("…" if start else "") + matching_content[start:end].strip() + ("…" if end < len(matching_content) else "")
-            results.append(ConversationSearchResult(
+        return [
+            ConversationSearchResult(
                 **ConversationOut.model_validate(conversation).model_dump(),
-                match_excerpt=excerpt,
-            ))
-        return results
+                match_excerpt=self._excerpt(matching_content, query),
+            )
+            for conversation, matching_content in self.conv_repo.search(user_id, query)
+        ]
 
     def new_conversation(self, user_id: int, title: str = DEFAULT_CONVERSATION_TITLE) -> ConversationOut:
         conv = self.conv_repo.create(user_id, title)
         return ConversationOut.model_validate(conv)
 
     def rename_conversation(self, conv_id: int, user_id: int, title: str) -> ConversationOut:
-        conv = self.conv_repo.get_by_id(conv_id, user_id)
-        if not conv:
-            raise NotFoundError("Conversation not found")
-        conv = self.conv_repo.update_title(conv, title)
+        conv = self.conv_repo.update_title(self._conversation(conv_id, user_id), title)
         return ConversationOut.model_validate(conv)
 
     def remove_conversation(self, conv_id: int, user_id: int) -> MessageResponse:
-        conv = self.conv_repo.get_by_id(conv_id, user_id)
-        if not conv:
-            raise NotFoundError("Conversation not found")
-        self.conv_repo.delete(conv)
+        self.conv_repo.delete(self._conversation(conv_id, user_id))
         return MessageResponse(message="Conversation deleted")
 
     def list_messages(self, conv_id: int, user_id: int, plan: Plan) -> list[MessageOut]:
+        return self._visible_messages(self._readable(conv_id, user_id, plan))
+
+    def select_version(self, conv_id: int, user_id: int, message_id: int, plan: Plan) -> list[MessageOut]:
+        """Switch to another version of a turn: the conversation continues down that version's newest branch."""
+        conv = self._readable(conv_id, user_id, plan)
+        tree = MessageTree(self.conv_repo.get_messages(conv.id))
+        tree.require(message_id)
+        leaf = tree.latest_leaf(message_id)
+        self.conv_repo.set_active_leaf(conv, leaf.id if leaf else message_id)
+        return self._visible_messages(conv)
+
+    def branch_conversation(self, conv_id: int, user_id: int, message_id: int, plan: Plan) -> ConversationOut:
+        """Start a new conversation holding everything up to `message_id`; the original is left as it is."""
+        conv = self._readable(conv_id, user_id, plan)
+        tree = MessageTree(self.conv_repo.get_messages(conv.id))
+        tree.require(message_id)
+        # The copy keeps the original's date, so branching cannot extend how long a Free plan can see old chats.
+        branch = self.conv_repo.create(user_id, conv.title, conv.created_at)
+        parent_id: int | None = None
+        for message in tree.path_to(message_id):
+            parent_id = self.conv_repo.add_message(branch.id, message.role, message.content, message.meta, parent_id).id
+        self.conv_repo.set_active_leaf(branch, parent_id)
+        return ConversationOut.model_validate(branch)
+
+    def _conversation(self, conv_id: int, user_id: int) -> Conversation:
         conv = self.conv_repo.get_by_id(conv_id, user_id)
         if not conv:
             raise NotFoundError("Conversation not found")
-        self.tier.check_history(plan, conv.created_at or datetime.now(timezone.utc))
-        return [MessageOut.model_validate(m) for m in self.conv_repo.get_messages(conv_id)]
+        return conv
 
-    async def ask(
-        self,
-        conv_id: int,
-        user_id: int,
-        question: str,
-        filters: AskFilters | None,
-        top_k: int,
-        plan: Plan,
-    ) -> AsyncGenerator[tuple[str, dict | str], None]:
-        conv = self.conv_repo.get_by_id(conv_id, user_id)
-        if not conv:
-            raise NotFoundError("Conversation not found")
-        self.tier.check_history(plan, conv.created_at or datetime.now(timezone.utc))
-        self.tier.check_and_log_ask(plan, user_id)
+    def _readable(self, conv_id: int, user_id: int, plan: Plan) -> Conversation:
+        """The conversation, if the plan still allows reading something this old."""
+        conv = self._conversation(conv_id, user_id)
+        self.tier.check_history(plan, conv.created_at or datetime.now(UTC))
+        return conv
 
-        self.conv_repo.add_message(conv_id, "user", question)
+    def _visible_messages(self, conv: Conversation) -> list[MessageOut]:
+        tree = MessageTree(self.conv_repo.get_messages(conv.id))
+        return [self._with_versions(message, tree) for message in tree.path_to(conv.active_leaf_id)]
 
-        query_vector = await self.ai.get_embedding(question)
-        doc_id = filters.doc_id if filters else None
-        results = self.lib_repo.get_top_k_chunks(user_id, query_vector, top_k, doc_id)
-        chunks = get_library_chunks(results)
-        context_text = build_context_text(chunks)
+    @staticmethod
+    def _with_versions(message: Message, tree: MessageTree[Message]) -> MessageOut:
+        sibling_ids = [version.id for version in tree.versions(message)]
+        return MessageOut.model_validate(message).model_copy(
+            update={
+                "version": sibling_ids.index(message.id) + 1,
+                "versions": len(sibling_ids),
+                "sibling_ids": sibling_ids,
+            }
+        )
 
-        description, badges = await generate_description_and_badges(self.ai, chunks, question)
-        meta = {
-            "description": description,
-            "badges": badges,
-            "snippets": generate_snippets(chunks),
-            "sources": generate_sources(chunks),
-        }
-
-        yield "meta", meta
-
-        full_answer = ""
-        async for token in stream_answer(self.ai, context_text, question):
-            full_answer += token
-            yield "token", token
-
-        self.conv_repo.add_message(conv_id, "assistant", full_answer, meta)
-
-        if conv.title == "New conversation":
-            short_q = question[:60] + ("…" if len(question) > 60 else "")
-            self.conv_repo.update_title(conv, short_q)
-        else:
-            self.conv_repo.touch(conv)
+    @staticmethod
+    def _excerpt(content: str | None, query: str) -> str | None:
+        """A short stretch of the matching message around the search text."""
+        if not content:
+            return None
+        match_at = content.casefold().find(query.casefold())
+        start = max(0, match_at - EXCERPT_BEFORE)
+        end = min(len(content), match_at + len(query) + EXCERPT_AFTER)
+        return ("…" if start else "") + content[start:end].strip() + ("…" if end < len(content) else "")

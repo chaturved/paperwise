@@ -4,18 +4,22 @@ from sqlalchemy.orm import Session
 
 from src.config import settings
 from src.core.exceptions import UnauthorizedError
-from src.database.db import get_db  # noqa: F401 — re-exported for routers
+from src.database.db import get_db
 from src.models.user import User
-from src.services.token_service import validate_access_token
+from src.services.token_service import TokenService, TokenServiceProtocol
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
 
 
-def get_current_user_id(request: Request, bearer: str = Depends(oauth2_scheme)) -> int:
+def get_current_user_id(
+    request: Request,
+    bearer: str = Depends(oauth2_scheme),
+    tokens: TokenServiceProtocol = Depends(TokenService),
+) -> int:
     token = bearer or request.cookies.get(settings.ACCESS_TOKEN_KEY)
     if not token:
         raise UnauthorizedError("Not authenticated")
-    return validate_access_token(token)
+    return tokens.validate_access_token(token)
 
 
 def get_current_user(
@@ -26,4 +30,3 @@ def get_current_user(
     if not user:
         raise UnauthorizedError()
     return user
-

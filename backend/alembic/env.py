@@ -1,23 +1,22 @@
+import os
+import sys
 from logging.config import fileConfig
+
 from alembic import context
-import sys, os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from src.config import settings
 from src.database.db import Base, engine
-from src.models import *  # noqa
+from src.models import *
 
 DATABASE_URL = settings.DATABASE_URL
 
-# Alembic Config object
 config = context.config
 
-# Logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Target metadata
 target_metadata = Base.metadata
 
 

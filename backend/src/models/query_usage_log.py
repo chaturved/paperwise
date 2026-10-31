@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,6 +17,6 @@ class QueryUsageLog(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped[User] = relationship("User", back_populates="query_usage_logs")

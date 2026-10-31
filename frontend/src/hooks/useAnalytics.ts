@@ -30,18 +30,30 @@ export function useAnalytics() {
         setVolume(nextVolume);
         setCitations(nextCitations);
       })
-      .catch(() => { if (active) setError("Could not load analytics right now."); })
-      .finally(() => { if (active) setLoading(false); });
+      .catch(() => {
+        if (active) setError("Could not load analytics right now.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [days, refreshKey]);
 
   useEffect(() => {
     let active = true;
     getUsage()
-      .then((usage) => { if (active) setAccountUsage(usage); })
-      .catch(() => { if (active) setAccountUsage(null); });
-    return () => { active = false; };
+      .then((usage) => {
+        if (active) setAccountUsage(usage);
+      })
+      .catch(() => {
+        if (active) setAccountUsage(null);
+      });
+    return () => {
+      active = false;
+    };
   }, [refreshKey]);
 
   const dailyVolume = useMemo(() => {

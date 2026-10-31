@@ -2,12 +2,13 @@ from typing import Protocol
 
 from fastapi import Depends
 
-from src.models.user import User
-from src.repositories.user_repository import UserRepositoryProtocol, UserRepository
-from src.schemas.user import MessageResponse, ProfileResponse, UsageItemResponse, UsageResponse, UserCreate
 from src.core.exceptions import BadRequestError, NotFoundError, UnprocessableEntityError
-from src.utils.security import hash_password, verify_password
+from src.models.user import User
+from src.repositories.user_repository import UserRepository, UserRepositoryProtocol
+from src.schemas.user import MessageResponse, ProfileResponse, UsageItemResponse, UsageResponse, UserCreate
+from src.services.library_service import LibraryService, LibraryServiceProtocol
 from src.services.tier_service import LIMITS
+from src.utils.security import PasswordHasher
 
 
 class UserServiceProtocol(Protocol):
@@ -22,13 +23,20 @@ class UserServiceProtocol(Protocol):
 
 
 class UserService(UserServiceProtocol):
-    def __init__(self, repo: UserRepositoryProtocol = Depends(UserRepository)):
+    def __init__(
+        self,
+        repo: UserRepositoryProtocol = Depends(UserRepository),
+        hasher: PasswordHasher = Depends(PasswordHasher),
+        library: LibraryServiceProtocol = Depends(LibraryService),
+    ):
         self.repo = repo
+        self.hasher = hasher
+        self.library = library
 
     def create_user(self, user_in: UserCreate) -> User:
         user = User(
             email=user_in.email,
-            hashed_password=hash_password(user_in.password),
+            hashed_password=self.hasher.hash(user_in.password),
             full_name=user_in.full_name,
         )
         return self.repo.add(user)
@@ -53,11 +61,11 @@ class UserService(UserServiceProtocol):
         user = self.repo.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")
-        if not user.hashed_password or not verify_password(current_password, user.hashed_password):
+        if not user.hashed_password or not self.hasher.verify(current_password, user.hashed_password):
             raise BadRequestError("Current password is incorrect")
         if len(new_password) < 8:
             raise UnprocessableEntityError("Password must be at least 8 characters")
-        user.hashed_password = hash_password(new_password)
+        user.hashed_password = self.hasher.hash(new_password)
         self.repo.update(user)
         return MessageResponse(message="Password updated")
 
@@ -67,7 +75,7 @@ class UserService(UserServiceProtocol):
             raise NotFoundError("User not found")
         if len(new_password) < 8:
             raise UnprocessableEntityError("Password must be at least 8 characters")
-        user.hashed_password = hash_password(new_password)
+        user.hashed_password = self.hasher.hash(new_password)
         self.repo.update(user)
         return MessageResponse(message="Password set")
 
@@ -77,6 +85,7 @@ class UserService(UserServiceProtocol):
         user = self.repo.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")
+        self.library.clear_all(user_id)  # the database rows go with the user, but the stored files would not
         self.repo.delete(user)
         return MessageResponse(message="Account deleted")
 
@@ -96,6 +105,6 @@ class UserService(UserServiceProtocol):
         max_bytes = limits["max_file_mb"] * 1024 * 1024 if limits["max_file_mb"] else None
         return UsageResponse(
             documents=UsageItemResponse(used=self.repo.count_documents(user_id), limit=limits["max_docs"]),
-            queries_today=UsageItemResponse(used=self.repo.count_queries_today(user_id), limit=limits["max_queries_day"]),
+            queries_24h=UsageItemResponse(used=self.repo.count_queries_24h(user_id), limit=limits["max_queries_day"]),
             storage_bytes=UsageItemResponse(used=self.repo.sum_storage_bytes(user_id), limit=max_bytes),
         )

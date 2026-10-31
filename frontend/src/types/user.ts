@@ -7,6 +7,14 @@ export interface User {
   onboarding_completed: boolean;
 }
 
+export interface SignInMethods {
+  has_password: boolean;
+}
+
+export interface EmailExists {
+  exists: boolean;
+}
+
 export interface UsageItem {
   used: number;
   limit: number | null;
@@ -14,6 +22,6 @@ export interface UsageItem {
 
 export interface Usage {
   documents: UsageItem;
-  queries_today: UsageItem;
+  queries_24h: UsageItem;
   storage_bytes: UsageItem;
 }

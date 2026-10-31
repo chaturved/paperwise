@@ -5,18 +5,20 @@ Revises: d2f9a4f38ca4
 Create Date: 2026-05-18 00:00:00.000000
 
 """
-from typing import Sequence, Union
-from alembic import op
+
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 
+from alembic import op
+
 revision: str = "0001_alter_users"
-down_revision: Union[str, Sequence[str], None] = "d2f9a4f38ca4"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "d2f9a4f38ca4"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # Fix libraries.size from String to Integer (store bytes)
     op.alter_column("libraries", "size", type_=sa.Integer(), postgresql_using="0")
     op.add_column("users", sa.Column("avatar_initials", sa.String(4), nullable=True))
     op.add_column("users", sa.Column("plan", sa.String(20), nullable=False, server_default="free"))

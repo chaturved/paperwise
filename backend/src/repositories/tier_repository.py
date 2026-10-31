@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from fastapi import Depends
@@ -11,7 +11,8 @@ from src.models.query_usage_log import QueryUsageLog
 
 class TierRepositoryProtocol(Protocol):
     def count_queries_24h(self, user_id: int) -> int: ...
-    def log_query(self, user_id: int) -> None: ...
+    def log_query(self, user_id: int) -> int: ...
+    def remove_query(self, log_id: int) -> None: ...
 
 
 class TierRepository(TierRepositoryProtocol):
@@ -19,7 +20,7 @@ class TierRepository(TierRepositoryProtocol):
         self.db = db
 
     def count_queries_24h(self, user_id: int) -> int:
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
         stmt = (
             select(func.count())
             .select_from(QueryUsageLog)
@@ -30,6 +31,13 @@ class TierRepository(TierRepositoryProtocol):
         )
         return self.db.scalar(stmt) or 0
 
-    def log_query(self, user_id: int) -> None:
-        self.db.add(QueryUsageLog(user_id=user_id))
+    def log_query(self, user_id: int) -> int:
+        log = QueryUsageLog(user_id=user_id)
+        self.db.add(log)
+        self.db.commit()
+        return log.id
+
+    def remove_query(self, log_id: int) -> None:
+        self.db.rollback()
+        self.db.query(QueryUsageLog).filter(QueryUsageLog.id == log_id).delete()
         self.db.commit()

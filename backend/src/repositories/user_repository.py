@@ -1,45 +1,44 @@
-from datetime import datetime, timezone
-from typing import Optional, Protocol
+from datetime import UTC, datetime, timedelta
+from typing import Protocol
 
 from fastapi import Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.models.conversation import Conversation
 from src.models.library import Library
 from src.models.magic_token import MagicToken
-from src.models.message import Message
 from src.models.oauth_account import OAuthAccount
+from src.models.query_usage_log import QueryUsageLog
 from src.models.reset_token import ResetToken
 from src.models.user import User
 
 
 class UserRepositoryProtocol(Protocol):
     def add(self, user: User) -> User: ...
-    def get_by_email(self, email: str) -> Optional[User]: ...
-    def get_by_id(self, user_id: int) -> Optional[User]: ...
+    def get_by_email(self, email: str) -> User | None: ...
+    def get_by_id(self, user_id: int) -> User | None: ...
     def update(self, user: User) -> User: ...
     def delete(self, user: User) -> None: ...
-    def get_oauth_account(self, provider: str, provider_user_id: str) -> Optional[OAuthAccount]: ...
+    def get_oauth_account(self, provider: str, provider_user_id: str) -> OAuthAccount | None: ...
     def create_oauth_account(
         self,
         user_id: int,
         provider: str,
         provider_user_id: str,
-        access_token: Optional[str],
-        refresh_token: Optional[str],
+        access_token: str | None,
+        refresh_token: str | None,
     ) -> OAuthAccount: ...
     def invalidate_magic_tokens(self, email: str) -> None: ...
     def create_magic_token(self, email: str, token_hash: str, expires_at: datetime) -> MagicToken: ...
-    def get_magic_token(self, token_hash: str) -> Optional[MagicToken]: ...
+    def get_magic_token(self, token_hash: str) -> MagicToken | None: ...
     def mark_magic_token_used(self, mt: MagicToken) -> None: ...
     def invalidate_reset_tokens(self, user_id: int) -> None: ...
     def create_reset_token(self, user_id: int, token_hash: str, expires_at: datetime) -> ResetToken: ...
-    def get_reset_token(self, token_hash: str) -> Optional[ResetToken]: ...
+    def get_reset_token(self, token_hash: str) -> ResetToken | None: ...
     def mark_reset_token_used(self, rt: ResetToken) -> None: ...
     def count_documents(self, user_id: int) -> int: ...
-    def count_queries_today(self, user_id: int) -> int: ...
+    def count_queries_24h(self, user_id: int) -> int: ...
     def sum_storage_bytes(self, user_id: int) -> int: ...
 
 
@@ -53,10 +52,10 @@ class UserRepository(UserRepositoryProtocol):
         self.db.refresh(user)
         return user
 
-    def get_by_email(self, email: str) -> Optional[User]:
+    def get_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email).first()
 
-    def get_by_id(self, user_id: int) -> Optional[User]:
+    def get_by_id(self, user_id: int) -> User | None:
         return self.db.query(User).filter(User.id == user_id).first()
 
     def update(self, user: User) -> User:
@@ -68,9 +67,7 @@ class UserRepository(UserRepositoryProtocol):
         self.db.delete(user)
         self.db.commit()
 
-    # ─── OAuth ────────────────────────────────────────────────────────────────
-
-    def get_oauth_account(self, provider: str, provider_user_id: str) -> Optional[OAuthAccount]:
+    def get_oauth_account(self, provider: str, provider_user_id: str) -> OAuthAccount | None:
         return (
             self.db.query(OAuthAccount)
             .filter(OAuthAccount.provider == provider, OAuthAccount.provider_user_id == provider_user_id)
@@ -82,8 +79,8 @@ class UserRepository(UserRepositoryProtocol):
         user_id: int,
         provider: str,
         provider_user_id: str,
-        access_token: Optional[str] = None,
-        refresh_token: Optional[str] = None,
+        access_token: str | None = None,
+        refresh_token: str | None = None,
     ) -> OAuthAccount:
         acct = OAuthAccount(
             user_id=user_id,
@@ -97,8 +94,6 @@ class UserRepository(UserRepositoryProtocol):
         self.db.refresh(acct)
         return acct
 
-    # ─── Magic tokens ─────────────────────────────────────────────────────────
-
     def invalidate_magic_tokens(self, email: str) -> None:
         self.db.query(MagicToken).filter(MagicToken.email == email, MagicToken.used_at.is_(None)).delete()
         self.db.commit()
@@ -110,14 +105,12 @@ class UserRepository(UserRepositoryProtocol):
         self.db.refresh(mt)
         return mt
 
-    def get_magic_token(self, token_hash: str) -> Optional[MagicToken]:
+    def get_magic_token(self, token_hash: str) -> MagicToken | None:
         return self.db.query(MagicToken).filter(MagicToken.token_hash == token_hash).first()
 
     def mark_magic_token_used(self, mt: MagicToken) -> None:
-        mt.used_at = datetime.now(timezone.utc)
+        mt.used_at = datetime.now(UTC)
         self.db.commit()
-
-    # ─── Reset tokens ─────────────────────────────────────────────────────────
 
     def invalidate_reset_tokens(self, user_id: int) -> None:
         self.db.query(ResetToken).filter(ResetToken.user_id == user_id, ResetToken.used_at.is_(None)).delete()
@@ -130,29 +123,24 @@ class UserRepository(UserRepositoryProtocol):
         self.db.refresh(rt)
         return rt
 
-    def get_reset_token(self, token_hash: str) -> Optional[ResetToken]:
+    def get_reset_token(self, token_hash: str) -> ResetToken | None:
         return self.db.query(ResetToken).filter(ResetToken.token_hash == token_hash).first()
 
     def mark_reset_token_used(self, rt: ResetToken) -> None:
-        rt.used_at = datetime.now(timezone.utc)
+        rt.used_at = datetime.now(UTC)
         self.db.commit()
-
-    # ─── Usage stats ──────────────────────────────────────────────────────────
 
     def count_documents(self, user_id: int) -> int:
         return self.db.query(Library).filter(Library.user_id == user_id).count()
 
-    def count_queries_today(self, user_id: int) -> int:
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    def count_queries_24h(self, user_id: int) -> int:
+        """Questions in the last 24 hours, counted from the same log that enforces the daily limit."""
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
         return (
-            self.db.query(Message)
-            .join(Conversation, Message.conversation_id == Conversation.id)
-            .filter(
-                Conversation.user_id == user_id,
-                Message.role == "user",
-                Message.created_at >= today_start,
-            )
-            .count()
+            self.db.query(func.count(QueryUsageLog.id))
+            .filter(QueryUsageLog.user_id == user_id, QueryUsageLog.created_at >= cutoff)
+            .scalar()
+            or 0
         )
 
     def sum_storage_bytes(self, user_id: int) -> int:

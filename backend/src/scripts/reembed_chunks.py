@@ -5,12 +5,13 @@ different models can't be compared, so old chunks stop matching new questions.
 
     cd backend && python -m src.scripts.reembed_chunks
 """
+
 import asyncio
 
 from src.database.db import SessionLocal
 from src.integrations.ai import get_ai_provider
 from src.integrations.ai.base import AIProvider
-from src.repositories.library_repository import LibraryRepositoryProtocol, LibraryRepository
+from src.repositories.library_repository import LibraryRepository, LibraryRepositoryProtocol
 
 BATCH_SIZE = 100
 

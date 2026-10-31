@@ -1,6 +1,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from html import escape as html_escape
 
 from src.config import settings
 
@@ -39,6 +40,25 @@ class SmtpMailer:
   <p style="color:#52525b;font-size:12px">© 2025 Paperwise</p>
 </div>"""
         self._send(to_email, subject, html, plain)
+
+    def send_demo_request(self, to_email: str, demo_request) -> None:
+        details = [
+            ("Name", demo_request.name),
+            ("Email", demo_request.email),
+            ("Company", demo_request.company or "-"),
+            ("Team size", demo_request.team_size or "-"),
+            ("Message", demo_request.message or "-"),
+        ]
+        plain = "New demo request\n\n" + "\n".join(f"{label}: {value}" for label, value in details)
+        rows = "".join(
+            f"<p><strong>{html_escape(label)}:</strong> {html_escape(str(value))}</p>" for label, value in details
+        )
+        self._send(
+            to_email,
+            f"Demo request from {demo_request.name}",
+            f"<div style='font-family:sans-serif'><h2>New demo request</h2>{rows}</div>",
+            plain,
+        )
 
     def send_magic_link(self, to_email: str, token: str) -> None:
         link = f"{settings.APP_URL}/auth/magic-link/verify?token={token}"

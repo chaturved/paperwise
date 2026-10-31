@@ -4,7 +4,6 @@ Revision ID: 0006
 Revises: 0005, 88e37589c795
 Create Date: 2026-05-21
 """
-from alembic import op
 
 revision = "0006"
 down_revision = ("0005", "88e37589c795")

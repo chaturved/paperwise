@@ -11,40 +11,73 @@ Full-stack, production-shaped project: typed API contracts, layered backend arch
 ```mermaid
 flowchart LR
     subgraph Browser
-        UI[Next.js App]
+        UI["Next.js app<br/>chat, library, settings"]
     end
 
-    subgraph "nginx (single origin)"
-        Proxy["/api/* → backend<br/>/* → frontend"]
+    subgraph Edge["nginx (single origin)"]
+        Proxy["/api/* to backend<br/>everything else to frontend"]
     end
 
     subgraph Backend["FastAPI"]
-        Auth[Auth Service]
-        Library[Library Service]
-        Conv[Conversation Service]
-        Tier[Tier Service]
+        Auth["Auth service"]
+        Library["Library service<br/>uploads, status"]
+        Ingest["Ingestion job<br/>parse, OCR, chunk, embed"]
+        Ask["Ask service<br/>retrieve, answer, follow-ups"]
+        Conv["Conversation service<br/>history, versions, branches"]
+        Extras["Export and key dates"]
+        Tier["Tier service<br/>plan limits"]
     end
 
-    HF[("Hugging Face<br/>Inference API")]
-    PG[("PostgreSQL<br/>+ pgvector")]
+    AI[("AI provider<br/>Gemini or Hugging Face")]
+    PG[("PostgreSQL<br/>with pgvector")]
     S3[("S3-compatible<br/>storage")]
 
-    UI -->|HTTP + SSE| Proxy
+    UI -->|"HTTP and SSE"| Proxy
+    UI -->|"signed upload URL"| S3
     Proxy --> Auth
     Proxy --> Library
+    Proxy --> Ask
     Proxy --> Conv
+    Proxy --> Extras
     Auth --> PG
-    Library -->|extract, chunk, embed| HF
-    Library -->|store raw file| S3
-    Library -->|chunks + embeddings| PG
-    Conv -->|embed question| HF
-    Conv -->|cosine similarity top-k| PG
-    Conv -->|stream completion| HF
-    Conv --> Tier
+    Library --> S3
+    Library -->|"start job"| Ingest
+    Ingest -->|"read file"| S3
+    Ingest -->|"embed chunks"| AI
+    Ingest -->|"text, chunks, status"| PG
+    Ask -->|"embed question, stream answer"| AI
+    Ask -->|"nearest passages"| PG
+    Ask --> Tier
+    Conv --> PG
+    Extras -->|"read dates with the model"| AI
+    Extras --> PG
     Tier --> PG
 ```
 
-**Ingestion**: an uploaded file is hashed (sha256) to reject duplicates, its text is extracted (PyMuPDF for PDF, `python-docx` for Word), split into ~500-character overlapping chunks, embedded via the configured AI provider (Gemini or Hugging Face), and only written to Postgres once every step succeeds — a failed embedding call never leaves a broken document row that would still count against the user's plan quota.
+### Answering a question
+
+```mermaid
+flowchart TD
+    Q["Question typed, edited or retried"] --> Check["Check the plan: history window and daily questions"]
+    Check --> Docs{"Any ready documents?"}
+    Docs -->|no| General["Answer from general knowledge, no sources"]
+    Docs -->|yes| Embed["Embed the question"]
+    Embed --> Search["Find the nearest passages in pgvector"]
+    Search --> Number["Number the passages 1 to n"]
+    Number --> Stream["Model streams an answer that cites passages as [n]"]
+    General --> Stream
+    Stream --> Cited["Keep only the sources the answer actually cites"]
+    Cited --> Store["Store the answer as a child of the question"]
+    Store --> Browser["Browser shows citations, page and Open page"]
+    Store --> Next["Suggest follow-up questions"]
+    Check -->|over the limit| Refuse["Refuse with a clear message"]
+    Stream -->|fails before any text| Refund["Give the question back and keep a failed message"]
+```
+
+An edit stores your new question beside the old one, and a retry stores another answer to the same question, so nothing is lost and the `1/2` switcher moves between versions.
+
+
+**Ingestion**: the browser uploads each file straight to storage through a signed URL that fixes its exact size and type, then tells the API it arrived. A background job downloads it, hashes it (sha256) to reject duplicates, extracts its text in an isolated worker process (PyMuPDF for PDF, `python-docx` for Word; PDF pages with no text layer are read with Tesseract OCR and marked as scanned), splits it into ~500-character overlapping chunks, embeds them via the configured AI provider (Gemini or Hugging Face), and saves the text, chunks and `ready` status in one commit. A document moves `uploading → processing → ready` (or `failed`, which the user can retry), so a failed step never leaves a half-indexed document that counts against the plan quota.
 
 **Retrieval + answering**: a question is embedded with the same model, and `pgvector`'s cosine-distance operator finds the top-k nearest chunks directly in SQL. Those chunks are assembled into a prompt with the question, sent to the chat model, and the response is streamed back to the browser token-by-token over Server-Sent Events — the UI renders it incrementally rather than waiting for the full answer.
 
@@ -52,7 +85,9 @@ flowchart LR
 
 - **Auth** — email/password, Google OAuth, and passwordless magic links, all issuing the same `httponly`/`Secure` JWT access + refresh cookie pair
 - **Document library** — upload PDF/TXT/MD, content-hash deduplication (rejects a re-upload before it touches storage or the embedding API), per-plan file-size and file-type limits
-- **RAG chat** — streamed, cited answers over your own documents; conversation history persisted per user
+- **RAG chat** — streamed answers over your own documents, each passage cited as `[n]` with its page and a "read from a scan" mark when it came from OCR; conversation history persisted per user
+- **Edit, retry and branch** — edit any question or retry an answer and keep the old version behind a `1/2` switcher (messages form a tree), or continue from any answer in a new chat
+- **Follow-up suggestions** and a **sources panel** beside the chat on wide screens
 - **Onboarding** — guided first-run flow that hands the first question straight into a real dashboard conversation
 - **Analytics** — usage dashboard
 - **Plans**, enforced server-side per request:
@@ -61,7 +96,7 @@ flowchart LR
   |---|---|---|
   | Documents | 5 | Unlimited |
   | Max file size | 10 MB | 50 MB |
-  | File types | pdf, txt, md | pdf, docx, txt, md |
+  | File types | pdf, docx, txt, md | pdf, docx, txt, md |
   | Queries / day | 20 | Unlimited |
   | Conversation history | 7 days | Unlimited |
 
@@ -71,7 +106,7 @@ flowchart LR
 
 A few decisions worth calling out, since they came from real bugs found and fixed during development rather than being designed in up front:
 
-- **Exception architecture** — services raise typed exceptions (`NotFoundError`, `PlanLimitError`, `UploadFailedError`, ...) from `core/exceptions.py`; a small set of centralized FastAPI exception handlers in `core/exception_handlers.py` map them to HTTP status codes and response shapes. Routes stay one-liners with no `try/except` scattered through the API layer.
+- **Exception architecture** — services raise typed exceptions (`NotFoundError`, `PlanLimitError`, ...) from `core/exceptions.py`; a small set of centralized FastAPI exception handlers in `core/exception_handlers.py` map them to HTTP status codes and response shapes. Routes stay one-liners with no `try/except` scattered through the API layer.
 - **SSE streams always terminate.** The `/ask` endpoint sends its final `[DONE]` event from a `finally` block, not the happy path — an unhandled exception mid-stream used to skip it entirely, leaving the frontend's "streaming" state stuck forever with no error shown.
 - **React 18 Strict Mode-safe effects.** A couple of effects with real side effects (creating a conversation, sending a question) are guarded with refs rather than relying on dependency-array identity, since Strict Mode's dev-only double-invoke of effects will otherwise fire a network call twice and produce visibly duplicated/interleaved streamed output.
 - **Prompt-injection-adjacent bug**: documents that are themselves full of questions (e.g. a homework/quiz PDF) could get their embedded "Question: ..." text confused with the user's actual question by the LLM, since both looked identical in a naive prompt. Fixed by explicitly delimiting retrieved context and telling the model never to treat text inside it as the question to answer — verified against the live model with a reproduction before and after.
@@ -92,21 +127,23 @@ A few decisions worth calling out, since they came from real bugs found and fixe
 backend/
   src/
     api/v1/          route handlers (auth, users, library, conversations, analytics, misc)
-    services/         business logic (auth, library, conversation, tier limits, waitlist)
+    services/         business logic (auth, library, ingestion, ask, conversation, answer export, key dates, tier limits, waitlist)
     repositories/      DB access layer
     models/            SQLAlchemy models
     schemas/            Pydantic request/response schemas
     core/               exceptions, exception handlers, shared enums, DI dependencies
-    utils/              HF client, text chunking/extraction, storage, query prompting
+    utils/              JWT, password hashing, text chunking, chunk formatting, message tree, Word writer, quote checking
+    integrations/       AI providers, storage, mailer, Google OAuth, safe document parsing and OCR
   alembic/             DB migrations
   tests/                pytest suite
 
 frontend/
   src/
-    app/                Next.js routes: (auth), (app)/dashboard, (app)/settings (including usage), onboarding, pricing, privacy, terms
-    components/          UI components (conversations, sidebar, settings, etc.)
-    hooks/                useSSEStream, useLibrary, etc.
+    app/                Next.js routes: (auth), (workspace)/dashboard, (workspace)/settings (including usage), onboarding, pricing, product, security, use-cases, privacy, terms
+    components/          ui (Base UI primitives), conversations, library, settings, auth, site, pdf, layout
+    hooks/                useConversationChat, useSSEStream, useMessageVersions, useKeyDates, useLibrary, etc.
     lib/api/              typed API client functions
+    lib/                  citations, calendar (.ics) and Markdown export, formatting
     context/              AuthContext, AppLayoutContext
 
 nginx/                  reverse proxy config for the Docker setup
@@ -179,20 +216,38 @@ Runs on a single AWS EC2 instance (t3.small) via this same `docker-compose.yml`,
 
 - Live at `https://paperwise.chaturved-sumanth-lakkaraju.com`
 - `deploy.sh` — pulls latest `main` and runs `docker compose up -d --build` on the instance
-- `.github/workflows/deploy.yml` — manually triggered from the Actions tab; runs backend `pytest` + frontend `lint`/`build`, then deploys via `deploy.sh` over SSH (a "skip tests" checkbox allows a force-deploy)
+- `.github/workflows/deploy.yml` — manually triggered from the Actions tab; runs `deploy.sh` on the instance over SSH. It does not run tests, so let CI go green on `main` first
+- Migrations run on every start: the backend container runs `alembic upgrade head` before `uvicorn`
 - First-time cert issuance (already done for the current domain, only needed again for a new domain):
   ```bash
   docker compose run --rm --entrypoint certbot certbot certonly --webroot -w /var/www/certbot -d <domain> --email <email> --agree-tos --no-eff-email
   ```
 
-## Testing
+## Development
+
+Install the repo-level tooling once so staged files are formatted on every commit:
 
 ```bash
-cd backend
-pytest
+npm install            # at the repo root: installs lefthook and its git hook
 ```
 
-153 unit tests covering services and repositories with mocked dependencies (auth, library, conversation, tier enforcement, dedup).
+| Check | Backend (`cd backend`) | Frontend (`cd frontend`) |
+|---|---|---|
+| Tests | `pytest` | `npm test` (Vitest) |
+| Lint | `ruff check .` | `npm run lint` |
+| Format | `ruff format .` | `npm run format` (check with `npm run format:check`) |
+| Types | `pyright backend/src` from the repo root | `npm run typecheck` |
+
+CI (`.github/workflows/ci.yml`) runs all of these, builds the frontend, and applies every Alembic migration to an empty pgvector Postgres. Dev-only Python tools (`ruff`, `pyright`) live in `backend/requirements-dev.txt`: `pip install -r requirements-dev.txt` in `backend/`.
+
+Things that catch people out:
+
+- Run `alembic upgrade head` after pulling. New migrations add columns the code reads, so answers fail until they are applied.
+- `uvicorn` without `--reload` keeps serving the old code after you edit the backend; restart it.
+- Don't run `next build` while `next dev` is running. They share `.next` and corrupt it.
+- `DATABASE_URL` must start with `postgresql+psycopg://` (the driver in `requirements.txt` is psycopg 3). A plain `postgresql://` fails with `No module named 'psycopg2'` on a clean install.
+- Your `DATABASE_URL` may point at a hosted database. Check it before running migrations or scripts.
+- Layer rules, naming and the design system are in [`AGENTS.md`](AGENTS.md).
 
 ## Further reading
 

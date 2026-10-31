@@ -8,7 +8,7 @@ passlib==1.7.4
 pydantic[email]==2.13.4
 alembic==1.18.5
 # passlib's bcrypt check breaks on bcrypt 5; keep this pinned until passlib is replaced.
-bcrypt==4.0.1
+bcrypt==5.0.0
 PyMuPDF==1.28.0
 python-docx==1.2.0
 psycopg[binary]==3.3.6

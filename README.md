@@ -215,8 +215,9 @@ Note nginx here terminates plain HTTP; since auth cookies are set `Secure`, you'
 Runs on a single AWS EC2 instance (t3.small) via this same `docker-compose.yml`, plus a `certbot` service that issues and auto-renews a Let's Encrypt certificate for the production domain. nginx serves HTTP only for the ACME challenge path and redirects everything else to HTTPS.
 
 - Live at `https://paperwise.chaturved-sumanth-lakkaraju.com`
-- `deploy.sh` — pulls latest `main` and runs `docker compose up -d --build` on the instance
-- `.github/workflows/deploy.yml` — manually triggered from the Actions tab; runs `deploy.sh` on the instance over SSH. It does not run tests, so let CI go green on `main` first
+- `deploy.sh` — pulls latest `main`, rebuilds `backend/.env` from AWS Systems Manager Parameter Store (`/paperwise/prod/*`, read through the instance's IAM role) and runs `docker compose up -d --build` on the instance
+- `.github/workflows/deploy.yml` — manually triggered from the Actions tab; signs in to AWS with GitHub OIDC and runs `deploy.sh` through SSM Run Command, so port 22 can stay closed. Repository secrets: `AWS_DEPLOY_ROLE_ARN`, `AWS_REGION`, `EC2_INSTANCE_ID`. It does not run tests, so let CI go green on `main` first
+- To change a setting, edit its parameter in Parameter Store and run the deploy workflow again
 - Migrations run on every start: the backend container runs `alembic upgrade head` before `uvicorn`
 - First-time cert issuance (already done for the current domain, only needed again for a new domain):
   ```bash

@@ -61,3 +61,19 @@ def test_a_generated_sql_script_assumes_the_initial_migration_made_the_table(mon
     module.upgrade()
 
     assert created == []
+
+
+def test_0014_turns_storage_urls_into_keys():
+    import re
+
+    module = _load("0014_library_path_is_key.py")
+    executed: list[str] = []
+    module.op = SimpleNamespace(execute=lambda sql, *a, **k: executed.append(str(sql)))
+
+    module.upgrade()
+
+    sql = executed[0]
+    pattern = re.search(r"regexp_replace\(path, '([^']+)'", sql).group(1)
+    url = "https://abc.storage.supabase.co/storage/v1/s3/object/library/7/3f2a/my report.pdf"
+    assert re.sub(pattern, "", url) == "7/3f2a/my report.pdf"
+    assert "LIKE '%://%'" in sql  # rows that already hold a key are not touched

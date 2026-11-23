@@ -22,7 +22,7 @@ RAW = b"file bytes"
 RAW_HASH = hashlib.sha256(RAW).hexdigest()
 
 
-def _lib(id=1, status=DocumentStatus.PROCESSING, path="https://s/object/library/1/x/a.pdf"):
+def _lib(id=1, status=DocumentStatus.PROCESSING, path="1/x/a.pdf"):
     lib = MagicMock()
     lib.id, lib.user_id, lib.status, lib.path, lib.size, lib.type = id, 7, status, path, len(RAW), "pdf"
     return lib
@@ -34,7 +34,6 @@ class TestProcess:
         self.repo = MagicMock(spec_set=LibraryRepositoryProtocol)
         self.repo.get_by_content_hash.return_value = None
         self.storage = MagicMock(spec_set=S3Storage)
-        self.storage.key_from_path.return_value = "1/x/a.pdf"
         self.storage.download.return_value = RAW
         self.ai = MagicMock(spec_set=AIProvider)
         self.ai.get_embeddings = AsyncMock(side_effect=lambda chunks: [[0.1] for _ in chunks])
@@ -200,7 +199,6 @@ class TestReindex:
         self.repo = MagicMock(spec_set=LibraryRepositoryProtocol)
         self.repo.get_by_content_hash.return_value = None
         self.storage = MagicMock(spec_set=S3Storage)
-        self.storage.key_from_path.return_value = "1/x/a.pdf"
         self.storage.download.return_value = RAW
         self.ai = MagicMock(spec_set=AIProvider)
         self.ai.get_embeddings = AsyncMock(side_effect=lambda chunks: [[0.1] for _ in chunks])

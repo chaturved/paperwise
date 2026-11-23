@@ -8,17 +8,48 @@ from src.config import settings
 from src.integrations.storage import S3Storage, StorageError
 
 
-def test_s3_storage_deletes_file_by_storage_key() -> None:
+def test_s3_storage_deletes_file_by_key() -> None:
     client = MagicMock()
     with patch("src.integrations.storage.boto3.client", return_value=client):
         storage = S3Storage()
 
-    storage.delete_file(f"https://example.com/object/{settings.S3_LIBRARY_BUCKET}/7/file-id/report.pdf")
+    storage.delete_file("7/file-id/report.pdf")
 
-    client.delete_object.assert_called_once_with(
-        Bucket=settings.S3_LIBRARY_BUCKET,
-        Key="7/file-id/report.pdf",
+    client.delete_object.assert_called_once_with(Bucket=settings.S3_LIBRARY_BUCKET, Key="7/file-id/report.pdf")
+
+
+def _client_kwargs(monkeypatch, **overrides) -> dict:
+    values = {"S3_ENDPOINT": "", "S3_REGION": "us-east-1", "S3_ACCESS_KEY": "", "S3_SECRET_ACCESS_KEY": ""}
+    for name, value in {**values, **overrides}.items():
+        monkeypatch.setattr(settings, name, value)
+    with patch("src.integrations.storage.boto3.client") as factory:
+        S3Storage()
+    return factory.call_args.kwargs
+
+
+def test_real_aws_uses_regional_virtual_hosted_sigv4_and_the_credential_chain(monkeypatch) -> None:
+    kwargs = _client_kwargs(monkeypatch)
+
+    assert kwargs["endpoint_url"] is None
+    assert kwargs["region_name"] == "us-east-1"
+    assert kwargs["aws_access_key_id"] is None and kwargs["aws_secret_access_key"] is None
+    assert kwargs["config"].signature_version == "v4"
+    assert kwargs["config"].s3["addressing_style"] == "virtual"
+
+
+def test_a_custom_endpoint_uses_path_style_and_static_keys(monkeypatch) -> None:
+    kwargs = _client_kwargs(
+        monkeypatch, S3_ENDPOINT="http://localhost:9000", S3_ACCESS_KEY="key", S3_SECRET_ACCESS_KEY="secret"
     )
+
+    assert kwargs["endpoint_url"] == "http://localhost:9000"
+    assert kwargs["aws_access_key_id"] == "key" and kwargs["aws_secret_access_key"] == "secret"
+    assert kwargs["config"].s3["addressing_style"] == "path"
+
+
+def test_real_aws_without_a_region_is_refused(monkeypatch) -> None:
+    with pytest.raises(StorageError, match="S3_REGION"):
+        _client_kwargs(monkeypatch, S3_REGION="")
 
 
 def _storage_with_client():
@@ -31,12 +62,9 @@ def _client_error(code: str, message: str = "boom") -> ClientError:
     return ClientError({"Error": {"Code": code, "Message": message}}, "Operation")
 
 
-def test_key_and_url_helpers_round_trip() -> None:
+def test_key_for_keeps_only_the_file_name() -> None:
     with patch("src.integrations.storage.uuid.uuid4", return_value="file-id"):
-        key = S3Storage.key_for(7, "../../etc/report.pdf")
-
-    assert key == "7/file-id/report.pdf"
-    assert S3Storage.key_from_path(S3Storage.public_url(key)) == key
+        assert S3Storage.key_for(7, "../../etc/report.pdf") == "7/file-id/report.pdf"
 
 
 def test_create_upload_url_signs_the_exact_size_and_type() -> None:

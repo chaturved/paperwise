@@ -78,7 +78,7 @@ class LibraryService(LibraryServiceProtocol):
                     name=name,
                     type=ext,
                     size=f.size,
-                    path=self.storage.public_url(key),
+                    path=key,
                     status=DocumentStatus.UPLOADING,
                     status_updated_at=datetime.now(UTC),
                 )
@@ -97,7 +97,7 @@ class LibraryService(LibraryServiceProtocol):
         if lib.status != DocumentStatus.UPLOADING:
             return LibraryDocResponse.model_validate(lib), False
 
-        stored_size = self.storage.object_size(self.storage.key_from_path(lib.path or ""))
+        stored_size = self.storage.object_size(lib.path or "")
         if stored_size is None:
             raise BadRequestError("We didn't receive this file. Please upload it again.")
         if stored_size != lib.size:
@@ -113,7 +113,7 @@ class LibraryService(LibraryServiceProtocol):
             raise ConflictError("Only documents that failed can be retried")
         # Failed documents don't use up the plan limit, so retrying one has to pass the same check as a new upload.
         self.tier.check_upload_metadata(plan, [UploadMeta(lib.name, lib.size)], self.repo.count_active(user_id))
-        if self.storage.object_size(self.storage.key_from_path(lib.path or "")) is None:
+        if self.storage.object_size(lib.path or "") is None:
             raise BadRequestError("The original file is no longer available. Please upload it again.")
 
         started = self.repo.transition_status(lib.id, DocumentStatus.FAILED, DocumentStatus.PROCESSING)
@@ -124,7 +124,7 @@ class LibraryService(LibraryServiceProtocol):
         lib = self._get_owned(user_id, doc_id)
         if lib.status != DocumentStatus.READY or not lib.path:
             raise BadRequestError("This document isn't ready to view yet.")
-        url = self.storage.create_download_url(self.storage.key_from_path(lib.path))
+        url = self.storage.create_download_url(lib.path)
         return DocumentFileResponse(url=url, expires_in=settings.DOWNLOAD_URL_EXPIRY_SECONDS)
 
     def _get_owned(self, user_id: int, doc_id: int) -> Library:

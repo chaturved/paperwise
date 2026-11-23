@@ -19,7 +19,7 @@ from src.services.library_service import LibraryService
 from src.services.tier_service import TierServiceProtocol
 
 
-def _make_lib(id=1, name="doc.pdf", type="pdf", size=1024, path: str | None = "/tmp/doc.pdf"):
+def _make_lib(id=1, name="doc.pdf", type="pdf", size=1024, path: str | None = "7/id/contract.pdf"):
     lib = MagicMock()
     lib.id = id
     lib.name = name
@@ -79,12 +79,12 @@ class TestLibraryService:
             self.svc.delete_document(doc_id=99, user_id=1)
 
     def test_delete_document_deletes_file_and_record(self):
-        lib = _make_lib(path="/tmp/doc.pdf")
+        lib = _make_lib(path="7/id/contract.pdf")
         self.mock_repo.get_by_id.return_value = lib
 
         result = self.svc.delete_document(doc_id=1, user_id=1)
 
-        self.mock_storage.delete_file.assert_called_once_with("/tmp/doc.pdf")
+        self.mock_storage.delete_file.assert_called_once_with("7/id/contract.pdf")
         self.mock_repo.delete.assert_called_once_with(lib)
         assert result.message == "Document deleted"
 
@@ -98,7 +98,7 @@ class TestLibraryService:
         self.mock_repo.delete.assert_called_once_with(lib)
 
     def test_clear_all_deletes_all_files_and_clears_repo(self):
-        libs = [_make_lib(id=1, path="/tmp/a.pdf"), _make_lib(id=2, path="/tmp/b.pdf")]
+        libs = [_make_lib(id=1, path="7/a/a.pdf"), _make_lib(id=2, path="7/b/b.pdf")]
         self.mock_repo.get_all.return_value = libs
 
         result = self.svc.clear_all(user_id=1)
@@ -108,7 +108,7 @@ class TestLibraryService:
         assert result.message == "Library cleared"
 
     def test_clear_all_continues_when_delete_file_fails(self):
-        libs = [_make_lib(id=1, path="/tmp/a.pdf"), _make_lib(id=2, path="/tmp/b.pdf")]
+        libs = [_make_lib(id=1, path="7/a/a.pdf"), _make_lib(id=2, path="7/b/b.pdf")]
         self.mock_repo.get_all.return_value = libs
 
         self.mock_storage.delete_file.side_effect = StorageError("disk error")
@@ -118,7 +118,7 @@ class TestLibraryService:
         assert result.message == "Library cleared"
 
     def test_clear_all_skips_delete_when_no_path(self):
-        libs = [_make_lib(id=1, path=None), _make_lib(id=2, path="/tmp/b.pdf")]
+        libs = [_make_lib(id=1, path=None), _make_lib(id=2, path="7/b/b.pdf")]
         self.mock_repo.get_all.return_value = libs
 
         self.svc.clear_all(user_id=1)
@@ -135,8 +135,6 @@ class TestDirectUploads:
         self.mock_tier = MagicMock(spec_set=TierServiceProtocol)
         self.mock_storage = MagicMock(spec_set=S3Storage)
         self.mock_storage.key_for.return_value = "7/id/contract.pdf"
-        self.mock_storage.public_url.return_value = "https://s/object/library/7/id/contract.pdf"
-        self.mock_storage.key_from_path.return_value = "7/id/contract.pdf"
         self.mock_storage.create_upload_url.return_value = "https://signed.example/put"
         self.svc = LibraryService(
             repo=self.mock_repo, tier=self.mock_tier, storage=self.mock_storage, content_types=ContentTypes()
@@ -170,7 +168,7 @@ class TestDirectUploads:
         library = self.mock_repo.add.call_args.args[0]
         assert (library.user_id, library.name, library.type, library.size) == (7, "contract.pdf", "pdf", 500)
         assert library.status == DocumentStatus.UPLOADING
-        assert library.path == "https://s/object/library/7/id/contract.pdf"
+        assert library.path == "7/id/contract.pdf"
         self.mock_storage.create_upload_url.assert_called_once_with("7/id/contract.pdf", 500, "application/pdf")
         slot = result.uploads[0]
         assert (slot.id, slot.upload_url, slot.headers) == (

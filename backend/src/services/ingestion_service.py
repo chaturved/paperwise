@@ -61,8 +61,7 @@ class IngestionService:
             self._fail(doc_id, RETRYABLE_MESSAGE, remove_file=False)
 
     async def _index(self, lib: Library) -> None:
-        key = self.storage.key_from_path(lib.path or "")
-        raw = await run_in_threadpool(self.storage.download, key, lib.size)
+        raw = await run_in_threadpool(self.storage.download, lib.path or "", lib.size)
 
         content_hash = hashlib.sha256(raw).hexdigest()
         existing = self.repo.get_by_content_hash(lib.user_id, content_hash)

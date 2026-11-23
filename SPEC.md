@@ -1472,7 +1472,8 @@ HF_API_KEY=
 HF_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 HF_CHAT_MODEL=meta-llama/Llama-3.1-8B-Instruct
 
-# S3 / Supabase Storage
+# S3 storage. Real AWS S3: leave S3_ENDPOINT empty, set S3_REGION and the bucket. With no keys, boto3 uses the
+# default credential chain (the EC2 instance role). Set S3_ENDPOINT only for MinIO or another S3-compatible store.
 S3_ENDPOINT=
 S3_REGION=
 S3_ACCESS_KEY=

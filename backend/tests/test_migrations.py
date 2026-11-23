@@ -76,4 +76,4 @@ def test_0014_turns_storage_urls_into_keys():
     pattern = re.search(r"regexp_replace\(path, '([^']+)'", sql).group(1)
     url = "https://abc.storage.supabase.co/storage/v1/s3/object/library/7/3f2a/my report.pdf"
     assert re.sub(pattern, "", url) == "7/3f2a/my report.pdf"
-    assert "LIKE '%://%'" in sql  # rows that already hold a key are not touched
+    assert "LIKE '%://%'" in sql

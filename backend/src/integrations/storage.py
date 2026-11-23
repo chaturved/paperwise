@@ -16,17 +16,18 @@ class StorageError(AppError):
 
 class S3Storage:
     def __init__(self) -> None:
-        endpoint = settings.S3_ENDPOINT or None
-        if endpoint is None and not settings.S3_REGION:
+        if not settings.S3_ENDPOINT and not settings.S3_REGION:
             raise StorageError("S3_REGION is required when S3_ENDPOINT is empty (real AWS S3)")
+
         self.client = boto3.client(
             "s3",
-            endpoint_url=endpoint,
+            endpoint_url=settings.S3_ENDPOINT or None,
             region_name=settings.S3_REGION or None,
             aws_access_key_id=settings.S3_ACCESS_KEY or None,
             aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY or None,
-            # AWS uses bucket.s3.region.amazonaws.com; a custom endpoint (MinIO, local dev) needs path style.
-            config=Config(signature_version="v4", s3={"addressing_style": "path" if endpoint else "virtual"}),
+            config=Config(
+                signature_version="v4", s3={"addressing_style": "path" if settings.S3_ENDPOINT else "virtual"}
+            ),
         )
 
     @staticmethod

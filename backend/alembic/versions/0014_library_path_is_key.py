@@ -17,8 +17,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # "https://host/storage/v1/s3/object/library/7/<uuid>/a.pdf" -> "7/<uuid>/a.pdf". Rows that already hold a key
-    # (no "://") are left alone, so running this twice changes nothing.
+    # Only rows containing "://" are changed, so running this twice does nothing.
     op.execute("UPDATE libraries SET path = regexp_replace(path, '^.*/object/[^/]+/', '') WHERE path LIKE '%://%'")
 
 
